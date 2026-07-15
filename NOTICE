@@ -1,0 +1,11 @@
+Stones
+Copyright 2026 sam4k27@gmail.com
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party components are distributed under their own licenses:
+  - React, React DOM      — MIT License (Meta Platforms, Inc.)
+  - GSAP                  — GreenSock Standard "No Charge" License
+  - Lenis                 — MIT License (Studio Freight / darkroom.engineering)
+  - lucide-react          — ISC License
+  - Tailwind CSS, Vite    — MIT License

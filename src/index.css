@@ -1,0 +1,317 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   DESIGN TOKENS — Stones
+   Stratigraphic duotone: the accent interpolates warm(surface) -> cold(depth)
+   as `--depth` (0..1) is driven by scroll from JS. Components must reference
+   these tokens, never raw hex. RGB triples exist so Tailwind's `<alpha-value>`
+   and rgba() work (e.g. `bg-accent/20`, `rgb(var(--bone-rgb) / 0.4)`).
+   ============================================================================ */
+@layer base {
+  :root {
+    /* Surfaces */
+    --void: #0a0d12;
+    --surface: #111621;
+    --layer: #161c28;
+    --void-rgb: 10 13 18;
+    --surface-rgb: 17 22 33;
+    --layer-rgb: 22 28 40;
+
+    /* Ink */
+    --bone: #ede6d8;
+    --ash: #8c8676;
+    --bone-rgb: 237 230 216;
+    --ash-rgb: 140 133 118;
+
+    /* Duotone accents */
+    --accent-warm: #d68a4e;
+    --accent-cold: #5e86a6;
+    --accent-warm-rgb: 214 138 78;
+    --accent-cold-rgb: 94 134 166;
+
+    /* Live accent — recomputed from `--depth` by the scroll engine. Defaults
+       to warm so the first paint (Hero, surface) is correct without JS. */
+    --accent: #d68a4e;
+    --accent-rgb: 214 138 78;
+
+    /* Depth of the current viewport into deep time, 0 (surface) .. 1 (Hadean) */
+    --depth: 0;
+
+    /* Motion */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --dur-fast: 400ms;
+    --dur-med: 800ms;
+    --dur-slow: 1100ms;
+    --dur-xslow: 1400ms;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-color: rgb(var(--accent-rgb) / 0.4) transparent;
+  }
+
+  body {
+    background-color: var(--void);
+    color: var(--bone);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgb(var(--accent-rgb) / 0.28);
+    color: var(--bone);
+  }
+
+  /* Keyboard focus — always visible, tinted to the live accent. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent-rgb) / 0.9);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* When the custom cursor is mounted (fine pointers only) hide the native one.
+     The class is added by CustomCursor and never on touch / reduced-motion. */
+  @media (pointer: fine) {
+    html.has-custom-cursor,
+    html.has-custom-cursor * {
+      cursor: none !important;
+    }
+  }
+}
+
+/* ============================================================================
+   TYPOGRAPHY UTILITIES
+   ============================================================================ */
+@layer utilities {
+  .font-display {
+    font-family: 'Unbounded', system-ui, sans-serif;
+  }
+  .font-accent {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+  }
+  .font-mono-t {
+    font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+  }
+
+  /* Eyebrow / telemetry label */
+  .eyebrow {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgb(var(--ash-rgb) / 0.9);
+  }
+
+  /* Accent-tinted gradient text (warm->cold live accent) */
+  .text-strata {
+    background-image: linear-gradient(
+      100deg,
+      var(--accent-warm),
+      var(--accent)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Fade the left/right edges of a horizontal strip (marquee, rail). */
+  .strip-fade-x {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 8%,
+      #000 92%,
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 8%,
+      #000 92%,
+      transparent
+    );
+  }
+
+  .will-change-transform {
+    will-change: transform;
+  }
+}
+
+/* ============================================================================
+   KEYFRAMES — Hero intro is CSS-only so the LCP text needs no JS to animate in.
+   Scroll-triggered section motion is handled by GSAP, not here.
+   ============================================================================ */
+@keyframes heroReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(28px);
+    filter: blur(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroFadeDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes floatPulse {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+}
+
+.anim {
+  opacity: 0;
+  animation-fill-mode: forwards;
+  animation-timing-function: var(--ease-out);
+}
+.anim-reveal {
+  animation-name: heroReveal;
+  animation-duration: var(--dur-slow);
+}
+.anim-fade {
+  animation-name: heroFadeUp;
+  animation-duration: var(--dur-med);
+}
+.anim-fade-down {
+  animation-name: heroFadeDown;
+  animation-duration: 900ms;
+}
+
+.marquee-track {
+  animation: marquee 42s linear infinite;
+}
+
+/* ── Custom cursor (mounted only on fine pointers with motion allowed) ─────── */
+.cursor-ring,
+.cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 999px;
+  will-change: transform;
+}
+.cursor-ring {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid rgb(var(--accent-rgb) / 0.7);
+  transition:
+    width 0.35s var(--ease-out),
+    height 0.35s var(--ease-out),
+    background-color 0.35s var(--ease-out),
+    border-color 0.35s var(--ease-out);
+}
+.cursor-dot {
+  width: 5px;
+  height: 5px;
+  background: rgb(var(--accent-rgb));
+  transition: opacity 0.3s var(--ease-out);
+}
+.cursor-ring[data-mode='hover'] {
+  width: 56px;
+  height: 56px;
+  background: rgb(var(--accent-rgb) / 0.08);
+}
+.cursor-ring[data-mode='lens'] {
+  width: 88px;
+  height: 88px;
+  background: rgb(var(--accent-rgb) / 0.06);
+  border-color: rgb(var(--accent-rgb) / 0.9);
+}
+.cursor-ring[data-mode='label'] {
+  width: 74px;
+  height: 74px;
+  background: rgb(var(--accent-rgb) / 0.92);
+  border-color: transparent;
+}
+.cursor-dot[data-mode='hover'],
+.cursor-dot[data-mode='lens'],
+.cursor-dot[data-mode='label'] {
+  opacity: 0;
+}
+.cursor-label {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--void);
+}
+.cursor-ring[data-mode='lens'] .cursor-label {
+  color: rgb(var(--accent-rgb));
+}
+
+/* ============================================================================
+   REDUCED MOTION — kill all cinematic motion, reveal everything instantly.
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .anim {
+    opacity: 1 !important;
+  }
+  .marquee-track {
+    animation: none !important;
+  }
+}

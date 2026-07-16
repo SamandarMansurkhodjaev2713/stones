@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { ChevronDown } from 'lucide-react'
+import baseImage from '../../assets/base.webp'
 import { useI18n } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
 import { useMediaQuery } from '../../lib/useMediaQuery'
@@ -10,22 +11,41 @@ import {
   HEADER_OFFSET,
   MQ_FINE_POINTER,
   MQ_MOBILE,
-  SPOTLIGHT_DRIFT_SPEED,
   SPOTLIGHT_RADIUS,
 } from '../../lib/constants'
 import { VIDEO } from '../../lib/media'
 import MagneticButton from '../ui/MagneticButton'
 
-/** Gyro tilt → spotlight travel, as a fraction of the viewport. */
-const TILT_TRAVEL = 0.28
+/**
+ * Desktop keeps the monolith slightly lifted from the bottom edge, like an
+ * exhibit on a plinth. Mobile pulls the camera BACK instead of cropping in:
+ * the footage is letterboxed (contain) and then rescaled, so the whole
+ * monolith floats in the void — the vignette swallows the seams.
+ */
+const DESKTOP_MEDIA_TRANSFORM = 'translateY(9vh) scale(0.88)'
+const MOBILE_MEDIA_SCALE = 1.75
+
+/** How long a touch keeps steering the beam before the auto-sweep resumes. */
+const TOUCH_HOLD_MS = 2200
+/** Gyro tilt → beam travel, as a fraction of the viewport. */
+const TILT_TRAVEL_X = 0.18
+const TILT_TRAVEL_Y = 0.1
+
+/** The auto-sweep path: two incommensurate sine pairs → a slow, non-repeating
+ *  wander, as if someone patiently moves a lamp across the specimen. */
+const SWEEP = {
+  x1: 0.00021,
+  x2: 0.00034,
+  y1: 0.00017,
+  y2: 0.00027,
+} as const
 
 /**
- * The knocked-out wordmark hero. A full-bleed video of living rock is covered
- * by a void-colored SVG plate with two holes punched through its luminance
- * mask: the giant STONES lettering (always open) and a soft spotlight circle
- * that chases the pointer (fine pointers), the gyroscope (mobile) or drifts in
- * a slow orbit (no sensors). Everything runs on direct SVG attribute writes
- * inside one rAF — no React state per frame, no canvas re-encoding.
+ * Hero v3 — the original spotlight ritual, staged properly. A still of the
+ * monolith rests in the dark; a soft beam reveals the living footage beneath
+ * it. Fine pointers steer the beam themselves; touch devices watch it wander
+ * on its own (slow Lissajous sweep). The reveal is a CSS radial-gradient mask
+ * updated in one rAF — no canvas, no per-frame re-encoding, no React state.
  */
 export default function Hero() {
   const { t } = useI18n()
@@ -34,35 +54,25 @@ export default function Hero() {
   const reduced = useReducedMotion()
   const tilt = useDeviceTilt(isMobile && !reduced)
 
-  const spotRef = useRef<SVGCircleElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const tiltRef = useRef(tilt)
+  const maskRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef(0)
+  const tiltRef = useRef(tilt)
+  const touchRef = useRef({ x: 0, y: 0, ts: -Infinity })
 
-  // Mirror the tilt state into a ref so the rAF loop reads it without
-  // re-subscribing (the hook re-renders on device orientation anyway).
+  // Mirror tilt into a ref so the rAF loop reads it without re-subscribing.
   useEffect(() => {
     tiltRef.current = tilt
   }, [tilt])
 
-  // Spotlight driver. Under reduced motion the circle stays parked slightly
-  // above center — a static, fully composed frame.
   useEffect(() => {
-    const spot = spotRef.current
-    if (!spot) return
-
-    const radiusFor = (w: number) => Math.min(SPOTLIGHT_RADIUS, w * 0.36)
-    spot.setAttribute('r', String(radiusFor(window.innerWidth)))
-
-    if (reduced) {
-      spot.setAttribute('cx', String(window.innerWidth / 2))
-      spot.setAttribute('cy', String(window.innerHeight * 0.42))
-      return
-    }
+    const maskEl = maskRef.current
+    if (!maskEl || reduced) return
 
     const hasFinePointer = window.matchMedia(MQ_FINE_POINTER).matches
-    const hasGyro = () => tiltRef.current.x !== 0 || tiltRef.current.y !== 0
-    const target = { x: window.innerWidth / 2, y: window.innerHeight * 0.42 }
+    const radiusFor = (w: number) => Math.min(SPOTLIGHT_RADIUS, w * 0.38)
+    let radius = radiusFor(window.innerWidth)
+
+    const target = { x: window.innerWidth / 2, y: window.innerHeight * 0.55 }
     const smooth = { ...target }
 
     const onMouseMove = (event: MouseEvent) => {
@@ -71,30 +81,48 @@ export default function Hero() {
     }
     if (hasFinePointer) window.addEventListener('mousemove', onMouseMove)
 
-    const onResize = () => spot.setAttribute('r', String(radiusFor(window.innerWidth)))
+    const onResize = () => {
+      radius = radiusFor(window.innerWidth)
+    }
     window.addEventListener('resize', onResize)
+
+    const paint = (x: number, y: number) => {
+      const mask =
+        `radial-gradient(circle ${radius}px at ${x.toFixed(1)}px ${y.toFixed(1)}px, ` +
+        `rgba(0,0,0,1) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,0.75) 60%, ` +
+        `rgba(0,0,0,0.4) 75%, rgba(0,0,0,0.12) 88%, transparent 100%)`
+      maskEl.style.maskImage = mask
+      maskEl.style.webkitMaskImage = mask
+    }
 
     const tick = (time: number) => {
       const w = window.innerWidth
       const h = window.innerHeight
       if (!hasFinePointer) {
-        if (hasGyro()) {
-          // Tilting the phone sweeps the spotlight across the wordmark.
-          target.x = w / 2 + tiltRef.current.x * w * TILT_TRAVEL
-          target.y = h * 0.42 + tiltRef.current.y * h * TILT_TRAVEL * 0.6
+        const touch = touchRef.current
+        if (time - touch.ts < TOUCH_HOLD_MS) {
+          // A finger on the rock steers the beam directly.
+          target.x = touch.x
+          target.y = touch.y
         } else {
-          const angle = time * SPOTLIGHT_DRIFT_SPEED
-          target.x = w / 2 + Math.cos(angle) * w * 0.24
-          target.y = h * 0.42 + Math.sin(angle) * h * 0.14
+          // The wandering lamp: slow, smooth, never twice the same place —
+          // nudged by the device tilt when a gyroscope is present.
+          target.x =
+            w * 0.5 +
+            Math.sin(time * SWEEP.x1) * w * 0.2 +
+            Math.sin(time * SWEEP.x2 + 1.7) * w * 0.08 +
+            tiltRef.current.x * w * TILT_TRAVEL_X
+          target.y =
+            h * 0.52 +
+            Math.sin(time * SWEEP.y1 + 0.9) * h * 0.13 +
+            Math.cos(time * SWEEP.y2) * h * 0.06 +
+            tiltRef.current.y * h * TILT_TRAVEL_Y
         }
       }
       smooth.x += (target.x - smooth.x) * CURSOR_SMOOTHING
       smooth.y += (target.y - smooth.y) * CURSOR_SMOOTHING
-      // The hero is sticky and stays mounted; skip work once it is covered.
-      if (window.scrollY < h) {
-        spot.setAttribute('cx', smooth.x.toFixed(1))
-        spot.setAttribute('cy', smooth.y.toFixed(1))
-      }
+      // Sticky hero stays mounted for the whole page — idle once covered.
+      if (window.scrollY < h) paint(smooth.x, smooth.y)
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
@@ -106,131 +134,139 @@ export default function Hero() {
     }
   }, [reduced])
 
-  // Subtle gyro parallax on the footage itself (mobile only).
-  const videoTransform = isMobile
-    ? `scale(1.12) translate(${tilt.x * 1.6}%, ${tilt.y * 1.1}%)`
-    : 'scale(1.02)'
+  // Mobile: whole monolith in frame (contain, pulled back) + gyro drift.
+  // Desktop: plinth composition. Media transforms stay in px/vh so the
+  // spotlight mask (viewport space) always lines up.
+  const mediaTransform = isMobile
+    ? {
+        transform: `scale(${MOBILE_MEDIA_SCALE}) translate(${tilt.x * 1.4}%, ${tilt.y * 1}%)`,
+      }
+    : { transform: DESKTOP_MEDIA_TRANSFORM }
+  const stillSizing = isMobile
+    ? { backgroundSize: 'contain', backgroundPosition: 'center 45%' }
+    : {}
 
   return (
     <section
       id="hero"
       className="sticky top-0 z-0 h-screen w-full overflow-hidden bg-void"
       style={{ height: '100dvh' }}
+      onPointerMove={(event) => {
+        if (event.pointerType === 'touch') {
+          touchRef.current = {
+            x: event.clientX,
+            y: event.clientY,
+            ts: performance.now(),
+          }
+        }
+      }}
     >
-      {/* Living rock, full bleed. Under reduced motion: a still mineral tone. */}
-      {reduced ? (
+      {/* The still monolith. */}
+      <div
+        className="absolute inset-0 z-10 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${baseImage})`, ...stillSizing, ...mediaTransform }}
+      />
+
+      {/* Living footage, revealed only inside the beam. The mask lives on this
+          untransformed wrapper so the spotlight stays in viewport space while
+          the footage inside lines up with the still. */}
+      {!reduced && (
         <div
-          className="absolute inset-0 z-10"
-          style={{
-            background:
-              'linear-gradient(160deg, #3a352e 0%, #241f1a 55%, #14110e 100%)',
-          }}
-        />
-      ) : (
-        <video
-          ref={videoRef}
-          src={VIDEO.reveal}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className="absolute inset-0 z-10 h-full w-full object-cover"
-          style={{ transform: videoTransform }}
-        />
+          ref={maskRef}
+          className="absolute inset-0 z-20"
+          style={{ maskImage: 'radial-gradient(circle 0px at -999px -999px, #000, transparent)' }}
+        >
+          <video
+            src={VIDEO.reveal}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className={`absolute inset-0 h-full w-full ${isMobile ? 'object-contain' : 'object-cover'}`}
+            style={isMobile ? { ...mediaTransform, objectPosition: 'center 45%' } : mediaTransform}
+          />
+        </div>
       )}
 
-      {/* The void plate with STONES and the spotlight punched out of it. */}
-      <svg className="absolute inset-0 z-20 h-full w-full" aria-hidden="true">
-        <defs>
-          <radialGradient id="hero-spot-grad">
-            <stop offset="0%" stopColor="#000" />
-            <stop offset="45%" stopColor="#1a1a1a" />
-            <stop offset="78%" stopColor="#9a9a9a" />
-            <stop offset="100%" stopColor="#fff" />
-          </radialGradient>
-          <mask id="hero-knockout" maskUnits="userSpaceOnUse">
-            <rect width="100%" height="100%" fill="#fff" />
-            {/* Spotlight first, letters after — the cut always wins. */}
-            <circle
-              ref={spotRef}
-              cx="-999"
-              cy="-999"
-              r={SPOTLIGHT_RADIUS}
-              fill="url(#hero-spot-grad)"
-            />
-            <text
-              x="50%"
-              y="44%"
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="#000"
-              className="display-title"
-              style={{ fontSize: 'clamp(88px, 23vw, 380px)', letterSpacing: '0.01em' }}
-            >
-              {t.meta.brand}
-            </text>
-          </mask>
-        </defs>
-        <rect width="100%" height="100%" fill="var(--void)" mask="url(#hero-knockout)" />
-      </svg>
+      {/* Vignette: dissolves the photo edges into --void (no floating square)
+          and keeps the type readable over any frame. */}
+      <div
+        className="pointer-events-none absolute inset-0 z-30"
+        style={{
+          background:
+            'radial-gradient(115% 92% at 50% 48%, transparent 34%, rgb(var(--void-rgb) / 0.52) 72%, rgb(var(--void-rgb) / 0.96) 100%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-56"
+        style={{
+          background:
+            'linear-gradient(180deg, transparent, rgb(var(--void-rgb) / 0.85))',
+        }}
+      />
 
-      {/* Hairline under the wordmark zone — surveyor's datum line. */}
-      <div className="pointer-events-none absolute left-0 right-0 top-[58%] z-30 hidden h-px bg-bone/[0.07] sm:block" />
-
-      {/* Editorial band: headline left, actions right. */}
-      <div className="absolute inset-x-0 bottom-0 z-40 px-5 pb-20 sm:px-8 sm:pb-10">
-        <div className="mx-auto flex max-w-[1600px] flex-col gap-7 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-xl">
-            <p
-              className="anim anim-fade eyebrow mb-4"
-              style={{ animationDelay: '0.5s' }}
-            >
-              {t.hero.eyebrow}
-            </p>
-            <h1
-              className="anim anim-reveal display-title text-4xl text-bone sm:text-5xl md:text-6xl"
-              style={{ animationDelay: '0.25s' }}
-            >
-              {t.hero.titleA}{' '}
-              <span className="text-bone/40">{t.hero.titleB}</span>
-            </h1>
-            <p
-              className="anim anim-fade mt-4 max-w-md text-sm leading-relaxed text-bone/65 sm:text-base"
-              style={{ animationDelay: '0.55s' }}
-            >
-              {t.hero.sub}
-            </p>
-          </div>
-
-          <div
-            className="anim anim-fade flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4"
-            style={{ animationDelay: '0.75s' }}
+      {/* Headline — top center, above the monolith. */}
+      <div className="absolute inset-x-0 top-[15%] z-40 flex flex-col items-center px-5 text-center sm:top-[16%]">
+        <p className="anim anim-fade-down eyebrow mb-5" style={{ animationDelay: '0.1s' }}>
+          {t.hero.eyebrow}
+        </p>
+        <h1 className="display-title text-bone">
+          <span
+            className="anim anim-reveal block text-5xl sm:text-6xl md:text-8xl"
+            style={{ animationDelay: '0.25s' }}
           >
-            <MagneticButton
-              label={t.hero.ctaPrimary}
-              cursorLabel={t.cursor.dig}
-              className="w-full sm:w-auto"
-              onClick={() => scrollTo('#descent', { offset: HEADER_OFFSET })}
-            />
-            <MagneticButton
-              label={t.hero.ctaSecondary}
-              variant="ghost"
-              cursorLabel={t.cursor.explore}
-              icon={<ChevronDown size={16} strokeWidth={2.25} />}
-              className="w-full sm:w-auto"
-              onClick={() => scrollTo('#expeditions', { offset: HEADER_OFFSET })}
-            />
-          </div>
+            {t.hero.titleA}
+          </span>
+          <span
+            className="anim anim-reveal block text-3xl text-bone/40 sm:text-4xl md:text-5xl"
+            style={{ animationDelay: '0.42s' }}
+          >
+            {t.hero.titleB}
+          </span>
+        </h1>
+      </div>
+
+      {/* Field note — bottom left (desktop only). */}
+      <p
+        className="anim anim-fade pointer-events-none absolute bottom-12 left-8 z-40 hidden max-w-[250px] text-sm leading-relaxed text-bone/55 lg:block"
+        style={{ animationDelay: '0.7s' }}
+      >
+        {t.hero.sideNote}
+      </p>
+
+      {/* Sub + actions — bottom right on desktop, bottom stack on mobile. */}
+      <div
+        className="anim anim-fade absolute inset-x-5 bottom-16 z-40 flex flex-col gap-4 sm:bottom-12 lg:left-auto lg:right-8 lg:max-w-[320px]"
+        style={{ animationDelay: '0.85s' }}
+      >
+        <p className="text-sm leading-relaxed text-bone/65 lg:text-right">
+          {t.hero.sub}
+        </p>
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center lg:justify-end">
+          <MagneticButton
+            label={t.hero.ctaPrimary}
+            cursorLabel={t.cursor.dig}
+            className="w-full sm:w-auto"
+            onClick={() => scrollTo('#descent', { offset: HEADER_OFFSET })}
+          />
+          <MagneticButton
+            label={t.hero.ctaSecondary}
+            variant="ghost"
+            cursorLabel={t.cursor.explore}
+            icon={<ChevronDown size={16} strokeWidth={2.25} />}
+            className="w-full sm:w-auto"
+            onClick={() => scrollTo('#expeditions', { offset: HEADER_OFFSET })}
+          />
         </div>
       </div>
 
       {/* Scroll hint */}
-      <div className="anim anim-fade pointer-events-none absolute bottom-5 left-1/2 z-40 -translate-x-1/2 sm:bottom-auto sm:left-auto sm:right-8 sm:top-[62%]">
-        <span className="flex items-center gap-2 sm:flex-col">
+      <div className="anim anim-fade pointer-events-none absolute bottom-4 left-1/2 z-40 -translate-x-1/2 sm:bottom-4">
+        <span className="flex items-center gap-2">
           <span className="eyebrow text-[10px]">{t.hero.scrollHint}</span>
           <ChevronDown
-            size={16}
+            size={15}
             className="text-bone/60"
             style={{ animation: 'floatPulse 2.4s var(--ease-in-out) infinite' }}
           />

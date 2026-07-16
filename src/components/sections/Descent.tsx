@@ -97,7 +97,10 @@ export default function Descent() {
         />
 
         <div className="relative flex flex-col items-center px-5 py-24 text-center md:py-40">
-          <h2 className="display-title max-w-3xl text-5xl text-bone sm:text-6xl md:text-8xl">
+          <h2
+            data-reveal-mask
+            className="display-title max-w-3xl text-5xl text-bone sm:text-6xl md:text-8xl"
+          >
             <span className="block">{t.descent.titleA}</span>
             <span className="block text-bone/40">{t.descent.titleB}</span>
           </h2>

@@ -69,6 +69,24 @@ export default function SectionShell({
           scrollTrigger: { trigger: section, start: 'top 74%', once: true },
         })
       }
+
+      // Display headlines rise out of a clipping mask — the line-reveal.
+      // Bottom inset ends at -12% so descenders are never shaved mid-flight.
+      const masked = gsap.utils.toArray<HTMLElement>(
+        section.querySelectorAll('[data-reveal-mask]'),
+      )
+      if (masked.length) {
+        gsap.set(masked, { clipPath: 'inset(0% 0% 100% 0%)', y: 48 })
+        gsap.to(masked, {
+          clipPath: 'inset(-12% 0% -12% 0%)',
+          y: 0,
+          duration: DURATION.slow,
+          ease: EASE_OUT,
+          stagger: 0.12,
+          scrollTrigger: { trigger: section, start: 'top 78%', once: true },
+          onComplete: () => gsap.set(masked, { clearProps: 'clipPath' }),
+        })
+      }
     }, section)
 
     return () => ctx.revert()

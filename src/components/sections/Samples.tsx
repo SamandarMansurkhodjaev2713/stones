@@ -2,21 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { MoveHorizontal } from 'lucide-react'
 import SectionShell from '../ui/SectionShell'
 import { useI18n } from '../../i18n'
-
-/**
- * Characteristic mineral gradient per sample, in dictionary order. Deliberately
- * desaturated: the specimens are the only "colored" objects in an otherwise
- * monochrome interface — like exhibits in a grey museum hall.
- */
-const SWATCH: readonly string[] = [
-  'linear-gradient(155deg, #b39676 0%, #7e6448 55%, #52402e 100%)', // qumtosh / sandstone
-  'linear-gradient(155deg, #34363b 0%, #1e2023 55%, #101113 100%)', // bazalt / basalt
-  'linear-gradient(155deg, #8e8c90 0%, #636166 55%, #434146 100%)', // granit / granite
-  'linear-gradient(155deg, #776b9e 0%, #52487c 55%, #322c50 100%)', // ametist / amethyst
-]
-
-const STRATA_TEXTURE =
-  'repeating-linear-gradient(180deg, rgba(0,0,0,0.14) 0 2px, transparent 2px 9px)'
+import { SAMPLE_PHOTO } from '../../lib/media'
 
 /** Archive shelf code for a specimen drawer. */
 const specimenCode = (index: number) => `STN-${String(index + 1).padStart(3, '0')}`
@@ -117,16 +103,16 @@ export default function Samples() {
       className="bg-void py-28 md:py-40"
     >
       <div className="mx-auto max-w-7xl px-5">
-        <div data-reveal className="mb-10 flex flex-wrap items-end justify-between gap-6 md:mb-14">
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-6 md:mb-14">
           <div className="max-w-3xl">
-            <h2 className="display-title text-5xl text-bone md:text-7xl">
+            <h2 data-reveal-mask className="display-title text-5xl text-bone md:text-7xl">
               {t.samples.title}
             </h2>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-bone/60">
+            <p data-reveal className="mt-5 max-w-xl text-lg leading-relaxed text-bone/60">
               {t.samples.sub}
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div data-reveal className="flex items-center gap-4">
             <span className="font-mono-t text-xs uppercase tracking-[0.16em] text-ash">
               {String(active + 1).padStart(2, '0')} /{' '}
               {String(t.samples.items.length).padStart(2, '0')}
@@ -164,23 +150,25 @@ export default function Samples() {
               key={item.name}
               className="group flex min-w-[78vw] max-w-[420px] snap-start flex-col overflow-hidden rounded-2xl border border-bone/10 bg-layer select-none xs:min-w-[340px] sm:min-w-[380px]"
             >
-              <div
-                className="relative h-32 overflow-hidden"
-                style={{ background: SWATCH[i % SWATCH.length] }}
-              >
-                <div
-                  className="absolute inset-0 opacity-[0.18] transition-transform duration-700 ease-out-expo group-hover:scale-110"
-                  style={{ backgroundImage: STRATA_TEXTURE }}
+              <div className="relative h-44 overflow-hidden">
+                {/* Eager on purpose: lazy-loading is unreliable for items in a
+                    horizontal scroller (no vertical intersection), and these
+                    four are lightweight (w=900). */}
+                <img
+                  src={SAMPLE_PHOTO[i % SAMPLE_PHOTO.length]}
+                  alt=""
+                  decoding="async"
+                  className="absolute inset-0 h-full w-full object-cover grayscale transition-transform duration-700 ease-out-expo group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-void/45 to-transparent" />
-                <span className="font-mono-t absolute left-4 top-3.5 text-[11px] uppercase tracking-[0.16em] text-void/80">
+                <div className="absolute inset-0 bg-gradient-to-t from-layer via-void/25 to-void/40" />
+                <span className="font-mono-t absolute left-4 top-3.5 text-[11px] uppercase tracking-[0.16em] text-bone/85">
                   {t.samples.eyebrow} · {specimenCode(i)}
                 </span>
                 {/* Archive stamp */}
-                <span className="font-mono-t absolute right-4 top-4 rotate-6 border border-void/50 px-2 py-0.5 text-[10px] uppercase tracking-[0.22em] text-void/70">
+                <span className="font-mono-t absolute right-4 top-4 rotate-6 border border-bone/40 px-2 py-0.5 text-[10px] uppercase tracking-[0.22em] text-bone/70">
                   {t.samples.stamp}
                 </span>
-                <span className="font-mono-t absolute bottom-3 right-4 text-xs uppercase tracking-[0.14em] text-void/70">
+                <span className="font-mono-t absolute bottom-3 right-4 text-xs uppercase tracking-[0.14em] text-bone/75">
                   {item.latin}
                 </span>
               </div>

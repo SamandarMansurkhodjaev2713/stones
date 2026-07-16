@@ -13,12 +13,18 @@ export function useMediaQuery(query: string): boolean {
   useEffect(() => {
     if (!window.matchMedia) return
     const mql = window.matchMedia(query)
-    const onChange = (event: MediaQueryListEvent) => setMatches(event.matches)
+    const sync = () => setMatches(mql.matches)
 
     // Sync immediately in case the query changed between render and effect.
-    setMatches(mql.matches)
-    mql.addEventListener('change', onChange)
-    return () => mql.removeEventListener('change', onChange)
+    sync()
+    mql.addEventListener('change', sync)
+    // Belt-and-braces: some environments (frozen background tabs, older
+    // WebViews) defer MQL change events — a plain resize listener catches up.
+    window.addEventListener('resize', sync)
+    return () => {
+      mql.removeEventListener('change', sync)
+      window.removeEventListener('resize', sync)
+    }
   }, [query])
 
   return matches

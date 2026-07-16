@@ -108,6 +108,7 @@ export interface Dictionary {
     title: string
     sub: string
     fields: { duration: string; difficulty: string }
+    profile: string
     cta: string
     items: ExpeditionItem[]
   }
@@ -295,6 +296,7 @@ const ru: Dictionary = {
     title: 'Полевые маршруты',
     sub: 'Читать породу учатся не по фото. Мы выводим в поле — туда, где страницы стоят вертикально.',
     fields: { duration: 'Длительность', difficulty: 'Сложность' },
+    profile: 'Профиль маршрута',
     cta: 'Обсудить экспедицию',
     items: [
       {
@@ -532,6 +534,7 @@ const uz: Dictionary = {
     title: 'Dala marshrutlari',
     sub: 'Jinsni o‘qishni suratdan o‘rganib bo‘lmaydi. Biz dalaga olib chiqamiz — sahifalar tik turgan joyga.',
     fields: { duration: 'Davomiyligi', difficulty: 'Murakkabligi' },
+    profile: 'Marshrut profili',
     cta: 'Ekspeditsiyani muhokama qilish',
     items: [
       {

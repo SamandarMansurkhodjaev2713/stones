@@ -4,7 +4,7 @@ import ParticleField from '../ui/ParticleField'
 import { useI18n, formatNumber } from '../../i18n'
 import type { Dictionary } from '../../i18n/dictionary'
 import { gsap, ScrollTrigger } from '../../lib/gsap'
-import { ERA_SEQUENCE, MAX_DEPTH_M, MQ_DESKTOP } from '../../lib/constants'
+import { ERA_SEQUENCE, MAX_DEPTH_M } from '../../lib/constants'
 import { ERA_PHOTO } from '../../lib/media'
 
 /** Scroll distance per era while the stage is pinned, in viewport heights. */
@@ -30,7 +30,7 @@ function PinnedEras({ t }: { t: Dictionary }) {
     if (!wrap) return
 
     const mm = gsap.matchMedia()
-    mm.add(`${MQ_DESKTOP} and (prefers-reduced-motion: no-preference)`, () => {
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
       const trigger = ScrollTrigger.create({
         trigger: wrap,
         start: 'top top',
@@ -56,7 +56,8 @@ function PinnedEras({ t }: { t: Dictionary }) {
     <div
       ref={wrapRef}
       aria-hidden="true"
-      className="relative hidden h-screen flex-col overflow-hidden motion-safe:lg:flex"
+      className="relative hidden flex-col overflow-hidden motion-safe:flex"
+      style={{ height: '100dvh' }}
     >
       {/* Era backdrops: one monochrome landscape per level, crossfading with
           the text. All stay mounted so the fade is instant on revisit. */}
@@ -87,7 +88,7 @@ function PinnedEras({ t }: { t: Dictionary }) {
       <ParticleField density={0.85} />
 
       {/* Static chapter header */}
-      <div className="relative mx-auto w-full max-w-7xl px-5 pt-24">
+      <div className="relative mx-auto w-full max-w-7xl px-5 pt-28 lg:pt-24">
         <h2 className="display-title text-4xl text-bone">{t.eras.title}</h2>
         <p className="mt-2 max-w-md text-sm leading-relaxed text-bone/55">
           {t.eras.sub}
@@ -100,7 +101,7 @@ function PinnedEras({ t }: { t: Dictionary }) {
           <p className="font-mono-t text-sm text-bone/60">
             −{formatNumber(depthOf(era.depth))} {t.telemetry.unit}
           </p>
-          <h3 className="display-title mt-3 text-7xl leading-[0.9] text-bone xl:text-[9rem]">
+          <h3 className="display-title mt-3 text-6xl leading-[0.9] text-bone sm:text-7xl xl:text-[9rem]">
             {copy.name}
           </h3>
           <p className="font-mono-t mt-4 text-sm uppercase tracking-[0.14em] text-bone/45">
@@ -130,6 +131,18 @@ function PinnedEras({ t }: { t: Dictionary }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Level ticks — the mobile stand-in for the right-edge rail. */}
+      <div className="relative mx-auto flex w-full max-w-7xl gap-1.5 px-5 pb-4 xl:hidden">
+        {ERA_SEQUENCE.map((item, i) => (
+          <span
+            key={item.id}
+            className={`h-px flex-1 transition-colors duration-500 ${
+              i <= idx ? 'bg-bone/80' : 'bg-bone/20'
+            }`}
+          />
+        ))}
       </div>
 
       {/* Bottom telemetry */}
@@ -233,12 +246,12 @@ export default function Eras() {
       {/* Pinned stage — desktop with motion allowed (CSS gate, always mounted). */}
       <PinnedEras t={t} />
       {/* Its AT mirror, active only where the visual stage is the one shown. */}
-      <div className="hidden motion-safe:lg:block">
+      <div className="hidden motion-safe:block">
         <ErasList t={t} srOnly />
       </div>
 
       {/* Flat list — mobile and reduced-motion desktop. */}
-      <div className="motion-safe:lg:hidden">
+      <div className="motion-safe:hidden">
         <div className="pointer-events-none absolute inset-0">
           <ParticleField density={0.85} />
         </div>

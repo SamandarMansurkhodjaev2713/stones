@@ -23,7 +23,11 @@ import MagneticButton from '../ui/MagneticButton'
  * monolith floats in the void — the vignette swallows the seams.
  */
 const DESKTOP_MEDIA_TRANSFORM = 'translateY(9vh) scale(0.88)'
-const MOBILE_MEDIA_SCALE = 1.75
+/** Moderate zoom keeps the WHOLE monolith in frame on a phone. */
+const MOBILE_MEDIA_SCALE = 1.35
+/** Dissolves the letterboxed frame edges into the void — no visible seams. */
+const MOBILE_EDGE_MASK =
+  'radial-gradient(ellipse 64% 54% at 50% 43%, #000 50%, transparent 92%)'
 
 /** How long a touch keeps steering the beam before the auto-sweep resumes. */
 const TOUCH_HOLD_MS = 2200
@@ -55,6 +59,8 @@ export default function Hero() {
   const tilt = useDeviceTilt(isMobile && !reduced)
 
   const maskRef = useRef<HTMLDivElement>(null)
+  const glowRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
   const rafRef = useRef(0)
   const tiltRef = useRef(tilt)
   const touchRef = useRef({ x: 0, y: 0, ts: -Infinity })
@@ -86,13 +92,23 @@ export default function Hero() {
     }
     window.addEventListener('resize', onResize)
 
+    const glowEl = glowRef.current
     const paint = (x: number, y: number) => {
+      const px = x.toFixed(1)
+      const py = y.toFixed(1)
       const mask =
-        `radial-gradient(circle ${radius}px at ${x.toFixed(1)}px ${y.toFixed(1)}px, ` +
+        `radial-gradient(circle ${radius}px at ${px}px ${py}px, ` +
         `rgba(0,0,0,1) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,0.75) 60%, ` +
         `rgba(0,0,0,0.4) 75%, rgba(0,0,0,0.12) 88%, transparent 100%)`
       maskEl.style.maskImage = mask
       maskEl.style.webkitMaskImage = mask
+      // The lamp itself: a soft luminous spot that reads even when the footage
+      // underneath is paused or nearly identical to the still.
+      if (glowEl) {
+        glowEl.style.background =
+          `radial-gradient(circle ${(radius * 1.2).toFixed(0)}px at ${px}px ${py}px, ` +
+          `rgb(var(--bone-rgb) / 0.16), rgb(var(--bone-rgb) / 0.06) 45%, transparent 72%)`
+      }
     }
 
     const tick = (time: number) => {
@@ -127,9 +143,19 @@ export default function Hero() {
     }
     rafRef.current = requestAnimationFrame(tick)
 
+    // Data-saver / low-power modes may block autoplay; the first user gesture
+    // is a legitimate moment to start the living footage.
+    const kickPlayback = () => {
+      videoRef.current?.play().catch(() => {
+        // Autoplay refused — the glow layer still carries the effect.
+      })
+    }
+    window.addEventListener('touchstart', kickPlayback, { once: true, passive: true })
+
     return () => {
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('resize', onResize)
+      window.removeEventListener('touchstart', kickPlayback)
       cancelAnimationFrame(rafRef.current)
     }
   }, [reduced])
@@ -143,7 +169,12 @@ export default function Hero() {
       }
     : { transform: DESKTOP_MEDIA_TRANSFORM }
   const stillSizing = isMobile
-    ? { backgroundSize: 'contain', backgroundPosition: 'center 45%' }
+    ? {
+        backgroundSize: 'contain',
+        backgroundPosition: 'center 43%',
+        maskImage: MOBILE_EDGE_MASK,
+        WebkitMaskImage: MOBILE_EDGE_MASK,
+      }
     : {}
 
   return (
@@ -177,6 +208,7 @@ export default function Hero() {
           style={{ maskImage: 'radial-gradient(circle 0px at -999px -999px, #000, transparent)' }}
         >
           <video
+            ref={videoRef}
             src={VIDEO.reveal}
             autoPlay
             muted
@@ -184,9 +216,30 @@ export default function Hero() {
             playsInline
             preload="auto"
             className={`absolute inset-0 h-full w-full ${isMobile ? 'object-contain' : 'object-cover'}`}
-            style={isMobile ? { ...mediaTransform, objectPosition: 'center 45%' } : mediaTransform}
+            style={
+              isMobile
+                ? {
+                    ...mediaTransform,
+                    objectPosition: 'center 43%',
+                    // Lit by the beam: brighter than the still around it.
+                    filter: 'brightness(1.35) contrast(1.06)',
+                    maskImage: MOBILE_EDGE_MASK,
+                    WebkitMaskImage: MOBILE_EDGE_MASK,
+                  }
+                : { ...mediaTransform, filter: 'brightness(1.18)' }
+            }
           />
         </div>
+      )}
+
+      {/* The visible lamp: a luminous spot that always shows where the beam
+          is, independent of the footage state. */}
+      {!reduced && (
+        <div
+          ref={glowRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-[25] mix-blend-screen"
+        />
       )}
 
       {/* Vignette: dissolves the photo edges into --void (no floating square)

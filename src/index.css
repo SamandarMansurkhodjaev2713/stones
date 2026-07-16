@@ -223,6 +223,24 @@
   }
 }
 
+/* The exhibit breathes: a barely-there scale/height oscillation that keeps the
+   monolith alive between beam passes (mobile hero). Wrapper-level, so it
+   composes with the inner media transform instead of overriding it. */
+@keyframes monolithBreath {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.035) translateY(-1%);
+  }
+}
+
+.monolith-breath {
+  animation: monolithBreath 9s var(--ease-in-out) infinite;
+  will-change: transform;
+}
+
 @keyframes floatPulse {
   0%,
   100% {

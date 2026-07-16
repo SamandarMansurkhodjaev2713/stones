@@ -35,13 +35,14 @@ const TOUCH_HOLD_MS = 2200
 const TILT_TRAVEL_X = 0.18
 const TILT_TRAVEL_Y = 0.1
 
-/** The auto-sweep path: two incommensurate sine pairs → a slow, non-repeating
- *  wander, as if someone patiently moves a lamp across the specimen. */
+/** The auto-sweep path: two incommensurate sine pairs → a smooth non-repeating
+ *  wander. Primary period ≈ 11 s — clearly alive within the first seconds,
+ *  never frantic. */
 const SWEEP = {
-  x1: 0.00021,
-  x2: 0.00034,
-  y1: 0.00017,
-  y2: 0.00027,
+  x1: 0.00057,
+  x2: 0.00091,
+  y1: 0.00047,
+  y2: 0.00074,
 } as const
 
 /**
@@ -102,12 +103,12 @@ export default function Hero() {
         `rgba(0,0,0,0.4) 75%, rgba(0,0,0,0.12) 88%, transparent 100%)`
       maskEl.style.maskImage = mask
       maskEl.style.webkitMaskImage = mask
-      // The lamp itself: a soft luminous spot that reads even when the footage
-      // underneath is paused or nearly identical to the still.
+      // The lamp itself: a compact luminous spot that reads even when the
+      // footage underneath is paused. Tight falloff — a beam, not grey fog.
       if (glowEl) {
         glowEl.style.background =
-          `radial-gradient(circle ${(radius * 1.2).toFixed(0)}px at ${px}px ${py}px, ` +
-          `rgb(var(--bone-rgb) / 0.16), rgb(var(--bone-rgb) / 0.06) 45%, transparent 72%)`
+          `radial-gradient(circle ${(radius * 1.05).toFixed(0)}px at ${px}px ${py}px, ` +
+          `rgb(var(--bone-rgb) / 0.2), rgb(var(--bone-rgb) / 0.07) 42%, transparent 62%)`
       }
     }
 
@@ -121,17 +122,17 @@ export default function Hero() {
           target.x = touch.x
           target.y = touch.y
         } else {
-          // The wandering lamp: slow, smooth, never twice the same place —
-          // nudged by the device tilt when a gyroscope is present.
+          // The wandering lamp: smooth, never twice the same place, orbiting
+          // the monolith zone — nudged by device tilt when a gyro is present.
           target.x =
             w * 0.5 +
-            Math.sin(time * SWEEP.x1) * w * 0.2 +
-            Math.sin(time * SWEEP.x2 + 1.7) * w * 0.08 +
+            Math.sin(time * SWEEP.x1) * w * 0.24 +
+            Math.sin(time * SWEEP.x2 + 1.7) * w * 0.1 +
             tiltRef.current.x * w * TILT_TRAVEL_X
           target.y =
-            h * 0.52 +
-            Math.sin(time * SWEEP.y1 + 0.9) * h * 0.13 +
-            Math.cos(time * SWEEP.y2) * h * 0.06 +
+            h * 0.44 +
+            Math.sin(time * SWEEP.y1 + 0.9) * h * 0.1 +
+            Math.cos(time * SWEEP.y2) * h * 0.05 +
             tiltRef.current.y * h * TILT_TRAVEL_Y
         }
       }
@@ -192,11 +193,14 @@ export default function Hero() {
         }
       }}
     >
-      {/* The still monolith. */}
-      <div
-        className="absolute inset-0 z-10 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${baseImage})`, ...stillSizing, ...mediaTransform }}
-      />
+      {/* The still monolith. The breathing lives on the wrapper so it composes
+          with (rather than overrides) the inner media transform. */}
+      <div className={`absolute inset-0 z-10 ${isMobile ? 'monolith-breath' : ''}`}>
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${baseImage})`, ...stillSizing, ...mediaTransform }}
+        />
+      </div>
 
       {/* Living footage, revealed only inside the beam. The mask lives on this
           untransformed wrapper so the spotlight stays in viewport space while
@@ -207,28 +211,30 @@ export default function Hero() {
           className="absolute inset-0 z-20"
           style={{ maskImage: 'radial-gradient(circle 0px at -999px -999px, #000, transparent)' }}
         >
-          <video
-            ref={videoRef}
-            src={VIDEO.reveal}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            className={`absolute inset-0 h-full w-full ${isMobile ? 'object-contain' : 'object-cover'}`}
-            style={
-              isMobile
-                ? {
-                    ...mediaTransform,
-                    objectPosition: 'center 43%',
-                    // Lit by the beam: brighter than the still around it.
-                    filter: 'brightness(1.35) contrast(1.06)',
-                    maskImage: MOBILE_EDGE_MASK,
-                    WebkitMaskImage: MOBILE_EDGE_MASK,
-                  }
-                : { ...mediaTransform, filter: 'brightness(1.18)' }
-            }
-          />
+          <div className={`absolute inset-0 ${isMobile ? 'monolith-breath' : ''}`}>
+            <video
+              ref={videoRef}
+              src={VIDEO.reveal}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              className={`absolute inset-0 h-full w-full ${isMobile ? 'object-contain' : 'object-cover'}`}
+              style={
+                isMobile
+                  ? {
+                      ...mediaTransform,
+                      objectPosition: 'center 43%',
+                      // Lit by the beam: brighter than the still around it.
+                      filter: 'brightness(1.35) contrast(1.06)',
+                      maskImage: MOBILE_EDGE_MASK,
+                      WebkitMaskImage: MOBILE_EDGE_MASK,
+                    }
+                  : { ...mediaTransform, filter: 'brightness(1.18)' }
+              }
+            />
+          </div>
         </div>
       )}
 

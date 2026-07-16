@@ -21,7 +21,7 @@ function SkipLink() {
   return (
     <a
       href="#manifesto"
-      className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-full focus:bg-accent focus:px-5 focus:py-2 focus:text-sm focus:text-void"
+      className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-full focus:bg-bone focus:px-5 focus:py-2 focus:text-sm focus:text-void"
     >
       {t.a11y.skip}
     </a>

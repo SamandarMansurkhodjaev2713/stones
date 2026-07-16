@@ -48,7 +48,7 @@ export default function GhostEpoch({ text, className = '', travel = 14 }: GhostE
     <div
       ref={ref}
       aria-hidden="true"
-      className={`font-display pointer-events-none absolute select-none whitespace-nowrap font-bold leading-none text-bone/[0.035] ${className}`}
+      className={`display-title pointer-events-none absolute select-none whitespace-nowrap text-bone/[0.035] ${className}`}
     >
       {text}
     </div>

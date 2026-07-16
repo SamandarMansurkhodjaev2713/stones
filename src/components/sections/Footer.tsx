@@ -21,9 +21,7 @@ export default function Footer() {
               >
                 <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
               </svg>
-              <span className="font-display text-xl font-bold text-bone">
-                {t.meta.brand}
-              </span>
+              <span className="display-title text-lg text-bone">{t.meta.brand}</span>
             </div>
             <p className="mt-6 max-w-xs text-sm leading-relaxed text-bone/40">
               {t.footer.tagline}
@@ -65,10 +63,9 @@ export default function Footer() {
         aria-hidden="true"
       >
         <span
-          className={`font-accent anim ${
+          className={`display-title anim ${
             giant.inView ? 'anim-fade' : ''
-          } absolute left-1/2 top-0 -translate-x-1/2 select-none whitespace-nowrap text-[24vw] leading-[0.8] text-bone/[0.05] sm:text-[18vw]`}
-          style={{ letterSpacing: '-0.04em' }}
+          } absolute left-1/2 top-0 -translate-x-1/2 select-none whitespace-nowrap text-[23vw] leading-[0.9] text-bone/[0.05] sm:text-[17vw]`}
         >
           {t.footer.wordmark}
         </span>

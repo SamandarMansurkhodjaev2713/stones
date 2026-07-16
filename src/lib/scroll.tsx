@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef } from 'react
 import type { ReactNode } from 'react'
 import Lenis from 'lenis'
 import { gsap, ScrollTrigger } from './gsap'
-import { ACCENT_COLD_RGB, ACCENT_WARM_RGB, DURATION, MQ_REDUCED_MOTION } from './constants'
+import { DURATION, MQ_REDUCED_MOTION } from './constants'
 import { useMediaQuery } from './useMediaQuery'
 
 interface ScrollToOptions {
@@ -18,30 +18,15 @@ const ScrollContext = createContext<ScrollContextValue | null>(null)
 
 const MS_PER_SECOND = 1000
 
-type Rgb = readonly [number, number, number]
-
-function lerp(from: number, to: number, t: number): number {
-  return from + (to - from) * t
-}
-
-/** Interpolate two RGB triples into a CSS space-separated `"r g b"` string. */
-function mixRgb(from: Rgb, to: Rgb, t: number): string {
-  const r = Math.round(lerp(from[0], to[0], t))
-  const g = Math.round(lerp(from[1], to[1], t))
-  const b = Math.round(lerp(from[2], to[2], t))
-  return `${r} ${g} ${b}`
-}
-
 /**
- * Owns the smooth-scroll engine and the stratigraphic depth→accent driver.
+ * Owns the smooth-scroll engine and the page-depth gauge.
  *
  * - On capable devices Lenis provides weighted inertial scrolling, driven by
  *   GSAP's ticker and wired into ScrollTrigger so pinning/reveals stay in sync.
  * - A single ScrollTrigger maps whole-page progress (0 surface → 1 origin) onto
- *   the `--depth` variable and interpolates `--accent` from warm to cold.
+ *   the `--depth` CSS variable for any gauge that wants it.
  * - Under `prefers-reduced-motion` Lenis is skipped entirely; native scrolling
- *   drives the same ScrollTrigger, so the accent still shifts but without
- *   inertia or smoothing.
+ *   drives the same ScrollTrigger.
  */
 export function SmoothScrollProvider({ children }: { children: ReactNode }) {
   const reduced = useMediaQuery(MQ_REDUCED_MOTION)
@@ -55,11 +40,7 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
       start: 'top top',
       end: 'bottom bottom',
       onUpdate: (self) => {
-        const depth = self.progress
-        const triple = mixRgb(ACCENT_WARM_RGB, ACCENT_COLD_RGB, depth)
-        root.style.setProperty('--depth', depth.toFixed(4))
-        root.style.setProperty('--accent-rgb', triple)
-        root.style.setProperty('--accent', `rgb(${triple})`)
+        root.style.setProperty('--depth', self.progress.toFixed(4))
       },
     })
 

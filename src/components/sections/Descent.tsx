@@ -32,37 +32,28 @@ export default function Descent() {
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse 60% 50% at 50% 100%, rgb(var(--accent-rgb) / 0.2), transparent 70%)',
+              'radial-gradient(ellipse 60% 50% at 50% 100%, rgb(var(--bone-rgb) / 0.12), transparent 70%)',
           }}
         />
 
         <div className="relative flex flex-col items-center px-5 py-24 text-center md:py-36">
-          <h2 className="max-w-3xl text-5xl leading-[1.02] text-bone md:text-7xl">
-            <span
-              className="font-display block font-semibold"
-              style={{ letterSpacing: '-0.04em' }}
-            >
-              {t.descent.titleA}
-            </span>
-            <span
-              className="font-accent text-strata block"
-              style={{ letterSpacing: '-0.02em' }}
-            >
-              {t.descent.titleB}
-            </span>
+          <h2 className="display-title max-w-3xl text-4xl text-bone sm:text-5xl md:text-7xl">
+            <span className="block">{t.descent.titleA}</span>
+            <span className="block text-bone/40">{t.descent.titleB}</span>
           </h2>
 
           <p className="mt-8 max-w-md text-base leading-relaxed text-bone/60 md:text-lg">
             {t.descent.body}
           </p>
 
-          <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row">
+          <div className="mt-12 flex w-full max-w-sm flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-4">
             <MagneticButton
               label={t.descent.ctaPrimary}
               href={CONTACT.telegram}
               external
               icon={<Send size={16} strokeWidth={2.25} />}
               cursorLabel={t.cursor.dig}
+              className="w-full sm:w-auto"
             />
             <MagneticButton
               label={t.descent.ctaSecondary}
@@ -70,6 +61,7 @@ export default function Descent() {
               icon={<ArrowUp size={16} strokeWidth={2.25} />}
               cursorLabel={t.cursor.explore}
               onClick={() => scrollTo('#hero')}
+              className="w-full sm:w-auto"
             />
           </div>
         </div>

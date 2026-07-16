@@ -36,7 +36,7 @@ function Counter({ stat, start }: { stat: StatItem; start: boolean }) {
   return (
     <span>
       {display}
-      <span className="text-accent">{stat.suffix}</span>
+      <span className="text-bone/45">{stat.suffix}</span>
     </span>
   )
 }
@@ -60,10 +60,7 @@ export default function Stats() {
               } ${i > 0 ? 'lg:border-l' : ''}`}
               style={{ animationDelay: `${i * 0.12}s` }}
             >
-              <div
-                className="font-display text-4xl font-semibold text-bone/90 md:text-5xl"
-                style={{ letterSpacing: '-0.03em' }}
-              >
+              <div className="display-title text-4xl text-bone/90 md:text-5xl">
                 <Counter stat={stat} start={block.inView} />
               </div>
               <p className="mt-4 text-sm leading-snug text-bone/45">{stat.label}</p>

@@ -18,10 +18,6 @@ export const DURATION = {
   xslow: 1.4,
 } as const
 
-/* ── Duotone accent endpoints (RGB), interpolated by scroll depth ─────────── */
-export const ACCENT_WARM_RGB: readonly [number, number, number] = [214, 138, 78]
-export const ACCENT_COLD_RGB: readonly [number, number, number] = [94, 134, 166]
-
 /* ── Hero spotlight / reveal geometry ─────────────────────────────────────── */
 export const SPOTLIGHT_RADIUS = 260
 /** Mobile spotlight drifts in a slow orbit; this is its angular speed. */
@@ -50,7 +46,7 @@ export const CONTACT = {
 /**
  * The spine of the site: geological eras from the present surface (depth 0)
  * down to the molten origin of the Earth (depth 1). `depth` positions each era
- * on the DepthRail and drives the warm→cold accent interpolation. Names, ages
+ * on the DepthRail and sizes each era's depth bar. Names, ages
  * and notes are localised in the dictionary under `eras.items[id]`.
  */
 export const ERA_SEQUENCE = [

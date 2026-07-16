@@ -9,7 +9,7 @@ interface PillButtonProps {
 }
 
 /**
- * Secondary, quieter action: a translucent pill with an accent chevron chip
+ * Secondary, quieter action: a translucent pill with a bone chevron chip
  * that nudges on hover. Magnetic on fine pointers, cursor-aware everywhere.
  */
 export default function PillButton({ label, href, onClick, cursorLabel }: PillButtonProps) {
@@ -17,7 +17,7 @@ export default function PillButton({ label, href, onClick, cursorLabel }: PillBu
 
   const body = (
     <span className="pointer-events-none flex items-center gap-3">
-      <span className="flex items-center justify-center rounded-full bg-accent p-2 transition-transform duration-300 ease-out-expo group-hover:translate-x-0.5">
+      <span className="flex items-center justify-center rounded-full bg-bone p-2 transition-transform duration-300 ease-out-expo group-hover:translate-x-0.5">
         <ChevronsRight size={14} className="text-void" />
       </span>
       <span className="pr-1 text-sm text-bone">{label}</span>

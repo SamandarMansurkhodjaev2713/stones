@@ -8,7 +8,7 @@
 | Эффект | Где | Как | Reduced-motion |
 |---|---|---|---|
 | Плавный скролл | `lib/scroll.tsx` | Lenis + GSAP ticker, синхрон с ScrollTrigger | Lenis не создаётся, нативный скролл |
-| Драйвер глубины (дуотон) | `lib/scroll.tsx` | ScrollTrigger 0→1 пишет `--depth`, интерполяция `--accent` warm→cold | работает (цвет по нативному скроллу), без инерции |
+| Датчик глубины | `lib/scroll.tsx` | ScrollTrigger 0→1 пишет `--depth` для шкал | работает по нативному скроллу, без инерции |
 | Кастомный курсор | `components/cursor/CustomCursor.tsx` | rAF-lerp кольца + точка; режимы default/hover/lens/label по `data-cursor` | не монтируется (гейт в `App`) |
 | Магнитные кнопки | `lib/useMagnetic.ts` | `gsap.quickTo` тянет к курсору, пружина назад | off (гейт fine-pointer + reduced) |
 

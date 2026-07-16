@@ -24,19 +24,9 @@ export default function Manifesto() {
 
       <div className="relative mx-auto max-w-7xl px-5">
         <div data-reveal className="max-w-3xl">
-          <h2 className="text-4xl leading-[1.02] text-bone sm:text-5xl md:text-7xl">
-            <span
-              className="font-display block font-semibold"
-              style={{ letterSpacing: '-0.04em' }}
-            >
-              {t.manifesto.titleA}
-            </span>
-            <span
-              className="font-accent text-strata block"
-              style={{ letterSpacing: '-0.02em' }}
-            >
-              {t.manifesto.titleB}
-            </span>
+          <h2 className="display-title text-4xl text-bone sm:text-5xl md:text-7xl">
+            <span className="block">{t.manifesto.titleA}</span>
+            <span className="block text-bone/40">{t.manifesto.titleB}</span>
           </h2>
         </div>
 

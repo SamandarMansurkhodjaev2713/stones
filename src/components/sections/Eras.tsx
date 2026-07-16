@@ -17,10 +17,7 @@ export default function Eras() {
 
       <div className="relative mx-auto max-w-7xl px-5">
         <div data-reveal className="mb-14 max-w-3xl md:mb-20">
-          <h2
-            className="font-display text-4xl font-semibold leading-[1.02] text-bone md:text-6xl"
-            style={{ letterSpacing: '-0.04em' }}
-          >
+          <h2 className="display-title text-4xl text-bone md:text-6xl">
             {t.eras.title}
           </h2>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-bone/60">
@@ -42,13 +39,10 @@ export default function Eras() {
                 </span>
 
                 <div className="col-span-10 md:col-span-5">
-                  <h3
-                    className="font-display text-3xl font-semibold text-bone md:text-5xl"
-                    style={{ letterSpacing: '-0.03em' }}
-                  >
+                  <h3 className="display-title text-3xl text-bone md:text-5xl">
                     {copy.name}
                   </h3>
-                  <p className="font-mono-t mt-2 text-xs uppercase tracking-[0.14em] text-accent">
+                  <p className="font-mono-t mt-2 text-xs uppercase tracking-[0.14em] text-bone/50">
                     {copy.age}
                   </p>
                 </div>
@@ -61,7 +55,7 @@ export default function Eras() {
                     aria-hidden="true"
                   >
                     <div
-                      className="h-px bg-gradient-to-r from-accent-warm to-accent-cold"
+                      className="h-px bg-gradient-to-r from-bone/20 to-bone/70"
                       style={{ width: `${Math.max(4, era.depth * 100)}%` }}
                     />
                   </div>

@@ -3,40 +3,35 @@
 @tailwind utilities;
 
 /* ============================================================================
-   DESIGN TOKENS — Stones
-   Stratigraphic duotone: the accent interpolates warm(surface) -> cold(depth)
-   as `--depth` (0..1) is driven by scroll from JS. Components must reference
-   these tokens, never raw hex. RGB triples exist so Tailwind's `<alpha-value>`
-   and rgba() work (e.g. `bg-accent/20`, `rgb(var(--bone-rgb) / 0.4)`).
+   DESIGN TOKENS — Stones · «Монолит»
+   Monochrome stone: neutral graphite surfaces, bone-white ink, and a single
+   accent that IS the bone tone. Tonal hierarchy (opacity steps of --bone)
+   replaces color. No hue shifts, no duotone — one material, like rock.
+   RGB triples exist so Tailwind's `<alpha-value>` and rgba() work
+   (e.g. `bg-accent/20`, `rgb(var(--bone-rgb) / 0.4)`).
    ============================================================================ */
 @layer base {
   :root {
-    /* Surfaces */
-    --void: #0a0d12;
-    --surface: #111621;
-    --layer: #161c28;
-    --void-rgb: 10 13 18;
-    --surface-rgb: 17 22 33;
-    --layer-rgb: 22 28 40;
+    /* Surfaces — neutral graphite, deliberately without a blue undertone */
+    --void: #0c0c0d;
+    --surface: #141416;
+    --layer: #1a1a1d;
+    --void-rgb: 12 12 13;
+    --surface-rgb: 20 20 22;
+    --layer-rgb: 26 26 29;
 
-    /* Ink */
-    --bone: #ede6d8;
-    --ash: #8c8676;
-    --bone-rgb: 237 230 216;
-    --ash-rgb: 140 133 118;
+    /* Ink — bone / weathered limestone */
+    --bone: #e8e6e1;
+    --ash: #8d8b85;
+    --bone-rgb: 232 230 225;
+    --ash-rgb: 141 139 133;
 
-    /* Duotone accents */
-    --accent-warm: #d68a4e;
-    --accent-cold: #5e86a6;
-    --accent-warm-rgb: 214 138 78;
-    --accent-cold-rgb: 94 134 166;
+    /* Single accent = the bone tone. Kept as a separate token so the palette
+       can be re-pointed in one place without touching components. */
+    --accent: #e8e6e1;
+    --accent-rgb: 232 230 225;
 
-    /* Live accent — recomputed from `--depth` by the scroll engine. Defaults
-       to warm so the first paint (Hero, surface) is correct without JS. */
-    --accent: #d68a4e;
-    --accent-rgb: 214 138 78;
-
-    /* Depth of the current viewport into deep time, 0 (surface) .. 1 (Hadean) */
+    /* Scroll depth 0..1 (surface → origin), used by gauges. */
     --depth: 0;
 
     /* Motion */
@@ -50,13 +45,13 @@
 
   html {
     -webkit-text-size-adjust: 100%;
-    scrollbar-color: rgb(var(--accent-rgb) / 0.4) transparent;
+    scrollbar-color: rgb(var(--bone-rgb) / 0.3) transparent;
   }
 
   body {
     background-color: var(--void);
     color: var(--bone);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -64,13 +59,13 @@
   }
 
   ::selection {
-    background: rgb(var(--accent-rgb) / 0.28);
+    background: rgb(var(--bone-rgb) / 0.22);
     color: var(--bone);
   }
 
-  /* Keyboard focus — always visible, tinted to the live accent. */
+  /* Keyboard focus — always visible. */
   :focus-visible {
-    outline: 2px solid rgb(var(--accent-rgb) / 0.9);
+    outline: 2px solid rgb(var(--bone-rgb) / 0.85);
     outline-offset: 3px;
     border-radius: 2px;
   }
@@ -86,19 +81,24 @@
 }
 
 /* ============================================================================
-   TYPOGRAPHY UTILITIES
+   TYPOGRAPHY UTILITIES — one voice: Oswald caps for display, Manrope for body,
+   JetBrains Mono for field telemetry.
    ============================================================================ */
 @layer utilities {
   .font-display {
-    font-family: 'Unbounded', system-ui, sans-serif;
-  }
-  .font-accent {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-style: italic;
-    font-weight: 400;
+    font-family: 'Oswald', system-ui, sans-serif;
   }
   .font-mono-t {
     font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+  }
+
+  /* The single display voice: condensed caps, engraved-monument tracking. */
+  .display-title {
+    font-family: 'Oswald', system-ui, sans-serif;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1.04;
   }
 
   /* Eyebrow / telemetry label */
@@ -108,18 +108,6 @@
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: rgb(var(--ash-rgb) / 0.9);
-  }
-
-  /* Accent-tinted gradient text (warm->cold live accent) */
-  .text-strata {
-    background-image: linear-gradient(
-      100deg,
-      var(--accent-warm),
-      var(--accent)
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
   }
 
   .scrollbar-hide {
@@ -249,7 +237,7 @@
   height: 34px;
   display: grid;
   place-items: center;
-  border: 1.5px solid rgb(var(--accent-rgb) / 0.7);
+  border: 1.5px solid rgb(var(--bone-rgb) / 0.55);
   transition:
     width 0.35s var(--ease-out),
     height 0.35s var(--ease-out),
@@ -259,24 +247,24 @@
 .cursor-dot {
   width: 5px;
   height: 5px;
-  background: rgb(var(--accent-rgb));
+  background: rgb(var(--bone-rgb));
   transition: opacity 0.3s var(--ease-out);
 }
 .cursor-ring[data-mode='hover'] {
   width: 56px;
   height: 56px;
-  background: rgb(var(--accent-rgb) / 0.08);
+  background: rgb(var(--bone-rgb) / 0.07);
 }
 .cursor-ring[data-mode='lens'] {
   width: 88px;
   height: 88px;
-  background: rgb(var(--accent-rgb) / 0.06);
-  border-color: rgb(var(--accent-rgb) / 0.9);
+  background: rgb(var(--bone-rgb) / 0.05);
+  border-color: rgb(var(--bone-rgb) / 0.85);
 }
 .cursor-ring[data-mode='label'] {
   width: 74px;
   height: 74px;
-  background: rgb(var(--accent-rgb) / 0.92);
+  background: rgb(var(--bone-rgb) / 0.94);
   border-color: transparent;
 }
 .cursor-dot[data-mode='hover'],
@@ -293,7 +281,7 @@
   color: var(--void);
 }
 .cursor-ring[data-mode='lens'] .cursor-label {
-  color: rgb(var(--accent-rgb));
+  color: rgb(var(--bone-rgb));
 }
 
 /* ============================================================================

@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       // Brand colors resolve to CSS variables (single source of truth in
-      // index.css). RGB triples let `<alpha-value>` work, e.g. `bg-accent/20`.
+      // index.css). RGB triples let `<alpha-value>` work, e.g. `bg-bone/20`.
       colors: {
         void: 'rgb(var(--void-rgb) / <alpha-value>)',
         surface: 'rgb(var(--surface-rgb) / <alpha-value>)',
@@ -12,13 +12,10 @@ export default {
         bone: 'rgb(var(--bone-rgb) / <alpha-value>)',
         ash: 'rgb(var(--ash-rgb) / <alpha-value>)',
         accent: 'rgb(var(--accent-rgb) / <alpha-value>)',
-        'accent-warm': 'rgb(var(--accent-warm-rgb) / <alpha-value>)',
-        'accent-cold': 'rgb(var(--accent-cold-rgb) / <alpha-value>)',
       },
       fontFamily: {
-        display: ['Unbounded', 'system-ui', 'sans-serif'],
-        accent: ['"Playfair Display"', 'Georgia', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Oswald', 'system-ui', 'sans-serif'],
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       transitionTimingFunction: {
@@ -31,7 +28,7 @@ export default {
         1400: '1400ms',
       },
       letterSpacing: {
-        tightest: '-0.06em',
+        display: '0.02em',
       },
       screens: {
         xs: '400px',

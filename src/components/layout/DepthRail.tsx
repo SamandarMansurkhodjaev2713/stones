@@ -86,7 +86,7 @@ export default function DepthRail() {
           {/* Progress fill grows downward with scroll (origin: top). */}
           <div
             ref={fillRef}
-            className="absolute right-0 top-0 h-full w-px origin-top bg-gradient-to-b from-accent-warm to-accent-cold"
+            className="absolute right-0 top-0 h-full w-px origin-top bg-gradient-to-b from-bone/25 to-bone/90"
             style={{ transform: 'scaleY(0)' }}
           />
 
@@ -109,7 +109,7 @@ export default function DepthRail() {
                     <span
                       className={`-mr-[3px] block rounded-full transition-all duration-500 ease-out-expo ${
                         active
-                          ? 'h-1.5 w-1.5 bg-accent shadow-[0_0_10px_rgb(var(--accent-rgb)/0.8)]'
+                          ? 'h-1.5 w-1.5 bg-bone shadow-[0_0_10px_rgb(var(--bone-rgb)/0.7)]'
                           : 'h-1 w-1 bg-bone/30 group-hover:bg-bone/70'
                       }`}
                     />

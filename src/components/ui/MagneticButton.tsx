@@ -21,10 +21,9 @@ interface MagneticButtonProps {
 }
 
 const VARIANT_CLASS: Record<Variant, string> = {
-  primary:
-    'bg-accent text-void hover:brightness-105 shadow-[0_18px_50px_-16px_rgb(var(--accent-rgb)/0.55)]',
+  primary: 'bg-bone text-void hover:bg-bone/85',
   ghost:
-    'bg-transparent text-bone border border-bone/20 hover:border-accent/60 hover:bg-bone/[0.04]',
+    'bg-transparent text-bone border border-bone/20 hover:border-bone/50 hover:bg-bone/[0.04]',
 }
 
 /**
@@ -55,8 +54,8 @@ export default function MagneticButton({
   )
 
   const shared =
-    `group inline-flex items-center justify-center rounded-full px-7 py-3.5 text-sm font-medium ` +
-    `transition-[background-color,border-color,filter] duration-500 ease-out-expo will-change-transform ` +
+    `group inline-flex items-center justify-center rounded-full px-7 py-3.5 text-sm font-semibold ` +
+    `transition-[background-color,border-color] duration-500 ease-out-expo will-change-transform ` +
     `${VARIANT_CLASS[variant]} ${className}`
 
   const cursorProps = {

@@ -84,10 +84,10 @@ export default function SectionShell({
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-5 px-5 pt-6 sm:px-8">
           <div
             ref={seamRef}
-            className="h-px flex-1 origin-left bg-gradient-to-r from-accent/50 via-bone/10 to-transparent"
+            className="h-px flex-1 origin-left bg-gradient-to-r from-bone/40 via-bone/10 to-transparent"
           />
           <span className="eyebrow shrink-0">
-            {index && <span className="text-accent">{index}</span>}
+            {index && <span className="text-bone/70">{index}</span>}
             {index && eyebrow ? ' · ' : ''}
             {eyebrow}
           </span>

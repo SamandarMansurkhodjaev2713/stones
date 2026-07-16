@@ -20,10 +20,7 @@ export default function Expeditions() {
     >
       <div className="mx-auto max-w-7xl px-5">
         <div data-reveal className="mb-12 max-w-3xl md:mb-16">
-          <h2
-            className="font-display text-4xl font-semibold leading-[1.02] text-bone md:text-6xl"
-            style={{ letterSpacing: '-0.04em' }}
-          >
+          <h2 className="display-title text-4xl text-bone md:text-6xl">
             {t.expeditions.title}
           </h2>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-bone/60">
@@ -43,7 +40,7 @@ export default function Expeditions() {
               >
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-gradient-to-r from-accent/[0.08] to-transparent transition-transform duration-500 ease-out-expo group-hover:scale-x-100"
+                  className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-gradient-to-r from-bone/[0.05] to-transparent transition-transform duration-500 ease-out-expo group-hover:scale-x-100"
                 />
                 <span className="relative grid grid-cols-12 items-center gap-x-4 gap-y-2 py-7 md:py-10">
                   <span className="font-mono-t col-span-2 text-xs text-ash md:col-span-1">
@@ -51,14 +48,14 @@ export default function Expeditions() {
                   </span>
 
                   <span className="col-span-10 md:col-span-4">
-                    <span className="font-display flex items-center gap-2 text-2xl font-semibold text-bone transition-transform duration-500 ease-out-expo group-hover:translate-x-1.5 md:text-4xl">
+                    <span className="display-title flex items-center gap-2 text-2xl text-bone transition-transform duration-500 ease-out-expo group-hover:translate-x-1.5 md:text-4xl">
                       {route.place}
                       <ArrowUpRight
                         size={20}
-                        className="text-accent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                        className="text-bone/70 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
                       />
                     </span>
-                    <span className="font-mono-t mt-1 block text-xs uppercase tracking-[0.14em] text-accent">
+                    <span className="font-mono-t mt-1 block text-xs uppercase tracking-[0.14em] text-ash">
                       {route.region} · {route.tag}
                     </span>
                   </span>

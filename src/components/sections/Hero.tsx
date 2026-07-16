@@ -52,7 +52,12 @@ export default function Hero() {
       }
       smooth.current.x += (mouse.current.x - smooth.current.x) * CURSOR_SMOOTHING
       smooth.current.y += (mouse.current.y - smooth.current.y) * CURSOR_SMOOTHING
-      setCursorPos({ x: smooth.current.x, y: smooth.current.y })
+      // The hero is sticky and stays mounted for the whole page. Once the dark
+      // curtain fully covers it, skip the state update (and the expensive
+      // canvas.toDataURL in RevealLayer) — no point re-rendering what's hidden.
+      if (window.scrollY < window.innerHeight) {
+        setCursorPos({ x: smooth.current.x, y: smooth.current.y })
+      }
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
@@ -63,7 +68,9 @@ export default function Hero() {
     }
   }, [isMobile])
 
-  const mobileVideoTransform = `scale(1.3) translate(${tilt.x * 3}%, ${tilt.y * 2}%)`
+  // Mobile: full-bleed cover with a small scale reserve so the gyro parallax
+  // never exposes edges.
+  const mobileVideoTransform = `scale(1.1) translate(${tilt.x * 2}%, ${tilt.y * 1.4}%)`
 
   return (
     <section
@@ -79,7 +86,7 @@ export default function Hero() {
           loop
           playsInline
           preload="auto"
-          className="absolute inset-0 z-10 h-full w-full object-contain"
+          className="absolute inset-0 z-10 h-full w-full object-cover"
           style={{ transform: mobileVideoTransform }}
         />
       ) : (
@@ -96,52 +103,53 @@ export default function Hero() {
         </>
       )}
 
-      {/* Warm-to-void vignette so the text keeps contrast over any frame. */}
+      {/* Vignette so the text keeps contrast over any frame of the footage. */}
       <div
         className="pointer-events-none absolute inset-0 z-40"
         style={{
           background:
-            'radial-gradient(120% 90% at 50% 42%, transparent 40%, rgb(var(--void-rgb) / 0.55) 78%, rgb(var(--void-rgb) / 0.9) 100%)',
+            'radial-gradient(120% 90% at 50% 42%, transparent 38%, rgb(var(--void-rgb) / 0.6) 76%, rgb(var(--void-rgb) / 0.92) 100%)',
         }}
       />
 
-      <div className="absolute inset-0 z-50 flex flex-col items-center justify-center px-5 text-center">
+      <div className="absolute inset-0 z-50 flex flex-col items-center justify-center px-5 pb-16 text-center sm:pb-0">
         <span
-          className="anim anim-fade-down eyebrow pointer-events-none mb-6"
+          className="anim anim-fade-down eyebrow pointer-events-none mb-7"
           style={{ animationDelay: '0.1s' }}
         >
           {t.hero.eyebrow}
         </span>
 
-        <h1 className="pointer-events-none leading-[0.94] text-bone">
+        <h1 className="display-title pointer-events-none text-bone">
           <span
-            className="anim anim-reveal font-accent block text-5xl sm:text-7xl md:text-8xl"
-            style={{ letterSpacing: '-0.02em', animationDelay: '0.25s' }}
+            className="anim anim-reveal block text-[15vw] xs:text-6xl sm:text-7xl md:text-8xl"
+            style={{ animationDelay: '0.25s' }}
           >
             {t.hero.titleA}
           </span>
           <span
-            className="anim anim-reveal font-display -mt-1 block text-4xl font-semibold sm:text-6xl md:text-7xl"
-            style={{ letterSpacing: '-0.04em', animationDelay: '0.42s' }}
+            className="anim anim-reveal block text-[9.5vw] text-bone/40 xs:text-4xl sm:text-5xl md:text-6xl"
+            style={{ animationDelay: '0.42s' }}
           >
             {t.hero.titleB}
           </span>
         </h1>
 
         <p
-          className="anim anim-fade pointer-events-none mt-7 max-w-xl text-sm leading-relaxed text-bone/75 sm:text-base"
+          className="anim anim-fade pointer-events-none mt-7 max-w-xl text-sm leading-relaxed text-bone/70 sm:text-base"
           style={{ animationDelay: '0.62s' }}
         >
           {t.hero.sub}
         </p>
 
         <div
-          className="anim anim-fade pointer-events-auto mt-9 flex flex-col items-center gap-4 sm:flex-row"
+          className="anim anim-fade pointer-events-auto mt-9 flex w-full max-w-sm flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-4"
           style={{ animationDelay: '0.8s' }}
         >
           <MagneticButton
             label={t.hero.ctaPrimary}
             cursorLabel={t.cursor.dig}
+            className="w-full sm:w-auto"
             onClick={() => scrollTo('#descent', { offset: HEADER_OFFSET })}
           />
           <MagneticButton
@@ -149,23 +157,24 @@ export default function Hero() {
             variant="ghost"
             cursorLabel={t.cursor.explore}
             icon={<ChevronDown size={16} strokeWidth={2.25} />}
+            className="w-full sm:w-auto"
             onClick={() => scrollTo('#expeditions', { offset: HEADER_OFFSET })}
           />
         </div>
       </div>
 
       {/* Side note (desktop) */}
-      <p className="anim anim-fade pointer-events-none absolute bottom-14 left-8 z-50 hidden max-w-[240px] text-sm leading-relaxed text-bone/60 md:block">
+      <p className="anim anim-fade pointer-events-none absolute bottom-14 left-8 z-50 hidden max-w-[240px] text-sm leading-relaxed text-bone/55 md:block">
         {t.hero.sideNote}
       </p>
 
       {/* Scroll hint */}
-      <div className="anim anim-fade pointer-events-none absolute bottom-8 left-1/2 z-50 -translate-x-1/2">
+      <div className="anim anim-fade pointer-events-none absolute bottom-6 left-1/2 z-50 -translate-x-1/2 sm:bottom-8">
         <span className="flex flex-col items-center gap-2">
           <span className="eyebrow text-[10px]">{t.hero.scrollHint}</span>
           <ChevronDown
             size={18}
-            className="text-accent"
+            className="text-bone/70"
             style={{ animation: 'floatPulse 2.4s var(--ease-in-out) infinite' }}
           />
         </span>

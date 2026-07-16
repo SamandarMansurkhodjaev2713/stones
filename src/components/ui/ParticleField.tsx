@@ -23,7 +23,7 @@ interface Particle {
 }
 
 const MAX_DPR = 2
-const DUST_RGB = '237, 230, 216' // --bone, neutral over the warm→cold accent
+const DUST_RGB = '232, 230, 225' // --bone: neutral mineral dust
 
 /**
  * A slow drift of mineral dust rendered on a canvas that fills its positioned

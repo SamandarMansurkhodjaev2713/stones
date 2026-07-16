@@ -1,63 +1,99 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { ChevronDown } from 'lucide-react'
-import RevealLayer from './RevealLayer'
-import baseImage from '../../assets/base.webp'
 import { useI18n } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
 import { useMediaQuery } from '../../lib/useMediaQuery'
+import { useReducedMotion } from '../../lib/useReducedMotion'
 import { useDeviceTilt } from '../../lib/useDeviceTilt'
 import {
   CURSOR_SMOOTHING,
+  HEADER_OFFSET,
   MQ_FINE_POINTER,
   MQ_MOBILE,
   SPOTLIGHT_DRIFT_SPEED,
+  SPOTLIGHT_RADIUS,
 } from '../../lib/constants'
 import { VIDEO } from '../../lib/media'
 import MagneticButton from '../ui/MagneticButton'
 
-const OFFSCREEN = -999
-const DESKTOP_MEDIA_TRANSFORM = 'translate(0px, 132px) scale(0.79)'
-const HEADER_OFFSET = -72
+/** Gyro tilt → spotlight travel, as a fraction of the viewport. */
+const TILT_TRAVEL = 0.28
 
+/**
+ * The knocked-out wordmark hero. A full-bleed video of living rock is covered
+ * by a void-colored SVG plate with two holes punched through its luminance
+ * mask: the giant STONES lettering (always open) and a soft spotlight circle
+ * that chases the pointer (fine pointers), the gyroscope (mobile) or drifts in
+ * a slow orbit (no sensors). Everything runs on direct SVG attribute writes
+ * inside one rAF — no React state per frame, no canvas re-encoding.
+ */
 export default function Hero() {
   const { t } = useI18n()
   const scrollTo = useScrollTo()
   const isMobile = useMediaQuery(MQ_MOBILE)
-  const tilt = useDeviceTilt(isMobile)
+  const reduced = useReducedMotion()
+  const tilt = useDeviceTilt(isMobile && !reduced)
 
-  const mouse = useRef({ x: OFFSCREEN, y: OFFSCREEN })
-  const smooth = useRef({ x: OFFSCREEN, y: OFFSCREEN })
+  const spotRef = useRef<SVGCircleElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const tiltRef = useRef(tilt)
   const rafRef = useRef(0)
-  const [cursorPos, setCursorPos] = useState({ x: OFFSCREEN, y: OFFSCREEN })
 
-  // Desktop spotlight: follow a fine pointer, or drift in a slow orbit on
-  // coarse pointers, easing the reveal point toward the target every frame.
+  // Mirror the tilt state into a ref so the rAF loop reads it without
+  // re-subscribing (the hook re-renders on device orientation anyway).
   useEffect(() => {
-    if (isMobile) return
+    tiltRef.current = tilt
+  }, [tilt])
+
+  // Spotlight driver. Under reduced motion the circle stays parked slightly
+  // above center — a static, fully composed frame.
+  useEffect(() => {
+    const spot = spotRef.current
+    if (!spot) return
+
+    const radiusFor = (w: number) => Math.min(SPOTLIGHT_RADIUS, w * 0.36)
+    spot.setAttribute('r', String(radiusFor(window.innerWidth)))
+
+    if (reduced) {
+      spot.setAttribute('cx', String(window.innerWidth / 2))
+      spot.setAttribute('cy', String(window.innerHeight * 0.42))
+      return
+    }
+
     const hasFinePointer = window.matchMedia(MQ_FINE_POINTER).matches
+    const hasGyro = () => tiltRef.current.x !== 0 || tiltRef.current.y !== 0
+    const target = { x: window.innerWidth / 2, y: window.innerHeight * 0.42 }
+    const smooth = { ...target }
 
     const onMouseMove = (event: MouseEvent) => {
-      mouse.current.x = event.clientX
-      mouse.current.y = event.clientY
+      target.x = event.clientX
+      target.y = event.clientY
     }
     if (hasFinePointer) window.addEventListener('mousemove', onMouseMove)
 
+    const onResize = () => spot.setAttribute('r', String(radiusFor(window.innerWidth)))
+    window.addEventListener('resize', onResize)
+
     const tick = (time: number) => {
+      const w = window.innerWidth
+      const h = window.innerHeight
       if (!hasFinePointer) {
-        const cx = window.innerWidth / 2
-        const cy = window.innerHeight * 0.55
-        const radius = Math.min(window.innerWidth, window.innerHeight) * 0.22
-        const angle = time * SPOTLIGHT_DRIFT_SPEED
-        mouse.current.x = cx + Math.cos(angle) * radius
-        mouse.current.y = cy + Math.sin(angle) * radius * 0.7
+        if (hasGyro()) {
+          // Tilting the phone sweeps the spotlight across the wordmark.
+          target.x = w / 2 + tiltRef.current.x * w * TILT_TRAVEL
+          target.y = h * 0.42 + tiltRef.current.y * h * TILT_TRAVEL * 0.6
+        } else {
+          const angle = time * SPOTLIGHT_DRIFT_SPEED
+          target.x = w / 2 + Math.cos(angle) * w * 0.24
+          target.y = h * 0.42 + Math.sin(angle) * h * 0.14
+        }
       }
-      smooth.current.x += (mouse.current.x - smooth.current.x) * CURSOR_SMOOTHING
-      smooth.current.y += (mouse.current.y - smooth.current.y) * CURSOR_SMOOTHING
-      // The hero is sticky and stays mounted for the whole page. Once the dark
-      // curtain fully covers it, skip the state update (and the expensive
-      // canvas.toDataURL in RevealLayer) — no point re-rendering what's hidden.
-      if (window.scrollY < window.innerHeight) {
-        setCursorPos({ x: smooth.current.x, y: smooth.current.y })
+      smooth.x += (target.x - smooth.x) * CURSOR_SMOOTHING
+      smooth.y += (target.y - smooth.y) * CURSOR_SMOOTHING
+      // The hero is sticky and stays mounted; skip work once it is covered.
+      if (window.scrollY < h) {
+        spot.setAttribute('cx', smooth.x.toFixed(1))
+        spot.setAttribute('cy', smooth.y.toFixed(1))
       }
       rafRef.current = requestAnimationFrame(tick)
     }
@@ -65,13 +101,15 @@ export default function Hero() {
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('resize', onResize)
       cancelAnimationFrame(rafRef.current)
     }
-  }, [isMobile])
+  }, [reduced])
 
-  // Mobile: full-bleed cover with a small scale reserve so the gyro parallax
-  // never exposes edges.
-  const mobileVideoTransform = `scale(1.1) translate(${tilt.x * 2}%, ${tilt.y * 1.4}%)`
+  // Subtle gyro parallax on the footage itself (mobile only).
+  const videoTransform = isMobile
+    ? `scale(1.12) translate(${tilt.x * 1.6}%, ${tilt.y * 1.1}%)`
+    : 'scale(1.02)'
 
   return (
     <section
@@ -79,8 +117,18 @@ export default function Hero() {
       className="sticky top-0 z-0 h-screen w-full overflow-hidden bg-void"
       style={{ height: '100dvh' }}
     >
-      {isMobile ? (
+      {/* Living rock, full bleed. Under reduced motion: a still mineral tone. */}
+      {reduced ? (
+        <div
+          className="absolute inset-0 z-10"
+          style={{
+            background:
+              'linear-gradient(160deg, #3a352e 0%, #241f1a 55%, #14110e 100%)',
+          }}
+        />
+      ) : (
         <video
+          ref={videoRef}
           src={VIDEO.reveal}
           autoPlay
           muted
@@ -88,94 +136,102 @@ export default function Hero() {
           playsInline
           preload="auto"
           className="absolute inset-0 z-10 h-full w-full object-cover"
-          style={{ transform: mobileVideoTransform }}
+          style={{ transform: videoTransform }}
         />
-      ) : (
-        <>
-          <div
-            className="absolute inset-0 z-10 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${baseImage})`, transform: DESKTOP_MEDIA_TRANSFORM }}
-          />
-          <RevealLayer
-            cursorX={cursorPos.x}
-            cursorY={cursorPos.y}
-            mediaTransform={DESKTOP_MEDIA_TRANSFORM}
-          />
-        </>
       )}
 
-      {/* Vignette so the text keeps contrast over any frame of the footage. */}
-      <div
-        className="pointer-events-none absolute inset-0 z-40"
-        style={{
-          background:
-            'radial-gradient(120% 90% at 50% 42%, transparent 38%, rgb(var(--void-rgb) / 0.6) 76%, rgb(var(--void-rgb) / 0.92) 100%)',
-        }}
-      />
+      {/* The void plate with STONES and the spotlight punched out of it. */}
+      <svg className="absolute inset-0 z-20 h-full w-full" aria-hidden="true">
+        <defs>
+          <radialGradient id="hero-spot-grad">
+            <stop offset="0%" stopColor="#000" />
+            <stop offset="45%" stopColor="#1a1a1a" />
+            <stop offset="78%" stopColor="#9a9a9a" />
+            <stop offset="100%" stopColor="#fff" />
+          </radialGradient>
+          <mask id="hero-knockout" maskUnits="userSpaceOnUse">
+            <rect width="100%" height="100%" fill="#fff" />
+            {/* Spotlight first, letters after — the cut always wins. */}
+            <circle
+              ref={spotRef}
+              cx="-999"
+              cy="-999"
+              r={SPOTLIGHT_RADIUS}
+              fill="url(#hero-spot-grad)"
+            />
+            <text
+              x="50%"
+              y="44%"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="#000"
+              className="display-title"
+              style={{ fontSize: 'clamp(88px, 23vw, 380px)', letterSpacing: '0.01em' }}
+            >
+              {t.meta.brand}
+            </text>
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" fill="var(--void)" mask="url(#hero-knockout)" />
+      </svg>
 
-      <div className="absolute inset-0 z-50 flex flex-col items-center justify-center px-5 pb-16 text-center sm:pb-0">
-        <span
-          className="anim anim-fade-down eyebrow pointer-events-none mb-7"
-          style={{ animationDelay: '0.1s' }}
-        >
-          {t.hero.eyebrow}
-        </span>
+      {/* Hairline under the wordmark zone — surveyor's datum line. */}
+      <div className="pointer-events-none absolute left-0 right-0 top-[58%] z-30 hidden h-px bg-bone/[0.07] sm:block" />
 
-        <h1 className="display-title pointer-events-none text-bone">
-          <span
-            className="anim anim-reveal block text-[15vw] xs:text-6xl sm:text-7xl md:text-8xl"
-            style={{ animationDelay: '0.25s' }}
+      {/* Editorial band: headline left, actions right. */}
+      <div className="absolute inset-x-0 bottom-0 z-40 px-5 pb-20 sm:px-8 sm:pb-10">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-7 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-xl">
+            <p
+              className="anim anim-fade eyebrow mb-4"
+              style={{ animationDelay: '0.5s' }}
+            >
+              {t.hero.eyebrow}
+            </p>
+            <h1
+              className="anim anim-reveal display-title text-4xl text-bone sm:text-5xl md:text-6xl"
+              style={{ animationDelay: '0.25s' }}
+            >
+              {t.hero.titleA}{' '}
+              <span className="text-bone/40">{t.hero.titleB}</span>
+            </h1>
+            <p
+              className="anim anim-fade mt-4 max-w-md text-sm leading-relaxed text-bone/65 sm:text-base"
+              style={{ animationDelay: '0.55s' }}
+            >
+              {t.hero.sub}
+            </p>
+          </div>
+
+          <div
+            className="anim anim-fade flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4"
+            style={{ animationDelay: '0.75s' }}
           >
-            {t.hero.titleA}
-          </span>
-          <span
-            className="anim anim-reveal block text-[9.5vw] text-bone/40 xs:text-4xl sm:text-5xl md:text-6xl"
-            style={{ animationDelay: '0.42s' }}
-          >
-            {t.hero.titleB}
-          </span>
-        </h1>
-
-        <p
-          className="anim anim-fade pointer-events-none mt-7 max-w-xl text-sm leading-relaxed text-bone/70 sm:text-base"
-          style={{ animationDelay: '0.62s' }}
-        >
-          {t.hero.sub}
-        </p>
-
-        <div
-          className="anim anim-fade pointer-events-auto mt-9 flex w-full max-w-sm flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-4"
-          style={{ animationDelay: '0.8s' }}
-        >
-          <MagneticButton
-            label={t.hero.ctaPrimary}
-            cursorLabel={t.cursor.dig}
-            className="w-full sm:w-auto"
-            onClick={() => scrollTo('#descent', { offset: HEADER_OFFSET })}
-          />
-          <MagneticButton
-            label={t.hero.ctaSecondary}
-            variant="ghost"
-            cursorLabel={t.cursor.explore}
-            icon={<ChevronDown size={16} strokeWidth={2.25} />}
-            className="w-full sm:w-auto"
-            onClick={() => scrollTo('#expeditions', { offset: HEADER_OFFSET })}
-          />
+            <MagneticButton
+              label={t.hero.ctaPrimary}
+              cursorLabel={t.cursor.dig}
+              className="w-full sm:w-auto"
+              onClick={() => scrollTo('#descent', { offset: HEADER_OFFSET })}
+            />
+            <MagneticButton
+              label={t.hero.ctaSecondary}
+              variant="ghost"
+              cursorLabel={t.cursor.explore}
+              icon={<ChevronDown size={16} strokeWidth={2.25} />}
+              className="w-full sm:w-auto"
+              onClick={() => scrollTo('#expeditions', { offset: HEADER_OFFSET })}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Side note (desktop) */}
-      <p className="anim anim-fade pointer-events-none absolute bottom-14 left-8 z-50 hidden max-w-[240px] text-sm leading-relaxed text-bone/55 md:block">
-        {t.hero.sideNote}
-      </p>
-
       {/* Scroll hint */}
-      <div className="anim anim-fade pointer-events-none absolute bottom-6 left-1/2 z-50 -translate-x-1/2 sm:bottom-8">
-        <span className="flex flex-col items-center gap-2">
+      <div className="anim anim-fade pointer-events-none absolute bottom-5 left-1/2 z-40 -translate-x-1/2 sm:bottom-auto sm:left-auto sm:right-8 sm:top-[62%]">
+        <span className="flex items-center gap-2 sm:flex-col">
           <span className="eyebrow text-[10px]">{t.hero.scrollHint}</span>
           <ChevronDown
-            size={18}
-            className="text-bone/70"
+            size={16}
+            className="text-bone/60"
             style={{ animation: 'floatPulse 2.4s var(--ease-in-out) infinite' }}
           />
         </span>

@@ -32,6 +32,20 @@ export const PARTICLE_COUNT_MOBILE = 30
 /* ── Field-station telemetry (Tashkent — nod to the CIS/UZ audience) ──────── */
 export const STATION_COORDS = { lat: 41.31, lon: 69.24 } as const
 
+/**
+ * The imaginary shaft the whole site descends through. 4 600 m for 4.6 billion
+ * years of Earth history — one metre per million years. Drives the live depth
+ * readout in the header telemetry, era depth marks and the preloader counter.
+ */
+export const MAX_DEPTH_M = 4600
+
+/* ── Preloader (skippable; skipped entirely under reduced motion) ─────────── */
+export const PRELOADER_COUNT_MS = 1300
+export const PRELOADER_LIFT_MS = 900
+
+/** Scroll-to offset compensating the fixed field-station header. */
+export const HEADER_OFFSET = -88
+
 /* ── Persistence ──────────────────────────────────────────────────────────── */
 export const LOCALE_STORAGE_KEY = 'stones.locale'
 

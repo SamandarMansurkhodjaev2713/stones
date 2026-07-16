@@ -14,7 +14,7 @@ export default {
         accent: 'rgb(var(--accent-rgb) / <alpha-value>)',
       },
       fontFamily: {
-        display: ['Oswald', 'system-ui', 'sans-serif'],
+        display: ['"Bebas Neue"', 'Oswald', 'system-ui', 'sans-serif'],
         sans: ['Manrope', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },

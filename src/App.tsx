@@ -4,6 +4,9 @@ import { useMediaQuery } from './lib/useMediaQuery'
 import { useReducedMotion } from './lib/useReducedMotion'
 import { MQ_FINE_POINTER } from './lib/constants'
 import CustomCursor from './components/cursor/CustomCursor'
+import Preloader from './components/layout/Preloader'
+import GrainOverlay from './components/ui/GrainOverlay'
+import EdgeRulers from './components/ui/EdgeRulers'
 import Navbar from './components/layout/Navbar'
 import DepthRail from './components/layout/DepthRail'
 import Hero from './components/sections/Hero'
@@ -35,7 +38,10 @@ function Shell() {
 
   return (
     <div className="min-h-screen bg-void tracking-[-0.01em] text-bone">
+      <Preloader />
       {showCustomCursor && <CustomCursor />}
+      <GrainOverlay />
+      <EdgeRulers />
       <SkipLink />
       <Navbar />
       <DepthRail />

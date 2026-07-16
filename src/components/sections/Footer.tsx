@@ -63,9 +63,9 @@ export default function Footer() {
         aria-hidden="true"
       >
         <span
-          className={`display-title anim ${
+          className={`display-title outline-title anim ${
             giant.inView ? 'anim-fade' : ''
-          } absolute left-1/2 top-0 -translate-x-1/2 select-none whitespace-nowrap text-[23vw] leading-[0.9] text-bone/[0.05] sm:text-[17vw]`}
+          } absolute left-1/2 top-0 -translate-x-1/2 select-none whitespace-nowrap text-[23vw] leading-[0.9] sm:text-[17vw]`}
         >
           {t.footer.wordmark}
         </span>

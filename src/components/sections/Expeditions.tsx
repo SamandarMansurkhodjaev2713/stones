@@ -3,8 +3,7 @@ import SectionShell from '../ui/SectionShell'
 import MagneticButton from '../ui/MagneticButton'
 import { useI18n } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
-
-const HEADER_OFFSET = -72
+import { HEADER_OFFSET } from '../../lib/constants'
 
 export default function Expeditions() {
   const { t } = useI18n()
@@ -57,6 +56,9 @@ export default function Expeditions() {
                     </span>
                     <span className="font-mono-t mt-1 block text-xs uppercase tracking-[0.14em] text-ash">
                       {route.region} · {route.tag}
+                    </span>
+                    <span className="font-mono-t mt-1 block text-[10px] tracking-[0.14em] text-ash/60">
+                      {route.coords}
                     </span>
                   </span>
 

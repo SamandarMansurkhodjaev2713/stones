@@ -48,6 +48,33 @@
     scrollbar-color: rgb(var(--bone-rgb) / 0.3) transparent;
   }
 
+  /* Custom scrollbar — a drill core: thin bone column with strata bands. */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--void);
+    border-left: 1px solid rgb(var(--bone-rgb) / 0.06);
+  }
+  ::-webkit-scrollbar-thumb {
+    background-image: repeating-linear-gradient(
+      180deg,
+      rgb(var(--bone-rgb) / 0.55) 0 10px,
+      rgb(var(--bone-rgb) / 0.25) 10px 26px,
+      rgb(var(--bone-rgb) / 0.45) 26px 40px
+    );
+    border: 3px solid var(--void);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-image: repeating-linear-gradient(
+      180deg,
+      rgb(var(--bone-rgb) / 0.75) 0 10px,
+      rgb(var(--bone-rgb) / 0.4) 10px 26px,
+      rgb(var(--bone-rgb) / 0.65) 26px 40px
+    );
+  }
+
   body {
     background-color: var(--void);
     color: var(--bone);
@@ -86,19 +113,26 @@
    ============================================================================ */
 @layer utilities {
   .font-display {
-    font-family: 'Oswald', system-ui, sans-serif;
+    font-family: 'Bebas Neue', 'Oswald', system-ui, sans-serif;
   }
   .font-mono-t {
     font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
   }
 
-  /* The single display voice: condensed caps, engraved-monument tracking. */
+  /* The single display voice: ultra-condensed poster caps, monument scale.
+     Bebas Neue ships one weight — hierarchy comes from size and tone. */
   .display-title {
-    font-family: 'Oswald', system-ui, sans-serif;
-    font-weight: 500;
+    font-family: 'Bebas Neue', 'Oswald', system-ui, sans-serif;
+    font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 0.02em;
-    line-height: 1.04;
+    line-height: 0.92;
+  }
+
+  /* Hollow variant for ghost wordmarks (footer, backdrops). */
+  .outline-title {
+    color: transparent;
+    -webkit-text-stroke: 1px rgb(var(--bone-rgb) / 0.16);
   }
 
   /* Eyebrow / telemetry label */
@@ -205,6 +239,44 @@
   opacity: 0;
   animation-fill-mode: forwards;
   animation-timing-function: var(--ease-out);
+}
+
+/* Entrance animations hold still behind the preloader curtain; the Preloader
+   component removes .pre-boot from <html> when it lifts. */
+html.pre-boot .anim {
+  animation-play-state: paused;
+}
+
+/* ── Film grain (overlay markup lives in <GrainOverlay/>) ──────────────────── */
+@keyframes grainShift {
+  0% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-3%, 2%);
+  }
+  40% {
+    transform: translate(2%, -3%);
+  }
+  60% {
+    transform: translate(-2%, -2%);
+  }
+  80% {
+    transform: translate(3%, 3%);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+.grain-layer {
+  animation: grainShift 0.9s steps(2) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain-layer {
+    animation: none !important;
+  }
 }
 .anim-reveal {
   animation-name: heroReveal;

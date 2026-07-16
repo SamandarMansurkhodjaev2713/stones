@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
-
-const HEADER_OFFSET = -72
+import { HEADER_OFFSET } from '../../lib/constants'
 
 interface RailStop {
   id: string

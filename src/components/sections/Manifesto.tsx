@@ -15,7 +15,7 @@ export default function Manifesto() {
       id="manifesto"
       index="01"
       eyebrow={t.manifesto.eyebrow}
-      className="bg-void py-28 md:py-40"
+      className="bg-void py-32 md:py-44"
     >
       <GhostEpoch
         text={t.eras.title}
@@ -24,7 +24,7 @@ export default function Manifesto() {
 
       <div className="relative mx-auto max-w-7xl px-5">
         <div data-reveal className="max-w-3xl">
-          <h2 className="display-title text-4xl text-bone sm:text-5xl md:text-7xl">
+          <h2 className="display-title text-5xl text-bone sm:text-6xl md:text-8xl">
             <span className="block">{t.manifesto.titleA}</span>
             <span className="block text-bone/40">{t.manifesto.titleB}</span>
           </h2>
@@ -46,6 +46,9 @@ export default function Manifesto() {
                   className="h-[420px] w-full object-cover md:h-[560px]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-void/80 via-void/10 to-void/30" />
+                <span className="font-mono-t absolute left-5 top-5 border border-bone/25 bg-void/55 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-bone/85 backdrop-blur-sm">
+                  {t.manifesto.tag1}
+                </span>
                 <figcaption className="absolute bottom-6 left-6 max-w-[80%] text-xs leading-relaxed text-bone/60">
                   {t.manifesto.caption1}
                 </figcaption>
@@ -82,6 +85,9 @@ export default function Manifesto() {
                   className="h-[220px] w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-void/80 to-void/20" />
+                <span className="font-mono-t absolute left-4 top-4 border border-bone/25 bg-void/55 px-2 py-0.5 text-[9px] uppercase tracking-[0.16em] text-bone/85 backdrop-blur-sm">
+                  {t.manifesto.tag2}
+                </span>
                 <figcaption className="absolute bottom-4 left-4 text-[11px] text-bone/60">
                   {t.manifesto.caption2}
                 </figcaption>

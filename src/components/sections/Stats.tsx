@@ -49,8 +49,23 @@ export default function Stats() {
     <section id="record" className="bg-void py-4">
       <div
         ref={block.ref}
-        className="mx-auto max-w-7xl border-y border-bone/[0.07] px-5"
+        className="relative mx-auto max-w-7xl border-y border-bone/[0.07] px-5"
       >
+        {/* Surveyor's register marks at the four corners of the report band. */}
+        {[
+          '-left-1.5 -top-2.5',
+          '-right-1.5 -top-2.5',
+          '-left-1.5 -bottom-2.5',
+          '-right-1.5 -bottom-2.5',
+        ].map((pos) => (
+          <span
+            key={pos}
+            aria-hidden="true"
+            className={`font-mono-t absolute ${pos} text-xs text-ash/50`}
+          >
+            +
+          </span>
+        ))}
         <div className="grid grid-cols-2 lg:grid-cols-4">
           {t.stats.items.map((stat, i) => (
             <div

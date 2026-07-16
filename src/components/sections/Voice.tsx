@@ -38,9 +38,9 @@ export default function Voice() {
           className="mx-auto mb-10 block h-10 w-px bg-gradient-to-b from-transparent to-bone/50"
           aria-hidden="true"
         />
-        <blockquote className="text-3xl font-medium leading-[1.25] tracking-tight text-bone/90 md:text-5xl">
+        <blockquote className="display-title text-4xl text-bone/90 sm:text-5xl md:text-7xl">
           <span>{t.voice.quoteA} </span>
-          <span className="text-bone/45">{t.voice.quoteB}</span>
+          <span className="text-bone/40">{t.voice.quoteB}</span>
         </blockquote>
 
         <div

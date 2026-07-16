@@ -9,8 +9,6 @@ export const PHOTO = {
     'https://images.unsplash.com/photo-1547234935-80c7145ec969?auto=format&fit=crop&w=1600&q=80',
   ridges:
     'https://images.unsplash.com/photo-1444927714506-8492d94b4e3d?auto=format&fit=crop&w=900&q=80',
-  peaks:
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2000&q=80',
 } as const
 
 /**

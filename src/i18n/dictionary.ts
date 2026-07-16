@@ -39,6 +39,8 @@ export interface ExpeditionItem {
   place: string
   region: string
   tag: string
+  /** Field coordinates, mono telemetry style (locale-neutral, e.g. "29.57 N · 35.42 E"). */
+  coords: string
   duration: string
   difficulty: string
   note: string
@@ -57,7 +59,9 @@ export interface FooterColumn {
 
 export interface Dictionary {
   meta: { brand: string; tagline: string }
-  nav: { links: NavLink[]; cta: string }
+  nav: { links: NavLink[]; cta: string; menu: string }
+  preloader: { label: string }
+  telemetry: { unit: string }
   hero: {
     eyebrow: string
     titleA: string
@@ -77,6 +81,9 @@ export interface Dictionary {
     cta: string
     caption1: string
     caption2: string
+    /** Field-specimen tags stamped on the photographs. */
+    tag1: string
+    tag2: string
   }
   eras: {
     eyebrow: string
@@ -92,6 +99,8 @@ export interface Dictionary {
     title: string
     sub: string
     fields: { type: string; age: string; origin: string }
+    dragHint: string
+    stamp: string
     items: SampleItem[]
   }
   expeditions: {
@@ -149,7 +158,10 @@ const ru: Dictionary = {
       { id: 'expeditions', label: 'Маршруты' },
     ],
     cta: 'Начать спуск',
+    menu: 'Меню',
   },
+  preloader: { label: 'Погружение' },
+  telemetry: { unit: 'М' },
   hero: {
     eyebrow: 'ПОЛЕ 01 · ГЛУБИНА 0 М',
     titleA: 'Камень помнит',
@@ -173,6 +185,8 @@ const ru: Dictionary = {
     caption1:
       'Песчаник Вади-Рам — вырезан по зерну, глубиной в пятьдесят миллионов лет',
     caption2: 'Глава II — хребты, сложенные, как страницы',
+    tag1: 'ОБР. STN-014 · ПЕСЧАНИК',
+    tag2: 'ОБР. STN-027 · СТРАТЫ',
   },
   eras: {
     eyebrow: 'ХРОНОЛОГИЯ',
@@ -239,6 +253,8 @@ const ru: Dictionary = {
     title: 'Досье породы',
     sub: 'Четыре свидетеля. Каждый образец — это условия, в которых он застыл.',
     fields: { type: 'Тип', age: 'Возраст', origin: 'Происхождение' },
+    dragHint: 'Тяните — листайте архив',
+    stamp: 'Архив',
     items: [
       {
         name: 'Песчаник',
@@ -285,6 +301,7 @@ const ru: Dictionary = {
         place: 'Вади-Рам',
         region: 'Иордания',
         tag: 'Песчаниковые башни',
+        coords: '29.57 N · 35.42 E',
         duration: '3 дня',
         difficulty: 'Средняя',
         note: 'Марсианские стены из красного песчаника, изрезанные ветром и временем.',
@@ -293,6 +310,7 @@ const ru: Dictionary = {
         place: 'Чарынский каньон',
         region: 'Казахстан',
         tag: 'Долина замков',
+        coords: '43.35 N · 79.05 E',
         duration: '2 дня',
         difficulty: 'Лёгкая',
         note: 'Оранжевые обрывы возрастом 12 миллионов лет — младший брат Гранд-Каньона.',
@@ -301,6 +319,7 @@ const ru: Dictionary = {
         place: 'Плато Устюрт',
         region: 'Узбекистан',
         tag: 'Меловые чинки',
+        coords: '43.80 N · 58.80 E',
         duration: '4 дня',
         difficulty: 'Высокая',
         note: 'Обрывы бывшего морского дна: белый мел, аммониты, тишина до горизонта.',
@@ -309,6 +328,7 @@ const ru: Dictionary = {
         place: 'Стевнс-Клинт',
         region: 'Дания',
         tag: 'Граница мела',
+        coords: '55.28 N · 12.44 E',
         duration: '1 день',
         difficulty: 'Лёгкая',
         note: 'Тонкая тёмная линия в обрыве — тот самый день, когда вымерли динозавры.',
@@ -375,7 +395,10 @@ const uz: Dictionary = {
       { id: 'expeditions', label: 'Marshrutlar' },
     ],
     cta: 'Tushishni boshlash',
+    menu: 'Menyu',
   },
+  preloader: { label: 'Tushish' },
+  telemetry: { unit: 'M' },
   hero: {
     eyebrow: 'DALA 01 · CHUQURLIK 0 M',
     titleA: 'Tosh eslaydi',
@@ -399,6 +422,8 @@ const uz: Dictionary = {
     caption1:
       'Vodiy Rum qumtoshi — donma-don o‘yilgan, ellik million yil chuqurlikda',
     caption2: 'II bob — sahifalardek taxlangan tizmalar',
+    tag1: 'NAM. STN-014 · QUMTOSH',
+    tag2: 'NAM. STN-027 · STRATALAR',
   },
   eras: {
     eyebrow: 'XRONOLOGIYA',
@@ -465,6 +490,8 @@ const uz: Dictionary = {
     title: 'Jins dosyesi',
     sub: 'To‘rt guvoh. Har bir namuna — u qotgan sharoitlarning o‘zi.',
     fields: { type: 'Turi', age: 'Yoshi', origin: 'Kelib chiqishi' },
+    dragHint: 'Torting — arxivni varaqlang',
+    stamp: 'Arxiv',
     items: [
       {
         name: 'Qumtosh',
@@ -511,6 +538,7 @@ const uz: Dictionary = {
         place: 'Vodiy Rum',
         region: 'Iordaniya',
         tag: 'Qumtosh minoralari',
+        coords: '29.57 N · 35.42 E',
         duration: '3 kun',
         difficulty: 'O‘rtacha',
         note: 'Shamol va vaqt o‘ygan qizil qumtoshdan iborat marsona devorlar.',
@@ -519,6 +547,7 @@ const uz: Dictionary = {
         place: 'Charin kanyoni',
         region: 'Qozog‘iston',
         tag: 'Qasrlar vodiysi',
+        coords: '43.35 N · 79.05 E',
         duration: '2 kun',
         difficulty: 'Yengil',
         note: '12 million yillik to‘q sariq jarliklar — Katta Kanyonning kichik ukasi.',
@@ -527,6 +556,7 @@ const uz: Dictionary = {
         place: 'Ustyurt platosi',
         region: 'O‘zbekiston',
         tag: 'Bo‘r chinklari',
+        coords: '43.80 N · 58.80 E',
         duration: '4 kun',
         difficulty: 'Yuqori',
         note: 'Qadimgi dengiz tubining jarliklari: oq bo‘r, ammonitlar, ufqqacha sukunat.',
@@ -535,6 +565,7 @@ const uz: Dictionary = {
         place: 'Stevns-Klint',
         region: 'Daniya',
         tag: 'Bo‘r chegarasi',
+        coords: '55.28 N · 12.44 E',
         duration: '1 kun',
         difficulty: 'Yengil',
         note: 'Jarlikdagi ingichka qora chiziq — dinozavrlar qirilgan o‘sha kun.',

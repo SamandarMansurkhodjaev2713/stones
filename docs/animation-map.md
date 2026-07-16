@@ -7,8 +7,10 @@
 
 | Эффект | Где | Как | Reduced-motion |
 |---|---|---|---|
+| Прелоадер-бурение | `layout/Preloader.tsx` | rAF-счётчик 0→−4600 М в DOM-рефы, шторка-подъём; `.pre-boot` на `<html>` держит entrance-анимации на паузе | не показывается, гейт снят сразу |
+| Плёночное зерно | `ui/GrainOverlay.tsx` | SVG feTurbulence тайл + steps()-джиттер (CSS) | статичное зерно без движения |
 | Плавный скролл | `lib/scroll.tsx` | Lenis + GSAP ticker, синхрон с ScrollTrigger | Lenis не создаётся, нативный скролл |
-| Датчик глубины | `lib/scroll.tsx` | ScrollTrigger 0→1 пишет `--depth` для шкал | работает по нативному скроллу, без инерции |
+| Датчик глубины | `lib/scroll.tsx` + `layout/Navbar.tsx` | ScrollTrigger 0→1 пишет `--depth`; шапка переводит прогресс в «−N М» (1 м = 1 млн лет) прямой записью в реф | работает по нативному скроллу, без инерции |
 | Кастомный курсор | `components/cursor/CustomCursor.tsx` | rAF-lerp кольца + точка; режимы default/hover/lens/label по `data-cursor` | не монтируется (гейт в `App`) |
 | Магнитные кнопки | `lib/useMagnetic.ts` | `gsap.quickTo` тянет к курсору, пружина назад | off (гейт fine-pointer + reduced) |
 
@@ -16,7 +18,7 @@
 
 | Секция | Эффекты |
 |---|---|
-| Hero | Спотлайт-раскрытие видео сквозь `base.webp` (canvas-маска); дрейф-орбита на coarse-pointer; гиро-параллакс видео на мобилке; CSS-reveal заголовка (LCP без JS) |
+| Hero | Врезанный вордмарк: SVG-маска (плита `--void`, вырезанные буквы STONES + мягкая дыра-прожектор); прожектор следует за курсором / гироскопом / орбитой — прямые записи `cx/cy`, ноль setState на кадр; гиро-параллакс видео на мобилке; CSS-reveal текста |
 | SectionShell (все) | «Seam» (scaleX 0→1) + стаггер-подъём `[data-reveal]` (opacity/y), один раз при входе |
 | Manifesto | Параллакс двух изображений (`useParallax`), призрак-типографика (`GhostEpoch`), lens-курсор над фото |
 | Eras | Поле частиц (`ParticleField`), построчный reveal, шкала глубины по эрам |

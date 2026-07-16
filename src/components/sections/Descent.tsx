@@ -1,43 +1,103 @@
+import { useEffect, useRef } from 'react'
 import { Send, ArrowUp } from 'lucide-react'
 import SectionShell from '../ui/SectionShell'
 import MagneticButton from '../ui/MagneticButton'
 import { useI18n } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
+import { useReducedMotion } from '../../lib/useReducedMotion'
+import { gsap } from '../../lib/gsap'
 import { CONTACT } from '../../lib/constants'
-import { PHOTO } from '../../lib/media'
 
+const TUNNEL_LAYERS = 6
+
+/**
+ * The final call to action framed as a mine-shaft entrance: concentric strata
+ * frames recede toward the center and breathe apart on scroll (scrub parallax),
+ * pulling the eye into the CTA. Fully procedural — no stock photography.
+ */
 export default function Descent() {
   const { t } = useI18n()
   const scrollTo = useScrollTo()
+  const reduced = useReducedMotion()
+  const tunnelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const tunnel = tunnelRef.current
+    if (!tunnel || reduced) return
+
+    const ctx = gsap.context(() => {
+      const layers = gsap.utils.toArray<HTMLElement>(
+        tunnel.querySelectorAll('[data-tunnel-layer]'),
+      )
+      layers.forEach((layer, i) => {
+        // Outer frames drift more than inner ones — a slow dolly-in feel.
+        const drift = 1 + (layers.length - i) * 0.035
+        gsap.fromTo(
+          layer,
+          { scale: 1 },
+          {
+            scale: drift,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: tunnel,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            },
+          },
+        )
+      })
+    }, tunnel)
+
+    return () => ctx.revert()
+  }, [reduced])
 
   return (
     <SectionShell
       id="descent"
       index="05"
       eyebrow={t.descent.eyebrow}
-      className="bg-void px-5 py-20 md:py-28"
+      className="bg-void px-5 py-24 md:py-32"
     >
       <div
+        ref={tunnelRef}
         data-reveal
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] border border-bone/10"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] border border-bone/10 bg-surface"
       >
-        <img
-          src={PHOTO.peaks}
-          alt="Пики на закате, поднимающиеся над морем облаков"
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-void/75" />
+        {/* Receding strata frames */}
         <div
-          className="absolute inset-0"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          aria-hidden="true"
+        >
+          {Array.from({ length: TUNNEL_LAYERS }, (_, i) => {
+            const step = (i + 1) / TUNNEL_LAYERS
+            return (
+              <div
+                key={i}
+                data-tunnel-layer
+                className="absolute rounded-[2rem] border"
+                style={{
+                  width: `${100 - step * 72}%`,
+                  height: `${100 - step * 66}%`,
+                  borderColor: `rgb(var(--bone-rgb) / ${0.05 + step * 0.09})`,
+                }}
+              />
+            )
+          })}
+        </div>
+
+        {/* Bone glow rising from the bottom of the shaft. */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          aria-hidden="true"
           style={{
             background:
-              'radial-gradient(ellipse 60% 50% at 50% 100%, rgb(var(--bone-rgb) / 0.12), transparent 70%)',
+              'radial-gradient(ellipse 55% 45% at 50% 100%, rgb(var(--bone-rgb) / 0.1), transparent 70%)',
           }}
         />
 
-        <div className="relative flex flex-col items-center px-5 py-24 text-center md:py-36">
-          <h2 className="display-title max-w-3xl text-4xl text-bone sm:text-5xl md:text-7xl">
+        <div className="relative flex flex-col items-center px-5 py-24 text-center md:py-40">
+          <h2 className="display-title max-w-3xl text-5xl text-bone sm:text-6xl md:text-8xl">
             <span className="block">{t.descent.titleA}</span>
             <span className="block text-bone/40">{t.descent.titleB}</span>
           </h2>

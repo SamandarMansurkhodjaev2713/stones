@@ -12,6 +12,7 @@ import {
   MQ_MOBILE,
   SPOTLIGHT_DRIFT_SPEED,
 } from '../../lib/constants'
+import { VIDEO } from '../../lib/media'
 import MagneticButton from '../ui/MagneticButton'
 
 const OFFSCREEN = -999
@@ -80,7 +81,7 @@ export default function Hero() {
     >
       {isMobile ? (
         <video
-          src="/reveal.mp4"
+          src={VIDEO.reveal}
           autoPlay
           muted
           loop

@@ -12,3 +12,13 @@ export const PHOTO = {
   peaks:
     'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2000&q=80',
 } as const
+
+/**
+ * Files in `public/` are copied to the build output as-is, so a literal
+ * `src="/reveal.mp4"` resolves against the domain root — wrong on GitHub
+ * Pages, where the site is served from a `/<repo>/` sub-path. `BASE_URL` is
+ * Vite's configured `base` (see vite.config.ts), correct in both dev and prod.
+ */
+export const VIDEO = {
+  reveal: `${import.meta.env.BASE_URL}reveal.mp4`,
+} as const

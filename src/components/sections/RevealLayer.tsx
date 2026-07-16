@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { SPOTLIGHT_RADIUS } from '../../lib/constants'
+import { VIDEO } from '../../lib/media'
 
 interface RevealLayerProps {
   cursorX: number
@@ -74,7 +75,7 @@ export default function RevealLayer({ cursorX, cursorY, mediaTransform }: Reveal
         data-cursor="lens"
       >
         <video
-          src="/reveal.mp4"
+          src={VIDEO.reveal}
           autoPlay
           muted
           loop

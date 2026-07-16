@@ -5,6 +5,19 @@
   "type": "module",
   "description": "Stones — a cinematic scrollytelling landing page that reads rock strata like pages of deep time.",
   "license": "Apache-2.0",
+  "author": {
+    "name": "Samandar Mansurkhodjaev",
+    "email": "sam4k27@gmail.com",
+    "url": "https://github.com/SamandarMansurkhodjaev2713"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamandarMansurkhodjaev2713/stones.git"
+  },
+  "homepage": "https://samandarmansurkhodjaev2713.github.io/stones/",
+  "bugs": {
+    "url": "https://github.com/SamandarMansurkhodjaev2713/stones/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

@@ -10,6 +10,11 @@
 
 RU-first · переключатель на узбекский (латиница) · дизайн под award-уровень.
 
+[![Deploy to GitHub Pages](https://github.com/SamandarMansurkhodjaev2713/stones/actions/workflows/deploy.yml/badge.svg)](https://github.com/SamandarMansurkhodjaev2713/stones/actions/workflows/deploy.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
+
+**[Открыть сайт →](https://samandarmansurkhodjaev2713.github.io/stones/)**
+
 </div>
 
 ---
@@ -74,7 +79,7 @@ stones-project/
 │  │                            #   Expeditions, Voice, Descent, Footer
 │  ├─ App.tsx                   # провайдеры + композиция секций
 │  └─ index.css                 # дизайн-токены, type scale, keyframes
-├─ docs/                        # арт-дирекция, контент, карта анимаций
+├─ docs/                        # арт-дирекция, контент, карта анимаций, QA-чек-лист
 └─ .github/workflows/deploy.yml # автодеплой на GitHub Pages
 ```
 
@@ -83,14 +88,23 @@ stones-project/
 
 ## Деплой на GitHub Pages
 
-1. Создайте репозиторий и запушьте проект в ветку `main`.
-2. Если имя репозитория **не** `stones` — поправьте `REPO_NAME` в
+Репозиторий: [`SamandarMansurkhodjaev2713/stones`](https://github.com/SamandarMansurkhodjaev2713/stones).
+Live: **https://samandarmansurkhodjaev2713.github.io/stones/**
+
+1. Репозиторий уже создан, `main` запушен, Pages включён на источник
+   **GitHub Actions** (Settings → Pages → Build and deployment).
+2. Любой пуш в `main` запускает [`deploy.yml`](./.github/workflows/deploy.yml) —
+   сборка и публикация происходят автоматически (см. бейдж выше).
+3. При форке/переименовании репозитория: поправьте `REPO_NAME` в
    [`vite.config.ts`](./vite.config.ts) (для user/organization-страницы или
-   кастомного домена оставьте пустую строку).
-3. В настройках репозитория: **Settings → Pages → Build and deployment →
-   Source: GitHub Actions**.
-4. Пуш в `main` запускает [`deploy.yml`](./.github/workflows/deploy.yml) — сборка
-   и публикация происходят автоматически.
+   кастомного домена оставьте пустую строку) и `homepage`/`repository`/`bugs`
+   в [`package.json`](./package.json).
+
+## QA
+
+Перед каждым релизом — ручной чек-лист по брейкпоинтам, a11y, i18n,
+производительности и кросс-браузерности: [`docs/qa.md`](./docs/qa.md).
+Автотестов в проекте нет — обоснование в том же файле.
 
 ## Кастомизация
 
@@ -107,3 +121,10 @@ stones-project/
 ## Лицензия
 
 [Apache License 2.0](./LICENSE) © 2026 sam4k27@gmail.com. См. также [`NOTICE`](./NOTICE).
+
+## Автор
+
+**Samandar Mansurkhodjaev**
+
+- GitHub: [@SamandarMansurkhodjaev2713](https://github.com/SamandarMansurkhodjaev2713)
+- Telegram: [@Killallofthem13](https://t.me/Killallofthem13)

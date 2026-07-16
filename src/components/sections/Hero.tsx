@@ -144,19 +144,28 @@ export default function Hero() {
     }
     rafRef.current = requestAnimationFrame(tick)
 
-    // Data-saver / low-power modes may block autoplay; the first user gesture
-    // is a legitimate moment to start the living footage.
+    // Data-saver / low-power modes may block or delay autoplay. Retry from
+    // every legitimate angle: media readiness, first gesture, tab focus.
     const kickPlayback = () => {
-      videoRef.current?.play().catch(() => {
+      const video = videoRef.current
+      if (!video || !video.paused) return
+      video.play().catch(() => {
         // Autoplay refused — the glow layer still carries the effect.
       })
     }
-    window.addEventListener('touchstart', kickPlayback, { once: true, passive: true })
+    const video = videoRef.current
+    video?.addEventListener('loadeddata', kickPlayback)
+    window.addEventListener('pointerdown', kickPlayback, { passive: true })
+    window.addEventListener('touchstart', kickPlayback, { passive: true })
+    document.addEventListener('visibilitychange', kickPlayback)
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('resize', onResize)
+      video?.removeEventListener('loadeddata', kickPlayback)
+      window.removeEventListener('pointerdown', kickPlayback)
       window.removeEventListener('touchstart', kickPlayback)
+      document.removeEventListener('visibilitychange', kickPlayback)
       cancelAnimationFrame(rafRef.current)
     }
   }, [reduced])
@@ -193,14 +202,11 @@ export default function Hero() {
         }
       }}
     >
-      {/* The still monolith. The breathing lives on the wrapper so it composes
-          with (rather than overrides) the inner media transform. */}
-      <div className={`absolute inset-0 z-10 ${isMobile ? 'monolith-breath' : ''}`}>
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${baseImage})`, ...stillSizing, ...mediaTransform }}
-        />
-      </div>
+      {/* The still monolith. */}
+      <div
+        className="absolute inset-0 z-10 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${baseImage})`, ...stillSizing, ...mediaTransform }}
+      />
 
       {/* Living footage, revealed only inside the beam. The mask lives on this
           untransformed wrapper so the spotlight stays in viewport space while
@@ -211,7 +217,7 @@ export default function Hero() {
           className="absolute inset-0 z-20"
           style={{ maskImage: 'radial-gradient(circle 0px at -999px -999px, #000, transparent)' }}
         >
-          <div className={`absolute inset-0 ${isMobile ? 'monolith-breath' : ''}`}>
+          <div className="absolute inset-0">
             <video
               ref={videoRef}
               src={VIDEO.reveal}

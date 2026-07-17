@@ -2,30 +2,34 @@ import { useEffect, useRef, useState } from 'react'
 import { MoveHorizontal } from 'lucide-react'
 import SectionShell from '../ui/SectionShell'
 import { useI18n } from '../../i18n'
+import { gsap } from '../../lib/gsap'
 import { SAMPLE_PHOTO } from '../../lib/media'
 
 /** Archive shelf code for a specimen drawer. */
 const specimenCode = (index: number) => `STN-${String(index + 1).padStart(3, '0')}`
 
 /**
- * The rock dossier as an archive shelf: a horizontal drag strip of specimen
- * drawers instead of a static grid. Native scroll + snap does the heavy
- * lifting (touch works out of the box); mouse users get drag-to-scroll and
- * arrow keys. A mono counter tracks the open drawer.
+ * The rock dossier as an archive shelf. Desktop with motion: the section PINS
+ * and vertical scroll drives the shelf horizontally (GSAP scrub) — the classic
+ * awwwards ribbon. Mobile / reduced motion: a native swipe strip with snap.
+ * Both live in the same DOM; gsap.matchMedia owns the pinned lifecycle.
  */
 export default function Samples() {
   const { t } = useI18n()
+  const wrapRef = useRef<HTMLDivElement>(null)
   const scrollerRef = useRef<HTMLDivElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
 
-  // Track which drawer is closest to the strip's left edge.
+  // Mobile: track which drawer is closest to the strip's left edge.
   useEffect(() => {
     const scroller = scrollerRef.current
-    if (!scroller) return
+    const track = trackRef.current
+    if (!scroller || !track) return
     let ticking = false
     const update = () => {
       ticking = false
-      const cards = Array.from(scroller.children) as HTMLElement[]
+      const cards = Array.from(track.children) as HTMLElement[]
       if (!cards.length) return
       const x = scroller.scrollLeft
       let nearest = 0
@@ -47,6 +51,44 @@ export default function Samples() {
     scroller.addEventListener('scroll', onScroll, { passive: true })
     return () => scroller.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Desktop pinned ribbon: vertical scroll → horizontal shelf travel.
+  useEffect(() => {
+    const wrap = wrapRef.current
+    const clip = scrollerRef.current
+    const track = trackRef.current
+    if (!wrap || !clip || !track) return
+    const count = t.samples.items.length
+
+    const mm = gsap.matchMedia()
+    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+      const dist = () => Math.max(0, track.scrollWidth - clip.clientWidth)
+      const tween = gsap.to(track, {
+        x: () => -dist(),
+        ease: 'none',
+        scrollTrigger: {
+          trigger: wrap,
+          start: 'top top',
+          end: () => `+=${Math.max(dist() * 1.1, window.innerHeight * 0.6)}`,
+          pin: true,
+          scrub: 1,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            const next = Math.min(count - 1, Math.round(self.progress * (count - 1)))
+            setActive((cur) => (cur === next ? cur : next))
+          },
+        },
+      })
+      return () => {
+        tween.scrollTrigger?.kill()
+        tween.kill()
+        gsap.set(track, { clearProps: 'x' })
+      }
+    })
+
+    return () => mm.revert()
+  }, [t.samples.items.length])
 
   // Mouse drag-to-scroll (touch already scrolls natively).
   useEffect(() => {
@@ -89,8 +131,9 @@ export default function Samples() {
 
   const scrollByCard = (dir: 1 | -1) => {
     const scroller = scrollerRef.current
-    if (!scroller) return
-    const card = scroller.children[0] as HTMLElement | undefined
+    const track = trackRef.current
+    if (!scroller || !track) return
+    const card = track.children[0] as HTMLElement | undefined
     const step = card ? card.offsetWidth + 20 : 380
     scroller.scrollBy({ left: dir * step, behavior: 'smooth' })
   }
@@ -100,9 +143,15 @@ export default function Samples() {
       id="samples"
       index="03"
       eyebrow={t.samples.eyebrow}
-      className="bg-void py-28 md:py-40"
+      className="bg-void py-28 md:py-40 lg:motion-safe:py-0"
     >
-      <div className="mx-auto max-w-7xl px-5">
+      {/* Pinned on desktop: header + shelf lock to the viewport while the
+          shelf rides horizontally. */}
+      <div
+        ref={wrapRef}
+        className="lg:motion-safe:flex lg:motion-safe:h-screen lg:motion-safe:flex-col lg:motion-safe:justify-center"
+      >
+      <div className="mx-auto w-full max-w-7xl px-5">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-6 md:mb-14">
           <div className="max-w-3xl">
             <h2 data-reveal-mask className="display-title text-5xl text-bone md:text-7xl">
@@ -117,7 +166,7 @@ export default function Samples() {
               {String(active + 1).padStart(2, '0')} /{' '}
               {String(t.samples.items.length).padStart(2, '0')}
             </span>
-            <span className="hidden items-center gap-2 text-ash sm:flex">
+            <span className="hidden items-center gap-2 text-ash sm:flex lg:motion-safe:hidden">
               <MoveHorizontal size={14} aria-hidden="true" />
               <span className="font-mono-t text-[10px] uppercase tracking-[0.16em]">
                 {t.samples.dragHint}
@@ -128,7 +177,7 @@ export default function Samples() {
       </div>
 
       {/* Bleeds to the right edge — an open archive shelf, not a boxed grid. */}
-      <div data-reveal className="mx-auto max-w-[1600px]">
+      <div data-reveal className="mx-auto w-full max-w-[1600px]">
         <div
           ref={scrollerRef}
           role="region"
@@ -143,8 +192,12 @@ export default function Samples() {
               scrollByCard(-1)
             }
           }}
-          className="scrollbar-hide flex cursor-grab snap-x snap-mandatory gap-5 overflow-x-auto px-5 pb-4 sm:px-8 lg:px-[max(2rem,calc((100vw-80rem)/2+1.25rem))]"
+          className="scrollbar-hide cursor-grab snap-x snap-mandatory overflow-x-auto lg:motion-safe:snap-none lg:motion-safe:overflow-x-hidden"
         >
+          <div
+            ref={trackRef}
+            className="flex w-max gap-5 px-5 pb-4 sm:px-8 lg:px-[max(2rem,calc((100vw-80rem)/2+1.25rem))]"
+          >
           {t.samples.items.map((item, i) => (
             <article
               key={item.name}
@@ -202,7 +255,9 @@ export default function Samples() {
               </div>
             </article>
           ))}
+          </div>
         </div>
+      </div>
       </div>
     </SectionShell>
   )

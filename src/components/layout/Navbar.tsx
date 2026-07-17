@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { Volume2, VolumeX } from 'lucide-react'
 import { useI18n, formatNumber } from '../../i18n'
 import { LOCALES } from '../../i18n/dictionary'
 import type { Locale } from '../../i18n/dictionary'
 import { useScrollTo } from '../../lib/scroll'
+import { ambient } from '../../lib/ambient'
 import { HEADER_OFFSET, MAX_DEPTH_M, STATION_COORDS } from '../../lib/constants'
 
 const SCROLLED_THRESHOLD = 24
@@ -36,6 +38,50 @@ function LangToggle({ compact = false }: { compact?: boolean }) {
         </span>
       ))}
     </div>
+  )
+}
+
+/**
+ * Ambient sound switch. Off by default; the choice is deliberately NOT
+ * persisted — autoplaying audio on return visits is hostile, sound is an
+ * invitation renewed per session.
+ */
+function SoundToggle() {
+  const { t } = useI18n()
+  const [on, setOn] = useState(false)
+
+  useEffect(() => {
+    const onVis = () => ambient.onVisibility(document.hidden)
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      document.removeEventListener('visibilitychange', onVis)
+      ambient.disable()
+    }
+  }, [])
+
+  const toggle = () => {
+    setOn((cur) => {
+      const next = !cur
+      if (next) void ambient.enable()
+      else ambient.disable()
+      return next
+    })
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={t.a11y.sound}
+      aria-pressed={on}
+      data-cursor="label"
+      data-cursor-label={t.a11y.sound}
+      className={`grid h-11 w-11 place-items-center rounded-full border transition-colors duration-300 ${
+        on ? 'border-bone/50 text-bone' : 'border-bone/15 text-bone/50 hover:border-bone/40'
+      }`}
+    >
+      {on ? <Volume2 size={15} /> : <VolumeX size={15} />}
+    </button>
   )
 }
 
@@ -175,8 +221,11 @@ export default function Navbar() {
             <Wordmark />
           </button>
 
-          <div className="flex items-center gap-4 sm:gap-7">
+          <div className="flex items-center gap-3 sm:gap-5">
             <LangToggle />
+            <span className="hidden sm:block">
+              <SoundToggle />
+            </span>
             <button
               ref={menuButtonRef}
               type="button"
@@ -273,7 +322,10 @@ export default function Navbar() {
             {t.meta.tagline}
           </p>
           <div className="flex items-center justify-between gap-4">
-            <LangToggle compact />
+            <div className="flex items-center gap-4">
+              <LangToggle compact />
+              <SoundToggle />
+            </div>
             <button
               type="button"
               onClick={() => go('descent')}

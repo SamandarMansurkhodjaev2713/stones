@@ -142,6 +142,7 @@ export interface Dictionary {
     closeMenu: string
     toSection: string
     langSwitch: string
+    sound: string
   }
 }
 
@@ -380,6 +381,7 @@ const ru: Dictionary = {
     closeMenu: 'Закрыть меню',
     toSection: 'Перейти к разделу',
     langSwitch: 'Сменить язык',
+    sound: 'Звук',
   },
 }
 
@@ -618,6 +620,7 @@ const uz: Dictionary = {
     closeMenu: 'Menyuni yopish',
     toSection: 'Bo‘limga o‘tish',
     langSwitch: 'Tilni almashtirish',
+    sound: 'Ovoz',
   },
 }
 

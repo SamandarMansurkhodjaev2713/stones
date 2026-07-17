@@ -61,6 +61,7 @@ export default function Hero() {
 
   const maskRef = useRef<HTMLDivElement>(null)
   const glowRef = useRef<HTMLDivElement>(null)
+  const tiltWrapRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const rafRef = useRef(0)
   const tiltRef = useRef(tilt)
@@ -139,7 +140,17 @@ export default function Hero() {
       smooth.x += (target.x - smooth.x) * CURSOR_SMOOTHING
       smooth.y += (target.y - smooth.y) * CURSOR_SMOOTHING
       // Sticky hero stays mounted for the whole page — idle once covered.
-      if (window.scrollY < h) paint(smooth.x, smooth.y)
+      if (window.scrollY < h) {
+        paint(smooth.x, smooth.y)
+        // Desktop: the monolith leans almost imperceptibly toward the cursor.
+        // Both layers live inside one wrapper, so their registration holds.
+        if (hasFinePointer && tiltWrapRef.current) {
+          const rotY = (smooth.x / w - 0.5) * 3.6
+          const rotX = -(smooth.y / h - 0.55) * 2.6
+          tiltWrapRef.current.style.transform =
+            `perspective(1200px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`
+        }
+      }
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
@@ -202,22 +213,24 @@ export default function Hero() {
         }
       }}
     >
-      {/* The still monolith. */}
-      <div
-        className="absolute inset-0 z-10 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${baseImage})`, ...stillSizing, ...mediaTransform }}
-      />
-
-      {/* Living footage, revealed only inside the beam. The mask lives on this
-          untransformed wrapper so the spotlight stays in viewport space while
-          the footage inside lines up with the still. */}
-      {!reduced && (
+      {/* One wrapper carries the still AND the masked footage, so the desktop
+          cursor-lean never breaks their registration. */}
+      <div ref={tiltWrapRef} className="absolute inset-0 z-10 will-change-transform">
+        {/* The still monolith. */}
         <div
-          ref={maskRef}
-          className="absolute inset-0 z-20"
-          style={{ maskImage: 'radial-gradient(circle 0px at -999px -999px, #000, transparent)' }}
-        >
-          <div className="absolute inset-0">
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${baseImage})`, ...stillSizing, ...mediaTransform }}
+        />
+
+        {/* Living footage, revealed only inside the beam. The spotlight mask
+            tracks near-viewport space (the wrapper lean is ≤4°, a negligible
+            offset), while the footage stays registered with the still. */}
+        {!reduced && (
+          <div
+            ref={maskRef}
+            className="absolute inset-0 z-20"
+            style={{ maskImage: 'radial-gradient(circle 0px at -999px -999px, #000, transparent)' }}
+          >
             <video
               ref={videoRef}
               src={VIDEO.reveal}
@@ -241,8 +254,8 @@ export default function Hero() {
               }
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* The visible lamp: a luminous spot that always shows where the beam
           is, independent of the footage state. */}

@@ -20,6 +20,8 @@ export default function Descent() {
   const scrollTo = useScrollTo()
   const reduced = useReducedMotion()
   const tunnelRef = useRef<HTMLDivElement>(null)
+  const beamRef = useRef<HTMLDivElement>(null)
+  const dimRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const tunnel = tunnelRef.current
@@ -47,6 +49,34 @@ export default function Descent() {
           },
         )
       })
+
+      // The lamp returns for the finale: as the shaft enters the viewport the
+      // beam dives toward its center, frames light up one by one and the
+      // world around dims — the site's ring composition.
+      const dive = gsap.timeline({
+        scrollTrigger: {
+          trigger: tunnel,
+          start: 'top 82%',
+          end: 'center 52%',
+          scrub: true,
+        },
+      })
+      if (beamRef.current) {
+        dive.fromTo(
+          beamRef.current,
+          { opacity: 0, scale: 1.9 },
+          { opacity: 1, scale: 0.5, ease: 'none' },
+          0,
+        )
+      }
+      if (dimRef.current) {
+        dive.fromTo(dimRef.current, { opacity: 0 }, { opacity: 0.4, ease: 'none' }, 0)
+      }
+      dive.to(
+        layers,
+        { borderColor: 'rgb(var(--bone-rgb) / 0.45)', stagger: 0.09, duration: 0.6 },
+        0,
+      )
     }, tunnel)
 
     return () => ctx.revert()
@@ -93,6 +123,22 @@ export default function Descent() {
           style={{
             background:
               'radial-gradient(ellipse 55% 45% at 50% 100%, rgb(var(--bone-rgb) / 0.1), transparent 70%)',
+          }}
+        />
+
+        {/* Dimming veil + the diving beam (driven by the entry timeline). */}
+        <div
+          ref={dimRef}
+          className="pointer-events-none absolute inset-0 bg-black opacity-0"
+          aria-hidden="true"
+        />
+        <div
+          ref={beamRef}
+          className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0 mix-blend-screen"
+          aria-hidden="true"
+          style={{
+            background:
+              'radial-gradient(circle, rgb(var(--bone-rgb) / 0.28), rgb(var(--bone-rgb) / 0.08) 45%, transparent 70%)',
           }}
         />
 

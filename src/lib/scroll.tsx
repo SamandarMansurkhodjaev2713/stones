@@ -19,6 +19,40 @@ const ScrollContext = createContext<ScrollContextValue | null>(null)
 const MS_PER_SECOND = 1000
 
 /**
+ * The whole-page descent dramaturgy: surface tokens darken as the visitor
+ * scrolls toward the origin. Every surface (body, sections, cards, header)
+ * reads these variables, so the entire world dims in one place. Ink (--bone)
+ * is untouched — contrast only ever grows.
+ */
+const SURFACE_FROM = {
+  void: [12, 12, 13],
+  surface: [20, 20, 22],
+  layer: [26, 26, 29],
+} as const
+const SURFACE_TO = {
+  void: [4, 4, 5],
+  surface: [10, 10, 12],
+  layer: [14, 14, 17],
+} as const
+/** Cap so the finale stays material, not pitch black. */
+const DARKEN_MAX = 0.85
+
+function mixChannel(from: number, to: number, t: number): number {
+  return Math.round(from + (to - from) * t)
+}
+
+function applyDepthSurfaces(root: HTMLElement, progress: number) {
+  const t = Math.min(1, progress) * DARKEN_MAX
+  ;(['void', 'surface', 'layer'] as const).forEach((token) => {
+    const [r, g, b] = SURFACE_FROM[token].map((c, i) =>
+      mixChannel(c, SURFACE_TO[token][i], t),
+    )
+    root.style.setProperty(`--${token}-rgb`, `${r} ${g} ${b}`)
+    root.style.setProperty(`--${token}`, `rgb(${r} ${g} ${b})`)
+  })
+}
+
+/**
  * Owns the smooth-scroll engine and the page-depth gauge.
  *
  * - On capable devices Lenis provides weighted inertial scrolling, driven by
@@ -41,6 +75,7 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
       end: 'bottom bottom',
       onUpdate: (self) => {
         root.style.setProperty('--depth', self.progress.toFixed(4))
+        applyDepthSurfaces(root, self.progress)
       },
     })
 

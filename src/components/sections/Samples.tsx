@@ -142,6 +142,8 @@ export default function Samples() {
     <SectionShell
       id="samples"
       index="03"
+      depthM={2700}
+      depart={false}
       eyebrow={t.samples.eyebrow}
       className="bg-void py-28 md:py-40 lg:motion-safe:py-0"
     >
@@ -211,7 +213,7 @@ export default function Samples() {
                   src={SAMPLE_PHOTO[i % SAMPLE_PHOTO.length]}
                   alt=""
                   decoding="async"
-                  className="absolute inset-0 h-full w-full object-cover grayscale transition-transform duration-700 ease-out-expo group-hover:scale-110"
+                  className="absolute inset-0 h-full w-full object-cover photo-tone transition-transform duration-700 ease-out-expo group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-layer via-void/25 to-void/40" />
                 <span className="font-mono-t absolute left-4 top-3.5 text-[11px] uppercase tracking-[0.16em] text-bone/85">

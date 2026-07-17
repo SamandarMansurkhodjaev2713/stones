@@ -86,6 +86,7 @@ export default function Descent() {
     <SectionShell
       id="descent"
       index="05"
+      depthM={4400}
       eyebrow={t.descent.eyebrow}
       className="bg-void px-5 py-24 md:py-32"
     >

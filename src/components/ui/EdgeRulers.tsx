@@ -27,6 +27,11 @@ export default function EdgeRulers() {
             'repeating-linear-gradient(180deg, rgb(var(--bone-rgb) / 0.13) 0 1px, transparent 1px 120px)',
         }}
       />
+      {/* Survey pulse: a faint blip runs the spine every ~half minute. */}
+      <span
+        className="absolute left-0 h-14 w-px bg-gradient-to-b from-transparent via-bone/50 to-transparent"
+        style={{ animation: 'seismicSweep 31s linear infinite' }}
+      />
     </div>
   )
 }

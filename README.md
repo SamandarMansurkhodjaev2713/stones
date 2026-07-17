@@ -118,6 +118,14 @@ Live: **https://samandarmansurkhodjaev2713.github.io/stones/**
 - **Оптимизация видео** — `public/reveal.mp4` (~9.7 МБ) стоит пережать (например,
   через `ffmpeg` в WebM/более низкий битрейт).
 
+## Фотография
+
+Все снимки — Wikimedia Commons, отобраны вручную под каждую эру и образец
+(CC0 / Public Domain / CC BY / CC BY-SA; среди них — «Monolith, the Face of
+Half Dome» Энсела Адамса, public domain). Полный прованс каждого кадра —
+название файла, лицензия, страница источника — в [`photo-set.json`](./photo-set.json).
+Все кадры проходят единый фильтр `.photo-tone` (тёплый монохром).
+
 ## Лицензия
 
 [Apache License 2.0](./LICENSE) © 2026 sam4k27@gmail.com. См. также [`NOTICE`](./NOTICE).

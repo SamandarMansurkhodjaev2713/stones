@@ -5,11 +5,13 @@ import { LOCALES } from '../../i18n/dictionary'
 import type { Locale } from '../../i18n/dictionary'
 import { useScrollTo } from '../../lib/scroll'
 import { ambient } from '../../lib/ambient'
+import { MENU_PREVIEW } from '../../lib/media'
 import { HEADER_OFFSET, MAX_DEPTH_M, STATION_COORDS } from '../../lib/constants'
 
 const SCROLLED_THRESHOLD = 24
 const MENU_LINK_STAGGER_MS = 70
-const MENU_LINK_BASE_DELAY_MS = 120
+/** Content settles only after the fault plates have met (700 ms travel). */
+const MENU_LINK_BASE_DELAY_MS = 380
 const CLOCK_TICK_MS = 1000
 
 function LangToggle({ compact = false }: { compact?: boolean }) {
@@ -117,6 +119,7 @@ export default function Navbar() {
   const scrollTo = useScrollTo()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [previewIdx, setPreviewIdx] = useState(0)
   const depthRef = useRef<HTMLSpanElement>(null)
   const clockRef = useRef<HTMLSpanElement>(null)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
@@ -250,14 +253,79 @@ export default function Navbar() {
         </nav>
       </header>
 
-      {/* Fullscreen shaft menu — one language for every breakpoint. */}
+      {/* Fullscreen shaft menu — one language for every breakpoint. Opens as a
+          FAULT: two rock plates slide in from above and below and meet at the
+          seam; the content settles on top of them. */}
       <div
-        className={`fixed inset-0 z-[110] flex flex-col bg-void transition-opacity duration-500 ease-out-expo ${
-          menuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        className={`fixed inset-0 z-[110] flex flex-col ${
+          menuOpen ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
         aria-hidden={!menuOpen}
       >
-        <div className="flex items-center justify-between px-4 py-3.5 sm:px-8">
+        {/* The plates */}
+        <div
+          aria-hidden="true"
+          className={`absolute inset-x-0 top-0 h-1/2 border-b border-bone/15 bg-surface transition-transform duration-700 ease-out-expo ${
+            menuOpen ? 'translate-y-0' : '-translate-y-full'
+          }`}
+        />
+        <div
+          aria-hidden="true"
+          className={`absolute inset-x-0 bottom-0 h-1/2 border-t border-bone/15 bg-surface transition-transform duration-700 ease-out-expo ${
+            menuOpen ? 'translate-y-0' : 'translate-y-full'
+          }`}
+        />
+
+        {/* Section preview — the scene behind the list (desktop). */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-[12%] right-[6%] top-[14%] hidden w-[30vw] max-w-[460px] overflow-hidden rounded-2xl border border-bone/10 lg:block"
+          style={{
+            opacity: menuOpen ? 1 : 0,
+            transition: 'opacity 500ms var(--ease-out) 350ms',
+          }}
+        >
+          {t.nav.links.map((link, i) => (
+            <img
+              key={link.id}
+              src={MENU_PREVIEW[link.id]}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className={`photo-tone absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-700 ease-out-expo ${
+                i === previewIdx ? 'scale-100 opacity-55' : 'scale-105 opacity-0'
+              }`}
+            />
+          ))}
+          <div className="absolute inset-0 bg-gradient-to-t from-void/80 to-transparent" />
+          <span className="font-mono-t absolute bottom-4 left-4 text-[10px] uppercase tracking-[0.2em] text-bone/70">
+            {t.nav.links[previewIdx]?.label} · −{formatNumber(levelDepth(previewIdx))}{' '}
+            {t.telemetry.unit}
+          </span>
+        </div>
+
+        {/* Depth gauge with a live caret (desktop). */}
+        <div
+          aria-hidden="true"
+          className="absolute bottom-[14%] left-[5%] top-[16%] hidden w-8 lg:block"
+          style={{
+            opacity: menuOpen ? 1 : 0,
+            transition: 'opacity 500ms var(--ease-out) 400ms',
+          }}
+        >
+          <div className="absolute left-1 top-0 h-full w-px bg-bone/15" />
+          <div
+            className="absolute -left-0.5 flex items-center gap-2 transition-[top] duration-500 ease-out-expo"
+            style={{ top: `${((previewIdx + 0.5) / t.nav.links.length) * 100}%` }}
+          >
+            <span className="block h-3 w-3 rounded-full border border-bone/70 bg-void" />
+            <span className="font-mono-t whitespace-nowrap text-[10px] text-ash">
+              −{formatNumber(levelDepth(previewIdx))}
+            </span>
+          </div>
+        </div>
+
+        <div className="relative flex items-center justify-between px-4 py-3.5 sm:px-8">
           <Wordmark />
           <button
             type="button"
@@ -275,12 +343,14 @@ export default function Navbar() {
           </button>
         </div>
 
-        <nav className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-6 sm:px-8">
+        <nav className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-6 sm:px-8 lg:mx-[12%]">
           {t.nav.links.map((link, i) => (
             <button
               key={link.id}
               type="button"
               onClick={() => go(link.id)}
+              onMouseEnter={() => setPreviewIdx(i)}
+              onFocus={() => setPreviewIdx(i)}
               data-cursor="label"
               data-cursor-label={link.label}
               className={`group flex items-baseline justify-between gap-6 border-b border-bone/10 py-4 text-left transition-[opacity,transform] duration-500 ease-out-expo sm:py-5 ${
@@ -308,7 +378,7 @@ export default function Navbar() {
         </nav>
 
         <div
-          className={`mx-auto w-full max-w-4xl px-6 pb-8 transition-[opacity,transform] duration-500 ease-out-expo sm:px-8 ${
+          className={`relative mx-auto w-full max-w-4xl px-6 pb-8 transition-[opacity,transform] duration-500 ease-out-expo sm:px-8 lg:mx-[12%] ${
             menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
           }`}
           style={{

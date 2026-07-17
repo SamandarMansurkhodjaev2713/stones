@@ -15,6 +15,7 @@ export default function Manifesto() {
     <SectionShell
       id="manifesto"
       index="01"
+      depthM={400}
       eyebrow={t.manifesto.eyebrow}
       className="bg-void py-32 md:py-44"
     >

@@ -42,6 +42,7 @@ export default function Expeditions() {
     <SectionShell
       id="expeditions"
       index="04"
+      depthM={3400}
       eyebrow={t.expeditions.eyebrow}
       className="bg-surface py-28 md:py-40"
     >

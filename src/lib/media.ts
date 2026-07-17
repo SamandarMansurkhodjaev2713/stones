@@ -10,30 +10,79 @@ export const VIDEO = {
   reveal: `${import.meta.env.BASE_URL}reveal.mp4`,
 } as const
 
-const unsplash = (id: string, w: number) =>
-  `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=75`
+const commons = (path: string) =>
+  `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}`
 
 /**
- * Backdrops for the pinned descent stage — one landscape per era, crossfading
- * with the text. All are rendered grayscale under a void overlay, so the set
- * reads as one monochrome film rather than a stock collage. Availability of
- * every id is verified (HTTP 200); swap any single line to recast an era.
+ * Curated photography — Wikimedia Commons, hand-picked per subject with
+ * verified licenses (CC0 / PD / CC BY(-SA); attribution in README). Every
+ * frame is rendered through `.photo-tone` (warm-toned monochrome), so the set
+ * reads as one archival film. `photo-set.json` in the repo root keeps the
+ * full provenance (title, license, file page) for each entry.
  */
 export const ERA_PHOTO: Record<EraId, string> = {
-  holocene: unsplash('1506744038136-46273834b3fb', 1600), // живая долина с озером
-  cretaceous: unsplash('1433086966358-54859d0ed716', 1600), // обрыв и водопад
-  permian: unsplash('1454496522488-7a8e488e8606', 1600), // туманная пустошь хребтов
-  devonian: unsplash('1518837695005-2083093ee35b', 1600), // океанская волна
-  cambrian: unsplash('1500375592092-40eb2168fd21', 1600), // первобытный прибой
-  proterozoic: unsplash('1444927714506-8492d94b4e3d', 1600), // слоистые хребты в дымке
-  archean: unsplash('1470071459604-3b5ec3a7fe05', 1600), // тёмный первичный сумрак
-  hadean: unsplash('1462332420958-a05d1e002413', 1600), // небо, под которым родилась Земля
+  // Зелёная долина поверх аппалачской синклинали — живой тонкий слой.
+  holocene: commons(
+    '0/04/Stony_Creek_Syncline_in_the_Appalachian_Mountains_%28Cross_Mountain-Shady_Valley-Iron_Mountains%2C_Tennessee%2C_USA%29.jpg/1920px-Stony_Creek_Syncline_in_the_Appalachian_Mountains_%28Cross_Mountain-Shady_Valley-Iron_Mountains%2C_Tennessee%2C_USA%29.jpg',
+  ),
+  // Меловые обрывы Этрета — сам мел, давший имя периоду.
+  cretaceous: commons(
+    'f/f7/The_chalk_cliffs_of_%C3%89tretat%2C_France_%2848789269701%29.jpg/1920px-The_chalk_cliffs_of_%C3%89tretat%2C_France_%2848789269701%29.jpg',
+  ),
+  // Мёртвые акации Дедвлея — пейзаж великого вымирания.
+  permian: commons(
+    'f/fe/054e_Dead_camel_thorn_tree_in_Deadvlei_Photo_by_Giles_Laurent.jpg/1920px-054e_Dead_camel_thorn_tree_in_Deadvlei_Photo_by_Giles_Laurent.jpg',
+  ),
+  // Шторм бьёт в скалу — век рыб, власть океана.
+  devonian: commons(
+    '5/50/Isla_de_Mouro%2C_waves_crashing_over_lighthouse.jpg/1920px-Isla_de_Mouro%2C_waves_crashing_over_lighthouse.jpg',
+  ),
+  // Королевский прилив на скалистом берегу — первобытный прибой.
+  cambrian: commons(
+    '9/9e/King_Tides%2C_Rocky_Creek_Scenic_viewpoint%2C_Oregon_-_Flickr_-_Bonnie_Moreland_%28free_images%29.jpg/1920px-King_Tides%2C_Rocky_Creek_Scenic_viewpoint%2C_Oregon_-_Flickr_-_Bonnie_Moreland_%28free_images%29.jpg',
+  ),
+  // Полосчатая железистая формация — прямой документ кислородной катастрофы.
+  proterozoic: commons(
+    '2/24/BIF_Banded_Iron_Formation.jpg/1920px-BIF_Banded_Iron_Formation.jpg',
+  ),
+  // Чёрные лавовые поля Торсмёрка — первые континенты.
+  archean: commons(
+    '0/0d/The_Lava_Fields_Of_%C3%9E%C3%B3rsm%C3%B6rk_Iceland_%28175491845%29.jpeg/1920px-The_Lava_Fields_Of_%C3%9E%C3%B3rsm%C3%B6rk_Iceland_%28175491845%29.jpeg',
+  ),
+  // Извержение в Исландии — расплавленное начало мира.
+  hadean: commons(
+    '2/21/Iceland_Volcano_Eruption_19_December_2023.jpg/1920px-Iceland_Volcano_Eruption_19_December_2023.jpg',
+  ),
 }
 
 /** Specimen photography for the archive drawers, in dictionary order. */
 export const SAMPLE_PHOTO: readonly string[] = [
-  unsplash('1547234935-80c7145ec969', 900), // песчаник — башни Вади-Рам
-  unsplash('1519681393784-d120267933ba', 900), // базальт — тёмные скалы ночью
-  unsplash('1464822759023-fed622ff2c3b', 900), // гранит — зубчатые пики
-  unsplash('1567359781514-3b964e2b04d6', 900), // аметист — кристаллическое макро
+  // Песчаник — волны Антилопьего каньона.
+  commons('e/e3/Antelope_Canyon_B%26W.jpg/1920px-Antelope_Canyon_B%26W.jpg'),
+  // Базальт — колонны Дороги гигантов крупным планом.
+  commons(
+    '5/56/Antrim_Coast_-_Giant%27s_Causeway_-_Closeup_of_Basalt_Columns_-_geograph.org.uk_-_3719472.jpg/1920px-Antrim_Coast_-_Giant%27s_Causeway_-_Closeup_of_Basalt_Columns_-_geograph.org.uk_-_3719472.jpg',
+  ),
+  // Гранит — «Монолит» Энсела Адамса, лик Хаф-Доума (public domain).
+  commons(
+    '0/08/Ansel-adams-monolith-the-face-of-half-dome_-_edit1.jpg/1920px-Ansel-adams-monolith-the-face-of-half-dome_-_edit1.jpg',
+  ),
+  // Аметист — вскрытая жеода.
+  commons(
+    '2/2c/Opened_amethyst_geode_in_Crystal_Mountain_Museum.jpg/1920px-Opened_amethyst_geode_in_Crystal_Mountain_Museum.jpg',
+  ),
 ]
+
+/** Shaft-menu hover previews, keyed by nav section id. */
+export const MENU_PREVIEW: Record<string, string> = {
+  manifesto: commons(
+    'd/d5/Grand_Canyon_National_Park_South_Rim_-_Panorama_from_Moran_Point_4941_%287290025068%29.jpg/1920px-Grand_Canyon_National_Park_South_Rim_-_Panorama_from_Moran_Point_4941_%287290025068%29.jpg',
+  ),
+  eras: commons('2/24/BIF_Banded_Iron_Formation.jpg/1920px-BIF_Banded_Iron_Formation.jpg'),
+  samples: commons(
+    '2/2c/Opened_amethyst_geode_in_Crystal_Mountain_Museum.jpg/1920px-Opened_amethyst_geode_in_Crystal_Mountain_Museum.jpg',
+  ),
+  expeditions: commons(
+    'f/fc/Desert_landscape_with_rocks_in_the_middle_in_Wadi_Rum.jpg/1920px-Desert_landscape_with_rocks_in_the_middle_in_Wadi_Rum.jpg',
+  ),
+}

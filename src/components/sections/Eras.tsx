@@ -69,7 +69,7 @@ function PinnedEras({ t }: { t: Dictionary }) {
             alt=""
             loading={i === 0 ? 'eager' : 'lazy'}
             decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover grayscale transition-opacity duration-[900ms] ease-out-expo ${
+            className={`absolute inset-0 h-full w-full object-cover photo-tone transition-opacity duration-[900ms] ease-out-expo ${
               i === idx ? 'opacity-40' : 'opacity-0'
             }`}
           />
@@ -242,7 +242,7 @@ export default function Eras() {
   const { t } = useI18n()
 
   return (
-    <SectionShell id="eras" index="02" eyebrow={t.eras.eyebrow} className="bg-surface">
+    <SectionShell id="eras" index="02" eyebrow={t.eras.eyebrow} depthM={1600} depart={false} className="bg-surface">
       {/* Pinned stage — desktop with motion allowed (CSS gate, always mounted). */}
       <PinnedEras t={t} />
       {/* Its AT mirror, active only where the visual stage is the one shown. */}

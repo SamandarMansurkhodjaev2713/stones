@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { gsap } from '../../lib/gsap'
 import { DURATION, EASE_OUT } from '../../lib/constants'
+import { formatNumber } from '../../i18n'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 
 interface SectionShellProps {
@@ -10,25 +11,41 @@ interface SectionShellProps {
   /** Two-digit index shown in the seam telemetry, e.g. "02". */
   index?: string
   eyebrow?: string
+  /** Nominal shaft depth of this chapter, metres — the margin whisper. */
+  depthM?: number
+  /**
+   * Departure choreography (scale-and-sink on exit). MUST be false for
+   * sections that pin content inside: a transform on the ancestor would break
+   * ScrollTrigger's fixed-position pinning.
+   */
+  depart?: boolean
   children: ReactNode
   className?: string
   /** Clip overflow (default true). Set false for sections with bleed/overlap. */
   clip?: boolean
 }
 
+/** Survey cross positions, fractions of the section box. */
+const CROSSES = [
+  { left: '8%', top: '30%' },
+  { left: '92%', top: '22%' },
+  { left: '46%', top: '78%' },
+] as const
+
 /**
- * The structural wrapper every content section shares. It draws a stratigraphic
- * "seam" (the fault line between layers) across the top as the section enters,
- * then reveals any descendant marked `data-reveal` with a staggered rise —
- * the excavation choreography. All GSAP work lives inside a `gsap.context`
- * scoped to the section, so a single `.revert()` tears down tweens and
- * ScrollTriggers with zero leaks. Under reduced motion nothing animates and the
- * content is simply visible.
+ * The structural wrapper every content section shares. Entrance: a
+ * stratigraphic seam draws across the top (flashing briefly as the fault is
+ * crossed) and `[data-reveal]` / `[data-reveal-mask]` descendants rise in.
+ * Exit: the whole section slightly scales down and sinks into darkness while
+ * the next chapter rides over it — the depth-stack transition. All GSAP work
+ * lives in one scoped context; reduced motion renders everything static.
  */
 export default function SectionShell({
   id,
   index,
   eyebrow,
+  depthM,
+  depart = true,
   children,
   className = '',
   clip = true,
@@ -42,9 +59,10 @@ export default function SectionShell({
     if (!section || reduced) return
 
     const ctx = gsap.context(() => {
-      if (seamRef.current) {
+      const seam = seamRef.current
+      if (seam) {
         gsap.fromTo(
-          seamRef.current,
+          seam,
           { scaleX: 0 },
           {
             scaleX: 1,
@@ -53,6 +71,26 @@ export default function SectionShell({
             scrollTrigger: { trigger: section, start: 'top 88%', once: true },
           },
         )
+        // The fault flashes every time the reader crosses it.
+        gsap.utils.toArray([section]).forEach(() => {
+          let flashTween: gsap.core.Tween | null = null
+          const flash = () => {
+            flashTween?.kill()
+            flashTween = gsap.fromTo(
+              seam,
+              { filter: 'brightness(3.2)' },
+              { filter: 'brightness(1)', duration: 0.7, ease: 'power2.out' },
+            )
+          }
+          gsap.timeline({
+            scrollTrigger: {
+              trigger: section,
+              start: 'top 60%',
+              onEnter: flash,
+              onEnterBack: flash,
+            },
+          })
+        })
       }
 
       const targets = gsap.utils.toArray<HTMLElement>(
@@ -71,7 +109,6 @@ export default function SectionShell({
       }
 
       // Display headlines rise out of a clipping mask — the line-reveal.
-      // Bottom inset ends at -12% so descenders are never shaved mid-flight.
       const masked = gsap.utils.toArray<HTMLElement>(
         section.querySelectorAll('[data-reveal-mask]'),
       )
@@ -87,16 +124,34 @@ export default function SectionShell({
           onComplete: () => gsap.set(masked, { clearProps: 'clipPath' }),
         })
       }
+
+      // Departure: the chapter sinks a layer deeper as the next rides over.
+      if (depart) {
+        gsap.to(section, {
+          scale: 0.965,
+          opacity: 0.72,
+          transformOrigin: 'center 12%',
+          ease: 'none',
+          scrollTrigger: {
+            trigger: section,
+            start: 'bottom 70%',
+            end: 'bottom 12%',
+            scrub: true,
+          },
+        })
+      }
     }, section)
 
     return () => ctx.revert()
-  }, [reduced])
+  }, [reduced, depart])
 
   return (
     <section
       id={id}
       ref={sectionRef}
-      className={`relative ${clip ? 'overflow-hidden' : ''} ${className}`}
+      className={`relative shadow-[0_-32px_60px_-30px_rgba(0,0,0,0.65)] ${
+        clip ? 'overflow-hidden' : ''
+      } ${className}`}
     >
       {(index || eyebrow) && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-5 px-5 pt-6 sm:px-8">
@@ -111,6 +166,30 @@ export default function SectionShell({
           </span>
         </div>
       )}
+
+      {/* Survey crosses — the field-map registration marks. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        {CROSSES.map((pos, i) => (
+          <span
+            key={i}
+            className="font-mono-t absolute -translate-x-1/2 -translate-y-1/2 text-sm text-bone/[0.08]"
+            style={pos}
+          >
+            +
+          </span>
+        ))}
+      </div>
+
+      {/* Margin whisper: the chapter's nominal depth. */}
+      {typeof depthM === 'number' && (
+        <span
+          aria-hidden="true"
+          className="font-mono-t pointer-events-none absolute bottom-10 left-3 z-10 text-[10px] tracking-[0.2em] text-ash/50 [writing-mode:vertical-rl] sm:left-5"
+        >
+          −{formatNumber(depthM)} M
+        </span>
+      )}
+
       {children}
     </section>
   )

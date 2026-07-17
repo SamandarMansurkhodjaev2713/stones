@@ -173,6 +173,13 @@
   .will-change-transform {
     will-change: transform;
   }
+
+  /* Archival warm-toned monochrome — the single photographic voice of the
+     site. Every photo goes through this filter so curated frames from many
+     authors read as one film stock. */
+  .photo-tone {
+    filter: grayscale(1) sepia(0.14) contrast(1.06) brightness(0.9);
+  }
 }
 
 /* ============================================================================
@@ -220,6 +227,126 @@
   }
   100% {
     transform: translateX(-50%);
+  }
+}
+
+/* Per-character rise for the hero headline: each glyph climbs out from under
+   its baseline. Delay is set inline per character; .anim gates it behind the
+   preloader via html.pre-boot. */
+@keyframes charRise {
+  0% {
+    opacity: 0;
+    transform: translateY(115%) rotate(2.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+}
+
+.char-rise {
+  animation-name: charRise;
+  animation-duration: 950ms;
+}
+
+/* Mineral dust trail behind the cursor (pooled nodes, reactivated by class). */
+@keyframes dustFade {
+  0% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 26px)) scale(0.2);
+  }
+}
+
+.dust-mote {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgb(var(--bone-rgb) / 0.8);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dust-mote.is-live {
+  animation: dustFade 700ms var(--ease-out) forwards;
+}
+
+/* Click chip: tiny shards burst radially (direction via --dx/--dy). */
+@keyframes shardFly {
+  0% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.3);
+  }
+}
+
+.shard {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 1.5px;
+  background: rgb(var(--bone-rgb) / 0.9);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shard.is-live {
+  animation: shardFly 550ms var(--ease-out) forwards;
+}
+
+/* Near-field dust: three big blurred motes drifting through the frame on
+   long, incommensurate paths — cinematic depth of field. */
+@keyframes dustDriftA {
+  0% {
+    transform: translate3d(-8vw, 108vh, 0);
+  }
+  100% {
+    transform: translate3d(14vw, -12vh, 0);
+  }
+}
+@keyframes dustDriftB {
+  0% {
+    transform: translate3d(96vw, 112vh, 0);
+  }
+  100% {
+    transform: translate3d(72vw, -14vh, 0);
+  }
+}
+@keyframes dustDriftC {
+  0% {
+    transform: translate3d(48vw, 116vh, 0);
+  }
+  100% {
+    transform: translate3d(58vw, -10vh, 0);
+  }
+}
+
+/* A survey pulse runs down the left ruler every ~half minute. */
+@keyframes seismicSweep {
+  0% {
+    top: -12%;
+    opacity: 0;
+  }
+  2% {
+    opacity: 1;
+  }
+  9% {
+    top: 112%;
+    opacity: 0;
+  }
+  100% {
+    top: 112%;
+    opacity: 0;
   }
 }
 

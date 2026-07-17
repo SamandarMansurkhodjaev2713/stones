@@ -15,29 +15,31 @@ import {
 } from '../../lib/constants'
 import { VIDEO } from '../../lib/media'
 import MagneticButton from '../ui/MagneticButton'
+import SplitChars from '../ui/SplitChars'
 
 /**
- * Desktop keeps the monolith slightly lifted from the bottom edge, like an
- * exhibit on a plinth. Mobile pulls the camera BACK instead of cropping in:
- * the footage is letterboxed (contain) and then rescaled, so the whole
- * monolith floats in the void — the vignette swallows the seams.
+ * Desktop: the monolith is an OBJECT in the scene (edge-masked), the giant
+ * headline lives BEHIND it — glyph tops rise above the ridge, feet disappear
+ * into the rock. Mobile: the monolith is a compact artifact under a single
+ * museum beam, typography above, plinth shadow below.
  */
-const DESKTOP_MEDIA_TRANSFORM = 'translateY(9vh) scale(0.88)'
-/** Moderate zoom keeps the WHOLE monolith in frame on a phone. */
-const MOBILE_MEDIA_SCALE = 1.35
-/** Dissolves the letterboxed frame edges into the void — no visible seams. */
+const DESKTOP_MEDIA_TRANSFORM = 'translateY(10vh) scale(0.94)'
+const DESKTOP_EDGE_MASK =
+  'radial-gradient(ellipse 66% 62% at 50% 56%, #000 46%, transparent 90%)'
+const MOBILE_MEDIA_SCALE = 1.18
 const MOBILE_EDGE_MASK =
-  'radial-gradient(ellipse 64% 54% at 50% 43%, #000 50%, transparent 92%)'
+  'radial-gradient(ellipse 62% 50% at 50% 46%, #000 48%, transparent 90%)'
 
 /** How long a touch keeps steering the beam before the auto-sweep resumes. */
 const TOUCH_HOLD_MS = 2200
 /** Gyro tilt → beam travel, as a fraction of the viewport. */
 const TILT_TRAVEL_X = 0.18
 const TILT_TRAVEL_Y = 0.1
+/** Depth-sandwich parallax: the headline drifts against the cursor. */
+const HEADLINE_PARALLAX_X = 26
+const HEADLINE_PARALLAX_Y = 16
 
-/** The auto-sweep path: two incommensurate sine pairs → a smooth non-repeating
- *  wander. Primary period ≈ 11 s — clearly alive within the first seconds,
- *  never frantic. */
+/** Auto-sweep: two incommensurate sine pairs, primary period ≈ 11 s. */
 const SWEEP = {
   x1: 0.00057,
   x2: 0.00091,
@@ -45,13 +47,6 @@ const SWEEP = {
   y2: 0.00074,
 } as const
 
-/**
- * Hero v3 — the original spotlight ritual, staged properly. A still of the
- * monolith rests in the dark; a soft beam reveals the living footage beneath
- * it. Fine pointers steer the beam themselves; touch devices watch it wander
- * on its own (slow Lissajous sweep). The reveal is a CSS radial-gradient mask
- * updated in one rAF — no canvas, no per-frame re-encoding, no React state.
- */
 export default function Hero() {
   const { t } = useI18n()
   const scrollTo = useScrollTo()
@@ -62,12 +57,12 @@ export default function Hero() {
   const maskRef = useRef<HTMLDivElement>(null)
   const glowRef = useRef<HTMLDivElement>(null)
   const tiltWrapRef = useRef<HTMLDivElement>(null)
+  const headlineRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const rafRef = useRef(0)
   const tiltRef = useRef(tilt)
   const touchRef = useRef({ x: 0, y: 0, ts: -Infinity })
 
-  // Mirror tilt into a ref so the rAF loop reads it without re-subscribing.
   useEffect(() => {
     tiltRef.current = tilt
   }, [tilt])
@@ -104,8 +99,6 @@ export default function Hero() {
         `rgba(0,0,0,0.4) 75%, rgba(0,0,0,0.12) 88%, transparent 100%)`
       maskEl.style.maskImage = mask
       maskEl.style.webkitMaskImage = mask
-      // The lamp itself: a compact luminous spot that reads even when the
-      // footage underneath is paused. Tight falloff — a beam, not grey fog.
       if (glowEl) {
         glowEl.style.background =
           `radial-gradient(circle ${(radius * 1.05).toFixed(0)}px at ${px}px ${py}px, ` +
@@ -119,12 +112,9 @@ export default function Hero() {
       if (!hasFinePointer) {
         const touch = touchRef.current
         if (time - touch.ts < TOUCH_HOLD_MS) {
-          // A finger on the rock steers the beam directly.
           target.x = touch.x
           target.y = touch.y
         } else {
-          // The wandering lamp: smooth, never twice the same place, orbiting
-          // the monolith zone — nudged by device tilt when a gyro is present.
           target.x =
             w * 0.5 +
             Math.sin(time * SWEEP.x1) * w * 0.24 +
@@ -139,30 +129,34 @@ export default function Hero() {
       }
       smooth.x += (target.x - smooth.x) * CURSOR_SMOOTHING
       smooth.y += (target.y - smooth.y) * CURSOR_SMOOTHING
-      // Sticky hero stays mounted for the whole page — idle once covered.
       if (window.scrollY < h) {
         paint(smooth.x, smooth.y)
-        // Desktop: the monolith leans almost imperceptibly toward the cursor.
-        // Both layers live inside one wrapper, so their registration holds.
-        if (hasFinePointer && tiltWrapRef.current) {
-          const rotY = (smooth.x / w - 0.5) * 3.6
-          const rotX = -(smooth.y / h - 0.55) * 2.6
-          tiltWrapRef.current.style.transform =
-            `perspective(1200px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`
+        if (hasFinePointer) {
+          // The monolith leans toward the cursor…
+          if (tiltWrapRef.current) {
+            const rotY = (smooth.x / w - 0.5) * 3.6
+            const rotX = -(smooth.y / h - 0.55) * 2.6
+            tiltWrapRef.current.style.transform =
+              `perspective(1200px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`
+          }
+          // …while the headline behind it drifts the opposite way. The two
+          // layers shear apart and the depth reads instantly.
+          if (headlineRef.current) {
+            const dx = -(smooth.x / w - 0.5) * HEADLINE_PARALLAX_X
+            const dy = -(smooth.y / h - 0.5) * HEADLINE_PARALLAX_Y
+            headlineRef.current.style.transform =
+              `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0)`
+          }
         }
       }
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
 
-    // Data-saver / low-power modes may block or delay autoplay. Retry from
-    // every legitimate angle: media readiness, first gesture, tab focus.
     const kickPlayback = () => {
       const video = videoRef.current
       if (!video || !video.paused) return
-      video.play().catch(() => {
-        // Autoplay refused — the glow layer still carries the effect.
-      })
+      video.play().catch(() => {})
     }
     const video = videoRef.current
     video?.addEventListener('loadeddata', kickPlayback)
@@ -181,21 +175,14 @@ export default function Hero() {
     }
   }, [reduced])
 
-  // Mobile: whole monolith in frame (contain, pulled back) + gyro drift.
-  // Desktop: plinth composition. Media transforms stay in px/vh so the
-  // spotlight mask (viewport space) always lines up.
+  const edgeMask = isMobile ? MOBILE_EDGE_MASK : DESKTOP_EDGE_MASK
   const mediaTransform = isMobile
     ? {
         transform: `scale(${MOBILE_MEDIA_SCALE}) translate(${tilt.x * 1.4}%, ${tilt.y * 1}%)`,
       }
     : { transform: DESKTOP_MEDIA_TRANSFORM }
   const stillSizing = isMobile
-    ? {
-        backgroundSize: 'contain',
-        backgroundPosition: 'center 43%',
-        maskImage: MOBILE_EDGE_MASK,
-        WebkitMaskImage: MOBILE_EDGE_MASK,
-      }
+    ? { backgroundSize: 'contain', backgroundPosition: 'center 46%' }
     : {}
 
   return (
@@ -213,18 +200,44 @@ export default function Hero() {
         }
       }}
     >
-      {/* One wrapper carries the still AND the masked footage, so the desktop
-          cursor-lean never breaks their registration. */}
+      {/* THE HEADLINE — behind the monolith. Glyph tops clear the ridge, the
+          feet sink into the rock: the depth sandwich. */}
+      <div
+        ref={headlineRef}
+        className="absolute inset-x-0 top-[13%] z-[8] px-4 text-center sm:top-[16%]"
+      >
+        <h1 className="display-title text-bone">
+          <SplitChars
+            text={t.hero.titleA}
+            baseDelayMs={300}
+            stepMs={36}
+            className="block text-[16vw] leading-[0.92] sm:text-[11vw]"
+          />
+          <SplitChars
+            text={t.hero.titleB}
+            baseDelayMs={650}
+            stepMs={22}
+            className="block text-[7.4vw] leading-[1.05] text-bone/45 sm:text-[3.6vw]"
+          />
+        </h1>
+      </div>
+
+      {/* THE MONOLITH — an edge-masked object in front of the headline. One
+          wrapper carries the still AND the masked footage so the cursor-lean
+          never breaks their registration. */}
       <div ref={tiltWrapRef} className="absolute inset-0 z-10 will-change-transform">
-        {/* The still monolith. */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${baseImage})`, ...stillSizing, ...mediaTransform }}
+          style={{
+            backgroundImage: `url(${baseImage})`,
+            maskImage: edgeMask,
+            WebkitMaskImage: edgeMask,
+            ...stillSizing,
+            ...mediaTransform,
+          }}
         />
 
-        {/* Living footage, revealed only inside the beam. The spotlight mask
-            tracks near-viewport space (the wrapper lean is ≤4°, a negligible
-            offset), while the footage stays registered with the still. */}
+        {/* Living footage, revealed only inside the beam. */}
         {!reduced && (
           <div
             ref={maskRef}
@@ -240,25 +253,34 @@ export default function Hero() {
               playsInline
               preload="auto"
               className={`absolute inset-0 h-full w-full ${isMobile ? 'object-contain' : 'object-cover'}`}
-              style={
-                isMobile
-                  ? {
-                      ...mediaTransform,
-                      objectPosition: 'center 43%',
-                      // Lit by the beam: brighter than the still around it.
-                      filter: 'brightness(1.35) contrast(1.06)',
-                      maskImage: MOBILE_EDGE_MASK,
-                      WebkitMaskImage: MOBILE_EDGE_MASK,
-                    }
-                  : { ...mediaTransform, filter: 'brightness(1.18)' }
-              }
+              style={{
+                ...mediaTransform,
+                filter: isMobile
+                  ? 'brightness(1.35) contrast(1.06)'
+                  : 'brightness(1.18)',
+                maskImage: edgeMask,
+                WebkitMaskImage: edgeMask,
+                ...(isMobile ? { objectPosition: 'center 46%' } : {}),
+              }}
             />
           </div>
         )}
       </div>
 
-      {/* The visible lamp: a luminous spot that always shows where the beam
-          is, independent of the footage state. */}
+      {/* Plinth: the artifact's resting shadow (mobile exhibit staging). */}
+      {isMobile && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-[64%] z-[9] h-8 w-60 -translate-x-1/2 rounded-[100%]"
+          style={{
+            background:
+              'radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%)',
+            boxShadow: '0 0 0 1px rgb(var(--bone-rgb) / 0.06)',
+          }}
+        />
+      )}
+
+      {/* The visible lamp. */}
       {!reduced && (
         <div
           ref={glowRef}
@@ -267,13 +289,12 @@ export default function Hero() {
         />
       )}
 
-      {/* Vignette: dissolves the photo edges into --void (no floating square)
-          and keeps the type readable over any frame. */}
+      {/* Vignette for type contrast. */}
       <div
         className="pointer-events-none absolute inset-0 z-30"
         style={{
           background:
-            'radial-gradient(115% 92% at 50% 48%, transparent 34%, rgb(var(--void-rgb) / 0.52) 72%, rgb(var(--void-rgb) / 0.96) 100%)',
+            'radial-gradient(120% 95% at 50% 50%, transparent 40%, rgb(var(--void-rgb) / 0.45) 74%, rgb(var(--void-rgb) / 0.92) 100%)',
         }}
       />
       <div
@@ -284,31 +305,18 @@ export default function Hero() {
         }}
       />
 
-      {/* Headline — top center, above the monolith. */}
-      <div className="absolute inset-x-0 top-[15%] z-40 flex flex-col items-center px-5 text-center sm:top-[16%]">
-        <p className="anim anim-fade-down eyebrow mb-5" style={{ animationDelay: '0.1s' }}>
-          {t.hero.eyebrow}
-        </p>
-        <h1 className="display-title text-bone">
-          <span
-            className="anim anim-reveal block text-5xl sm:text-6xl md:text-8xl"
-            style={{ animationDelay: '0.25s' }}
-          >
-            {t.hero.titleA}
-          </span>
-          <span
-            className="anim anim-reveal block text-3xl text-bone/40 sm:text-4xl md:text-5xl"
-            style={{ animationDelay: '0.42s' }}
-          >
-            {t.hero.titleB}
-          </span>
-        </h1>
-      </div>
+      {/* Eyebrow telemetry over everything, under the header. */}
+      <p
+        className="anim anim-fade-down eyebrow pointer-events-none absolute left-1/2 top-[9%] z-40 -translate-x-1/2 sm:top-[11%]"
+        style={{ animationDelay: '0.15s' }}
+      >
+        {t.hero.eyebrow}
+      </p>
 
       {/* Field note — bottom left (desktop only). */}
       <p
         className="anim anim-fade pointer-events-none absolute bottom-12 left-8 z-40 hidden max-w-[250px] text-sm leading-relaxed text-bone/55 lg:block"
-        style={{ animationDelay: '0.7s' }}
+        style={{ animationDelay: '1.1s' }}
       >
         {t.hero.sideNote}
       </p>
@@ -316,7 +324,7 @@ export default function Hero() {
       {/* Sub + actions — bottom right on desktop, bottom stack on mobile. */}
       <div
         className="anim anim-fade absolute inset-x-5 bottom-16 z-40 flex flex-col gap-4 sm:bottom-12 lg:left-auto lg:right-8 lg:max-w-[320px]"
-        style={{ animationDelay: '0.85s' }}
+        style={{ animationDelay: '1.2s' }}
       >
         <p className="text-sm leading-relaxed text-bone/65 lg:text-right">
           {t.hero.sub}
@@ -340,7 +348,7 @@ export default function Hero() {
       </div>
 
       {/* Scroll hint */}
-      <div className="anim anim-fade pointer-events-none absolute bottom-4 left-1/2 z-40 -translate-x-1/2 sm:bottom-4">
+      <div className="anim anim-fade pointer-events-none absolute bottom-4 left-1/2 z-40 -translate-x-1/2">
         <span className="flex items-center gap-2">
           <span className="eyebrow text-[10px]">{t.hero.scrollHint}</span>
           <ChevronDown

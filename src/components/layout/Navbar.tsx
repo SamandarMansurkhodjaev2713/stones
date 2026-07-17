@@ -325,12 +325,19 @@ export default function Navbar() {
           </div>
         </div>
 
-        <div className="relative flex items-center justify-between px-4 py-3.5 sm:px-8">
+        <div
+          className="relative flex items-center justify-between px-4 py-3.5 transition-opacity duration-300 ease-out-expo sm:px-8"
+          style={{
+            opacity: menuOpen ? 1 : 0,
+            transitionDelay: menuOpen ? '250ms' : '0ms',
+          }}
+        >
           <Wordmark />
           <button
             type="button"
             onClick={() => setMenuOpen(false)}
             aria-label={t.a11y.closeMenu}
+            tabIndex={menuOpen ? 0 : -1}
             className="group flex items-center gap-3"
           >
             <span className="font-mono-t text-xs uppercase tracking-[0.2em] text-bone/80 transition-colors duration-300 group-hover:text-bone">

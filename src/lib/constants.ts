@@ -50,12 +50,9 @@ export const HEADER_OFFSET = -88
 /* ── Persistence ──────────────────────────────────────────────────────────── */
 export const LOCALE_STORAGE_KEY = 'stones.locale'
 
-/**
- * Contact channels. Placeholder Telegram handle for the concept brand — replace
- * with a real destination before publishing.
- */
+/** Contact channels — the author's real Telegram. */
 export const CONTACT = {
-  telegram: 'https://t.me/stones',
+  telegram: 'https://t.me/Killallofthem13',
 } as const
 
 /**

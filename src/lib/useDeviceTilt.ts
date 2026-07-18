@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from './useReducedMotion'
 
-interface Tilt {
+export interface Tilt {
   /** Normalised left/right tilt, -1..1. */
   x: number
   /** Normalised front/back tilt, -1..1. */

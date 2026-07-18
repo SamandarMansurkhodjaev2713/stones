@@ -83,7 +83,15 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
     let tick: ((time: number) => void) | null = null
 
     if (!reduced) {
-      lenis = new Lenis({ duration: DURATION.slow, smoothWheel: true })
+      // Weighted inertia belongs to the wheel only. A finger already carries
+      // the platform's own momentum, and hijacking it is the fastest way to
+      // make a phone feel broken — so touch stays native and Lenis merely
+      // observes it. Stated explicitly rather than relying on the default.
+      lenis = new Lenis({
+        duration: DURATION.slow,
+        smoothWheel: true,
+        syncTouch: false,
+      })
       lenisRef.current = lenis
       lenis.on('scroll', ScrollTrigger.update)
       tick = (time: number) => {

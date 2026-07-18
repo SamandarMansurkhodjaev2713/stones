@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useI18n } from '../../i18n'
+import { useI18n, formatNumber } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
-import { HEADER_OFFSET } from '../../lib/constants'
+import { HEADER_OFFSET, MAX_DEPTH_M } from '../../lib/constants'
 
 interface RailStop {
   id: string
@@ -19,6 +19,8 @@ export default function DepthRail() {
   const { t } = useI18n()
   const scrollTo = useScrollTo()
   const fillRef = useRef<HTMLDivElement>(null)
+  const carriageRef = useRef<HTMLDivElement>(null)
+  const depthRef = useRef<HTMLSpanElement>(null)
   const [activeId, setActiveId] = useState('hero')
 
   const stops = useMemo<RailStop[]>(
@@ -32,15 +34,22 @@ export default function DepthRail() {
 
   useEffect(() => {
     const ids = stops.map((s) => s.id)
-    let ticking = false
+    let raf = 0
 
     const update = () => {
-      ticking = false
+      raf = 0
       const doc = document.documentElement
       const max = doc.scrollHeight - window.innerHeight
       const progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0
       if (fillRef.current) {
         fillRef.current.style.transform = `scaleY(${progress})`
+      }
+      // The carriage rides the core with the live depth beside it.
+      if (carriageRef.current) {
+        carriageRef.current.style.top = `${(progress * 100).toFixed(2)}%`
+      }
+      if (depthRef.current) {
+        depthRef.current.textContent = formatNumber(Math.round(progress * MAX_DEPTH_M))
       }
 
       const centerDoc = window.scrollY + window.innerHeight * 0.4
@@ -55,9 +64,8 @@ export default function DepthRail() {
     }
 
     const onScroll = () => {
-      if (ticking) return
-      ticking = true
-      requestAnimationFrame(update)
+      if (raf) return
+      raf = requestAnimationFrame(update)
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -66,6 +74,7 @@ export default function DepthRail() {
     return () => {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
+      cancelAnimationFrame(raf)
     }
   }, [stops])
 
@@ -80,14 +89,40 @@ export default function DepthRail() {
         </span>
 
         <div className="relative h-[42vh] w-44">
-          {/* Vertical track, pinned to the right edge. */}
-          <div className="absolute right-0 top-0 h-full w-px bg-bone/10" />
+          {/* The rail IS a core sample: a narrow column split into strata,
+              one band per stop, each with its own tone and texture. */}
+          <div className="absolute right-0 top-0 flex h-full w-[7px] flex-col overflow-hidden rounded-[2px] border border-bone/15">
+            {stops.map((stop, i) => (
+              <span
+                key={stop.id}
+                className="block flex-1 transition-opacity duration-500"
+                style={{
+                  backgroundColor: `rgb(var(--bone-rgb) / ${0.06 + i * 0.03})`,
+                  backgroundImage:
+                    i % 2 === 0
+                      ? 'repeating-linear-gradient(180deg, rgb(var(--void-rgb) / 0.5) 0 1px, transparent 1px 4px)'
+                      : 'repeating-linear-gradient(180deg, rgb(var(--void-rgb) / 0.35) 0 1px, transparent 1px 7px)',
+                  opacity: stop.id === activeId ? 1 : 0.55,
+                }}
+              />
+            ))}
+          </div>
           {/* Progress fill grows downward with scroll (origin: top). */}
           <div
             ref={fillRef}
-            className="absolute right-0 top-0 h-full w-px origin-top bg-gradient-to-b from-bone/25 to-bone/90"
+            className="absolute right-[9px] top-0 h-full w-px origin-top bg-gradient-to-b from-bone/25 to-bone/90"
             style={{ transform: 'scaleY(0)' }}
           />
+          {/* Live depth carriage riding the core. */}
+          <div
+            ref={carriageRef}
+            className="absolute right-[13px] top-0 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap"
+          >
+            <span className="font-mono-t text-[10px] tabular-nums text-bone/80">
+              −<span ref={depthRef}>0</span> {t.telemetry.unit}
+            </span>
+            <span className="block h-px w-3 bg-bone/60" />
+          </div>
 
           <ul className="absolute right-0 top-0 flex h-full flex-col justify-between">
             {stops.map((stop) => {
@@ -97,19 +132,26 @@ export default function DepthRail() {
                   <button
                     type="button"
                     onClick={() => scrollTo(`#${stop.id}`, { offset: HEADER_OFFSET })}
-                    className="group flex items-center gap-3"
+                    // Padding, not a fatter tick: the hairline stays a hairline
+                    // while the button clears the 24px minimum target size.
+                    className="group flex min-h-[24px] items-center gap-3 py-1"
                     data-cursor="label"
                     data-cursor-label={stop.label}
                     aria-label={`${t.a11y.toSection}: ${stop.label}`}
                   >
-                    <span className="font-mono-t whitespace-nowrap text-[10px] uppercase tracking-[0.16em] text-ash opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
+                    <span
+                      className={`font-mono-t whitespace-nowrap text-[10px] uppercase tracking-[0.16em] transition-all duration-300 ${
+                        active
+                          ? 'text-bone opacity-100'
+                          : 'text-ash opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
+                      }`}
+                    >
                       {stop.label}
                     </span>
+                    {/* Boundary tick between core bands, not a floating dot. */}
                     <span
-                      className={`-mr-[3px] block rounded-full transition-all duration-500 ease-out-expo ${
-                        active
-                          ? 'h-1.5 w-1.5 bg-bone shadow-[0_0_10px_rgb(var(--bone-rgb)/0.7)]'
-                          : 'h-1 w-1 bg-bone/30 group-hover:bg-bone/70'
+                      className={`-mr-[10px] block h-px transition-all duration-500 ease-out-expo ${
+                        active ? 'w-4 bg-bone' : 'w-2 bg-bone/35 group-hover:bg-bone/70'
                       }`}
                     />
                   </button>

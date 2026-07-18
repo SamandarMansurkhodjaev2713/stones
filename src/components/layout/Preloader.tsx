@@ -1,14 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { useI18n, formatNumber } from '../../i18n'
 import { useReducedMotion } from '../../lib/useReducedMotion'
+import { ambient } from '../../lib/ambient'
 import {
   ERA_SEQUENCE,
   MAX_DEPTH_M,
   PRELOADER_COUNT_MS,
   PRELOADER_LIFT_MS,
+  STATION_COORDS,
 } from '../../lib/constants'
 
 type Phase = 'count' | 'lift' | 'done'
+
+/** Marks that the full ritual already played in this browser session. */
+const SESSION_SEEN_KEY = 'stones.entered'
+/** Return visits within the session get a much shorter drill. */
+const RETURN_COUNT_MS = 520
 
 /** Opacity per core band — echoes the era sequence, dimmer with depth. */
 const BAND_ALPHAS = [0.85, 0.7, 0.6, 0.5, 0.42, 0.34, 0.26, 0.2]
@@ -24,6 +31,7 @@ export default function Preloader() {
   const { t } = useI18n()
   const reduced = useReducedMotion()
   const [phase, setPhase] = useState<Phase>('count')
+  const [eraIdx, setEraIdx] = useState(0)
   const counterRef = useRef<HTMLSpanElement>(null)
   const bandsRef = useRef<HTMLDivElement>(null)
   const finishedRef = useRef(false)
@@ -48,13 +56,28 @@ export default function Preloader() {
 
     root.classList.add('overflow-hidden')
 
+    // First arrival gets the full ritual; later reloads in the same session
+    // get a brisk version — awe on entry, no friction on return.
+    let seen = false
+    try {
+      seen = window.sessionStorage.getItem(SESSION_SEEN_KEY) === '1'
+      window.sessionStorage.setItem(SESSION_SEEN_KEY, '1')
+    } catch {
+      // Storage blocked — treat as a first visit; the ritual is harmless.
+    }
+    const duration = seen ? RETURN_COUNT_MS : PRELOADER_COUNT_MS
+    ambient.play('drill')
+
     let raf = 0
     let start: number | null = null
     const bandCount = ERA_SEQUENCE.length
     const tick = (now: number) => {
       if (start === null) start = now
-      const p = Math.min(1, (now - start) / PRELOADER_COUNT_MS)
+      const p = Math.min(1, (now - start) / duration)
       const eased = 1 - Math.pow(1 - p, 3)
+      // Name the era the drill is passing through right now.
+      const era = Math.min(bandCount - 1, Math.floor(eased * bandCount))
+      setEraIdx((cur) => (cur === era ? cur : era))
       if (counterRef.current) {
         counterRef.current.textContent = formatNumber(Math.round(eased * MAX_DEPTH_M))
       }
@@ -114,8 +137,16 @@ export default function Preloader() {
             −<span ref={counterRef}>0</span>
             <span className="text-bone/40"> {t.telemetry.unit}</span>
           </p>
-          <p className="font-mono-t mt-4 text-[10px] uppercase tracking-[0.2em] text-ash/70">
-            1 {t.telemetry.unit} = 1 000 000
+
+          {/* The era currently being drilled through — the loader narrates
+              the whole story before the story starts. */}
+          <p className="display-title mt-3 h-7 text-2xl text-bone/45 sm:text-3xl">
+            {t.eras.items[ERA_SEQUENCE[eraIdx].id].name}
+          </p>
+
+          <p className="font-mono-t mt-4 text-[10px] uppercase leading-relaxed tracking-[0.2em] text-ash/70">
+            LAT {STATION_COORDS.lat.toFixed(2)} · LON {STATION_COORDS.lon.toFixed(2)}
+            <br />1 {t.telemetry.unit} = 1 000 000
           </p>
         </div>
       </div>

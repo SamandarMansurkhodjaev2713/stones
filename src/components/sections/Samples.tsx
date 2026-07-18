@@ -1,14 +1,36 @@
 import { useEffect, useRef, useState } from 'react'
-import { MoveHorizontal } from 'lucide-react'
+import { ArrowRight, MoveHorizontal } from 'lucide-react'
 import SectionShell from '../ui/SectionShell'
 import DisplayHeading from '../ui/DisplayHeading'
 import SectionStrata from '../ui/SectionStrata'
 import { useI18n } from '../../i18n'
 import { gsap } from '../../lib/gsap'
+import { useScrollTo } from '../../lib/scroll'
+import { haptic } from '../../lib/haptics'
+import { useMediaQuery } from '../../lib/useMediaQuery'
+import { useReducedMotion } from '../../lib/useReducedMotion'
+import { useDeviceTilt } from '../../lib/useDeviceTilt'
+import { HEADER_OFFSET, MQ_MOBILE } from '../../lib/constants'
 import { SAMPLE_PHOTO } from '../../lib/media'
 
 /** Archive shelf code for a specimen drawer. */
 const specimenCode = (index: number) => `STN-${String(index + 1).padStart(3, '0')}`
+
+/** Hairlines drawn between two specimen marks so the scale reads as a ruler. */
+const RULER_MINOR_TICKS = 3
+
+/** Cards on the shelf that are not specimens: the closing empty-drawer CTA. */
+const TRAILING_CARDS = 1
+
+/** Inertial lean of the drawers while the shelf travels, in degrees. */
+const LEAN_MAX_DEG = 5
+/** Scroll velocity (px/s) that produces one degree of lean. */
+const LEAN_VELOCITY_DIVISOR = 260
+/** How long the lean takes to settle back to upright, in seconds. */
+const LEAN_SETTLE_S = 0.7
+
+/** Full-tilt rotation of a drawer on a phone, in degrees. */
+const TILT_ROTATE_DEG = 4
 
 /**
  * The rock dossier as an archive shelf. Desktop with motion: the section PINS
@@ -18,6 +40,10 @@ const specimenCode = (index: number) => `STN-${String(index + 1).padStart(3, '0'
  */
 export default function Samples() {
   const { t } = useI18n()
+  const scrollTo = useScrollTo()
+  const isMobile = useMediaQuery(MQ_MOBILE)
+  const reduced = useReducedMotion()
+  const tilt = useDeviceTilt(isMobile && !reduced)
   const wrapRef = useRef<HTMLDivElement>(null)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -28,10 +54,11 @@ export default function Samples() {
     const scroller = scrollerRef.current
     const track = trackRef.current
     if (!scroller || !track) return
-    let ticking = false
+    let raf = 0
     const update = () => {
-      ticking = false
-      const cards = Array.from(track.children) as HTMLElement[]
+      raf = 0
+      // The last child is the closing CTA, not a specimen — never "active".
+      const cards = (Array.from(track.children) as HTMLElement[]).slice(0, -TRAILING_CARDS)
       if (!cards.length) return
       const x = scroller.scrollLeft
       let nearest = 0
@@ -43,15 +70,20 @@ export default function Samples() {
           nearest = i
         }
       })
-      setActive((cur) => (cur === nearest ? cur : nearest))
+      setActive((cur) => {
+        if (cur !== nearest) haptic('snap')
+        return cur === nearest ? cur : nearest
+      })
     }
     const onScroll = () => {
-      if (ticking) return
-      ticking = true
-      requestAnimationFrame(update)
+      if (raf) return
+      raf = requestAnimationFrame(update)
     }
     scroller.addEventListener('scroll', onScroll, { passive: true })
-    return () => scroller.removeEventListener('scroll', onScroll)
+    return () => {
+      scroller.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(raf)
+    }
   }, [])
 
   // Desktop pinned ribbon: vertical scroll → horizontal shelf travel.
@@ -65,6 +97,16 @@ export default function Samples() {
     const mm = gsap.matchMedia()
     mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
       const dist = () => Math.max(0, track.scrollWidth - clip.clientWidth)
+      const cards = gsap.utils.toArray<HTMLElement>(track.children)
+      // Inertia: the drawers lag behind the shelf that carries them, leaning
+      // into the direction of travel and settling back once it stops.
+      const lean = { skew: 0 }
+      const applyLean = gsap.quickTo(cards, 'skewX', {
+        duration: LEAN_SETTLE_S,
+        ease: 'power3',
+      })
+      const clampLean = gsap.utils.clamp(-LEAN_MAX_DEG, LEAN_MAX_DEG)
+
       const tween = gsap.to(track, {
         x: () => -dist(),
         ease: 'none',
@@ -79,18 +121,49 @@ export default function Samples() {
           onUpdate: (self) => {
             const next = Math.min(count - 1, Math.round(self.progress * (count - 1)))
             setActive((cur) => (cur === next ? cur : next))
+
+            const skew = clampLean(self.getVelocity() / -LEAN_VELOCITY_DIVISOR)
+            // Only a faster gesture may raise the lean; the decay tween below
+            // always brings it home, so the shelf never stays crooked.
+            if (Math.abs(skew) > Math.abs(lean.skew)) {
+              lean.skew = skew
+              gsap.to(lean, {
+                skew: 0,
+                duration: LEAN_SETTLE_S,
+                ease: 'power3',
+                overwrite: true,
+                onUpdate: () => applyLean(lean.skew),
+              })
+            }
           },
         },
       })
       return () => {
+        gsap.killTweensOf(lean)
         tween.scrollTrigger?.kill()
         tween.kill()
         gsap.set(track, { clearProps: 'x' })
+        gsap.set(cards, { clearProps: 'skewX' })
       }
     })
 
     return () => mm.revert()
   }, [t.samples.items.length])
+
+  // On a phone the drawers catch the light as the wrist turns: the shelf gets
+  // the same near-side that the pointer gives it on desktop.
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track || (tilt.x === 0 && tilt.y === 0)) return
+    const cards = Array.from(track.children) as HTMLElement[]
+    cards.forEach((card, i) => {
+      // Depth on the shelf: further boxes lean a little more than near ones.
+      const depth = 1 + (i % 3) * 0.22
+      card.style.transform =
+        `perspective(1100px) rotateY(${(tilt.x * TILT_ROTATE_DEG * depth).toFixed(2)}deg) ` +
+        `rotateX(${(-tilt.y * TILT_ROTATE_DEG * 0.5).toFixed(2)}deg)`
+    })
+  }, [tilt])
 
   // Mouse drag-to-scroll (touch already scrolls natively).
   useEffect(() => {
@@ -169,11 +242,37 @@ export default function Samples() {
               {t.samples.sub}
             </p>
           </div>
-          <div data-reveal className="flex items-center gap-4">
-            <span className="font-mono-t text-xs uppercase tracking-[0.16em] text-ash">
-              {String(active + 1).padStart(2, '0')} /{' '}
-              {String(t.samples.items.length).padStart(2, '0')}
-            </span>
+          {/* Position indicator as a field ruler: the specimen currently in
+              hand is named, and the ticks below read like a measuring scale. */}
+          <div data-reveal className="flex flex-col items-start gap-2 sm:items-end">
+            <div className="flex items-baseline gap-3">
+              <span className="font-mono-t text-xs uppercase tracking-[0.16em] text-ash">
+                {specimenCode(active)}
+              </span>
+              <span
+                key={t.samples.items[active].name}
+                className="anim anim-fade display-title text-2xl text-bone sm:text-3xl"
+                style={{ animationDuration: '450ms' }}
+              >
+                {t.samples.items[active].name}
+              </span>
+            </div>
+
+            <div className="flex items-end gap-[3px]" aria-hidden="true">
+              {t.samples.items.map((item, i) => (
+                <span key={item.name} className="flex items-end gap-[3px]">
+                  <span
+                    className={`block w-px transition-all duration-500 ease-out-expo ${
+                      i === active ? 'h-4 bg-bone' : 'h-2 bg-bone/25'
+                    }`}
+                  />
+                  {Array.from({ length: RULER_MINOR_TICKS }, (_, k) => (
+                    <span key={k} className="block h-1 w-px bg-bone/15" />
+                  ))}
+                </span>
+              ))}
+            </div>
+
             <span className="hidden items-center gap-2 text-ash sm:flex lg:motion-safe:hidden">
               <MoveHorizontal size={14} aria-hidden="true" />
               <span className="font-mono-t text-[10px] uppercase tracking-[0.16em]">
@@ -208,10 +307,14 @@ export default function Samples() {
             className="flex w-max gap-5 px-5 pb-4 sm:px-8 lg:px-[max(2rem,calc((100vw-80rem)/2+1.25rem))]"
           >
           {t.samples.items.map((item, i) => (
+            // The article is the shelf slot GSAP leans; the inner .drawer is
+            // what the pointer pulls out. Splitting them keeps the inline
+            // transform GSAP writes from cancelling the hover transform.
             <article
               key={item.name}
-              className="group flex min-w-[78vw] max-w-[420px] snap-start flex-col overflow-hidden rounded-2xl border border-bone/10 bg-layer select-none xs:min-w-[340px] sm:min-w-[380px]"
+              className="flex min-w-[78vw] max-w-[420px] snap-start select-none xs:min-w-[340px] sm:min-w-[380px]"
             >
+            <div className="drawer group flex w-full flex-col overflow-hidden rounded-2xl border border-bone/10 bg-layer">
               <div data-reveal-media className="relative h-44 overflow-hidden">
                 {/* Eager on purpose: lazy-loading is unreliable for items in a
                     horizontal scroller (no vertical intersection), and these
@@ -223,7 +326,7 @@ export default function Samples() {
                   className="absolute inset-0 h-full w-full object-cover photo-tone transition-transform duration-700 ease-out-expo group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-layer via-void/25 to-void/40" />
-                <span className="font-mono-t absolute left-4 top-3.5 text-[11px] uppercase tracking-[0.16em] text-bone/85">
+                <span className="code-type font-mono-t absolute left-4 top-3.5 text-[11px] uppercase tracking-[0.16em] text-bone/85">
                   {t.samples.eyebrow} · {specimenCode(i)}
                 </span>
                 {/* Archive stamp */}
@@ -262,8 +365,35 @@ export default function Samples() {
                   {item.note}
                 </p>
               </div>
+            </div>
             </article>
           ))}
+
+          {/* The shelf ends on an empty drawer: the archive becomes an
+              invitation instead of simply running out. */}
+          <button
+            type="button"
+            onClick={() => scrollTo('#expeditions', { offset: HEADER_OFFSET })}
+            data-cursor="label"
+            data-cursor-label={t.cursor.dig}
+            className="group flex min-w-[78vw] max-w-[420px] snap-start flex-col items-start justify-center gap-4 rounded-2xl border border-dashed border-bone/20 p-7 text-left transition-colors duration-500 hover:border-bone/45 xs:min-w-[340px] sm:min-w-[380px]"
+          >
+            <span className="font-mono-t text-[11px] uppercase tracking-[0.16em] text-ash">
+              {t.samples.eyebrow} · STN-005
+            </span>
+            <span className="display-title text-3xl text-bone/80 transition-colors duration-500 group-hover:text-bone">
+              {t.samples.emptyTitle}
+            </span>
+            <span className="text-sm leading-relaxed text-bone/50">
+              {t.samples.emptyNote}
+            </span>
+            <span className="mt-2 flex items-center gap-2 text-bone/70 transition-transform duration-500 ease-out-expo group-hover:translate-x-1.5">
+              <ArrowRight size={18} aria-hidden="true" />
+              <span className="font-mono-t text-[11px] uppercase tracking-[0.16em]">
+                {t.expeditions.title}
+              </span>
+            </span>
+          </button>
           </div>
         </div>
       </div>

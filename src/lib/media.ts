@@ -10,6 +10,10 @@ export const VIDEO = {
   reveal: `${import.meta.env.BASE_URL}reveal.mp4`,
 } as const
 
+/**
+ * Commons only serves a whitelist of thumbnail widths — an arbitrary one (e.g.
+ * `900px-`) answers 400. Stick to the standard steps used here: 960 and 1920.
+ */
 const commons = (path: string) =>
   `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}`
 
@@ -71,6 +75,28 @@ export const SAMPLE_PHOTO: readonly string[] = [
   commons(
     '2/2c/Opened_amethyst_geode_in_Crystal_Mountain_Museum.jpg/1920px-Opened_amethyst_geode_in_Crystal_Mountain_Museum.jpg',
   ),
+]
+
+/**
+ * The place each route actually goes, in dictionary order. Served at 960px:
+ * these appear as a small preview beside the cursor and as the plate inside an
+ * opened route file — never full-bleed.
+ */
+export const ROUTE_PHOTO: readonly string[] = [
+  // Вади-Рам — песчаниковые останцы Иордании.
+  commons(
+    'f/fc/Desert_landscape_with_rocks_in_the_middle_in_Wadi_Rum.jpg/960px-Desert_landscape_with_rocks_in_the_middle_in_Wadi_Rum.jpg',
+  ),
+  // Чарынский каньон — «Долина замков» на реке Чарын.
+  commons(
+    '4/47/Charyn_Canyon%2C_Kazakhstan_01.jpg/960px-Charyn_Canyon%2C_Kazakhstan_01.jpg',
+  ),
+  // Устюрт — чинк плато над высохшим Аралом на рассвете.
+  commons(
+    '2/25/Sunrise_on_the_Aral_Sea_from_the_top_of_the_Ustyurt_Plateau_cliff_-_panoramio.jpg/960px-Sunrise_on_the_Aral_Sea_from_the_top_of_the_Ustyurt_Plateau_cliff_-_panoramio.jpg',
+  ),
+  // Стевнс-Клинт — обрыв с мел-палеогеновой границей, слоем иридия.
+  commons('5/5d/Stevns_Klint_027.jpg/960px-Stevns_Klint_027.jpg'),
 ]
 
 /** Shaft-menu hover previews, keyed by nav section id. */

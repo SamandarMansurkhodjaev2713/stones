@@ -52,16 +52,15 @@ export interface NavLink {
   label: string
 }
 
-export interface FooterColumn {
-  title: string
-  links: string[]
-}
 
 export interface Dictionary {
   meta: { brand: string; tagline: string }
   nav: { links: NavLink[]; cta: string; menu: string }
   preloader: { label: string }
-  telemetry: { unit: string }
+  /** `tilt` labels the phone's own attitude readout in the station strip. */
+  telemetry: { unit: string; tilt: string }
+  /** Full-screen act titles punctuating the descent. */
+  acts: { deep: string; bottom: string }
   hero: {
     eyebrow: string
     titleA: string
@@ -78,12 +77,16 @@ export interface Dictionary {
     titleB: string
     body1: string
     body2: string
+    /** Pull quote set between the two body paragraphs. */
+    pull: string
     cta: string
     caption1: string
     caption2: string
     /** Field-specimen tags stamped on the photographs. */
     tag1: string
     tag2: string
+    /** Vocabulary of the rock, cycling as ghost type behind the section. */
+    ghostTerms: string[]
   }
   eras: {
     eyebrow: string
@@ -93,7 +96,15 @@ export interface Dictionary {
     footnote: string
     items: Record<EraId, EraCopy>
   }
-  stats: { eyebrow: string; title: string; items: StatItem[] }
+  stats: {
+    eyebrow: string
+    title: string
+    /** Standfirst under the report title. */
+    sub: string
+    /** Document line stamped at the foot of the report sheet. */
+    doc: string
+    items: StatItem[]
+  }
   samples: {
     eyebrow: string
     title: string
@@ -101,6 +112,9 @@ export interface Dictionary {
     fields: { type: string; age: string; origin: string }
     dragHint: string
     stamp: string
+    /** Closing drawer: the archive turns into an invitation. */
+    emptyTitle: string
+    emptyNote: string
     items: SampleItem[]
   }
   expeditions: {
@@ -129,7 +143,14 @@ export interface Dictionary {
   }
   footer: {
     tagline: string
-    columns: FooterColumn[]
+    /** Stamp pressed into the last box of the core. */
+    stamp: string
+    /** Caption on the final depth reading — the floor of the shaft. */
+    bottomLabel: string
+    /** Heading over the poster-scale section links. */
+    navLabel: string
+    /** Heading over the one real contact channel. */
+    contactLabel: string
     legal: string
     credit: string
     wordmark: string
@@ -163,7 +184,8 @@ const ru: Dictionary = {
     menu: 'Меню',
   },
   preloader: { label: 'Погружение' },
-  telemetry: { unit: 'М' },
+  telemetry: { unit: 'М', tilt: 'КРЕН' },
+  acts: { deep: 'Вглубь', bottom: 'Дно' },
   hero: {
     eyebrow: 'ПОЛЕ 01 · ГЛУБИНА 0 М',
     titleA: 'Камень помнит',
@@ -183,12 +205,14 @@ const ru: Dictionary = {
       'Ветер написал первую главу. Вода правила её сто миллионов лет. Stones учит грамматике породы — плоскости напластования, косая слоистость, ржавые чернила оксида железа — пока стена скалы не начнёт читаться как страница.',
     body2:
       'Пройдите щелевой каньон с нашим гидом — и вы перестаёте видеть камень. Вы видите погоду высотой в четыре этажа.',
+    pull: 'Порода не хранит время. Порода и есть время.',
     cta: 'Открыть архив',
     caption1:
       'Песчаник Вади-Рам — вырезан по зерну, глубиной в пятьдесят миллионов лет',
     caption2: 'Глава II — хребты, сложенные, как страницы',
     tag1: 'ОБР. STN-014 · ПЕСЧАНИК',
     tag2: 'ОБР. STN-027 · СТРАТЫ',
+    ghostTerms: ['НАПЛАСТОВАНИЕ', 'СЛОИСТОСТЬ', 'ОКСИД ЖЕЛЕЗА', 'ЭРОЗИЯ'],
   },
   eras: {
     eyebrow: 'ХРОНОЛОГИЯ',
@@ -243,6 +267,8 @@ const ru: Dictionary = {
   stats: {
     eyebrow: 'АРХИВ',
     title: 'Летопись в цифрах',
+    sub: 'Всё, что Stones вынес из поля, сведено в одну таблицу. Проверяемые величины, а не обещания.',
+    doc: 'Форма 04-Р · свод полевых данных · пересмотр ежеквартально',
     items: [
       { value: 4.6, decimals: 1, suffix: ' млрд', label: 'лет истории в индексе' },
       { value: 12400, suffix: '+', label: 'слоёв нанесено на карту' },
@@ -257,6 +283,8 @@ const ru: Dictionary = {
     fields: { type: 'Тип', age: 'Возраст', origin: 'Происхождение' },
     dragHint: 'Тяните — листайте архив',
     stamp: 'Архив',
+    emptyTitle: 'Следующий образец — ваш',
+    emptyNote: 'Ящик ждёт находку с ближайшего маршрута.',
     items: [
       {
         name: 'Песчаник',
@@ -358,17 +386,16 @@ const ru: Dictionary = {
     eyebrow: 'НАЧАТЬ СПУСК',
     titleA: 'Начните читать',
     titleB: 'землю под ногами',
-    body: 'Один маршрут. Пять эпох. Камень под ногами больше никогда не будет молчать.',
+    body: 'Один маршрут. Восемь эпох. Камень под ногами больше никогда не будет молчать.',
     ctaPrimary: 'Написать в Telegram',
     ctaSecondary: 'Вернуться наверх',
   },
   footer: {
     tagline: 'Четыре миллиарда лет огня и потопов — по одному слою за раз.',
-    columns: [
-      { title: 'Маршрут', links: ['Манифест', 'Эры', 'Образцы', 'Маршруты'] },
-      { title: 'Бренд', links: ['О нас', 'Гиды', 'Вакансии', 'Пресса'] },
-      { title: 'Связь', links: ['Telegram', 'Instagram', 'YouTube', 'Почта'] },
-    ],
+    stamp: 'Конец керна',
+    bottomLabel: 'Дно',
+    navLabel: 'Керн',
+    contactLabel: 'Связь',
     legal: '© 2026 Stones. Все страты сохранены.',
     credit: 'Собрано на коренной породе, отрендерено в браузере.',
     wordmark: 'Stones',
@@ -402,7 +429,8 @@ const uz: Dictionary = {
     menu: 'Menyu',
   },
   preloader: { label: 'Tushish' },
-  telemetry: { unit: 'M' },
+  telemetry: { unit: 'M', tilt: 'QIYALIK' },
+  acts: { deep: 'Qa’riga', bottom: 'Tub' },
   hero: {
     eyebrow: 'DALA 01 · CHUQURLIK 0 M',
     titleA: 'Tosh eslaydi',
@@ -422,12 +450,14 @@ const uz: Dictionary = {
       'Birinchi bobni shamol yozdi. Suv uni yuz million yil tahrir qildi. Stones jins grammatikasini o‘rgatadi — qatlamlanish tekisliklari, qiya qatlamlar, temir oksidining zang siyohi — toki qoya devori sahifadek o‘qila boshlaguncha.',
     body2:
       'Gidimiz bilan tor kanyondan o‘ting — va siz endi toshni ko‘rmaysiz. Siz to‘rt qavat balandlikdagi ob-havoni ko‘rasiz.',
+    pull: 'Jins vaqtni saqlamaydi. Jinsning o‘zi — vaqt.',
     cta: 'Arxivni ochish',
     caption1:
       'Vodiy Rum qumtoshi — donma-don o‘yilgan, ellik million yil chuqurlikda',
     caption2: 'II bob — sahifalardek taxlangan tizmalar',
     tag1: 'NAM. STN-014 · QUMTOSH',
     tag2: 'NAM. STN-027 · STRATALAR',
+    ghostTerms: ['QATLAMLANISH', 'QATLAMLILIK', 'TEMIR OKSIDI', 'EROZIYA'],
   },
   eras: {
     eyebrow: 'XRONOLOGIYA',
@@ -482,6 +512,8 @@ const uz: Dictionary = {
   stats: {
     eyebrow: 'ARXIV',
     title: 'Raqamlardagi yilnoma',
+    sub: 'Stones daladan olib chiqqan hamma narsa bitta jadvalga jamlangan. Va’da emas — tekshiriladigan qiymatlar.',
+    doc: '04-R shakli · dala ma’lumotlari yig‘masi · har chorakda qayta ko‘rib chiqiladi',
     items: [
       { value: 4.6, decimals: 1, suffix: ' mlrd', label: 'yillik tarix indeksda' },
       { value: 12400, suffix: '+', label: 'qatlam xaritaga tushirilgan' },
@@ -496,6 +528,8 @@ const uz: Dictionary = {
     fields: { type: 'Turi', age: 'Yoshi', origin: 'Kelib chiqishi' },
     dragHint: 'Torting — arxivni varaqlang',
     stamp: 'Arxiv',
+    emptyTitle: 'Keyingi namuna — sizniki',
+    emptyNote: 'Bu tortma eng yaqin marshrutdagi topilmani kutmoqda.',
     items: [
       {
         name: 'Qumtosh',
@@ -597,17 +631,16 @@ const uz: Dictionary = {
     eyebrow: 'TUSHISHNI BOSHLASH',
     titleA: 'O‘qishni boshlang',
     titleB: 'oyoq ostidagi yerni',
-    body: 'Bitta marshrut. Besh davr. Oyoq ostidagi tosh endi hech qachon jim turmaydi.',
+    body: 'Bitta marshrut. Sakkiz davr. Oyoq ostidagi tosh endi hech qachon jim turmaydi.',
     ctaPrimary: 'Telegramga yozish',
     ctaSecondary: 'Yuqoriga qaytish',
   },
   footer: {
     tagline: 'To‘rt milliard yillik olov va to‘fonlar — bir vaqtda bitta qatlam.',
-    columns: [
-      { title: 'Marshrut', links: ['Manifest', 'Davrlar', 'Namunalar', 'Marshrutlar'] },
-      { title: 'Brend', links: ['Biz haqimizda', 'Gidlar', 'Vakansiyalar', 'Matbuot'] },
-      { title: 'Aloqa', links: ['Telegram', 'Instagram', 'YouTube', 'Pochta'] },
-    ],
+    stamp: 'Kern nihoyasi',
+    bottomLabel: 'Tub',
+    navLabel: 'Kern',
+    contactLabel: 'Aloqa',
     legal: '© 2026 Stones. Barcha stratalar saqlangan.',
     credit: 'Tub jinsda yig‘ilgan, brauzerda render qilingan.',
     wordmark: 'Stones',

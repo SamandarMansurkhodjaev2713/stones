@@ -3,13 +3,15 @@ import { Send, ArrowUp } from 'lucide-react'
 import SectionShell from '../ui/SectionShell'
 import MagneticButton from '../ui/MagneticButton'
 import DisplayHeading from '../ui/DisplayHeading'
-import { useI18n } from '../../i18n'
+import { useI18n, formatNumber } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 import { gsap } from '../../lib/gsap'
-import { CONTACT } from '../../lib/constants'
+import { CONTACT, MAX_DEPTH_M } from '../../lib/constants'
 
 const TUNNEL_LAYERS = 6
+/** Depth the readout starts from before the shaft is entered, in metres. */
+const COUNTDOWN_FROM_M = 3400
 
 /**
  * The final call to action framed as a mine-shaft entrance: concentric strata
@@ -23,6 +25,7 @@ export default function Descent() {
   const tunnelRef = useRef<HTMLDivElement>(null)
   const beamRef = useRef<HTMLDivElement>(null)
   const dimRef = useRef<HTMLDivElement>(null)
+  const depthRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     const tunnel = tunnelRef.current
@@ -78,6 +81,27 @@ export default function Descent() {
         { borderColor: 'rgb(var(--bone-rgb) / 0.45)', stagger: 0.09, duration: 0.6 },
         0,
       )
+
+      // The ring closes: the preloader drilled 0 → −4600, and the shaft
+      // finishes the count on the way in. Written straight to the DOM — a
+      // scrubbed counter must never re-render React on every frame.
+      const readout = depthRef.current
+      if (readout) {
+        const reading = { m: COUNTDOWN_FROM_M }
+        gsap.to(reading, {
+          m: MAX_DEPTH_M,
+          ease: 'none',
+          onUpdate: () => {
+            readout.textContent = formatNumber(Math.round(reading.m))
+          },
+          scrollTrigger: {
+            trigger: tunnel,
+            start: 'top 80%',
+            end: 'center 55%',
+            scrub: true,
+          },
+        })
+      }
     }, tunnel)
 
     return () => ctx.revert()
@@ -91,10 +115,13 @@ export default function Descent() {
       eyebrow={t.descent.eyebrow}
       className="bg-void px-5 py-24 md:py-32"
     >
+      {/* On a phone the shaft is not a card on a page — it is the page: a
+          full-height well with the CTA parked in the thumb zone at the bottom.
+          On desktop it stays a framed plate. */}
       <div
         ref={tunnelRef}
         data-reveal
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] border border-bone/10 bg-surface"
+        className="relative mx-auto flex min-h-[82svh] max-w-7xl flex-col overflow-hidden rounded-[2.5rem] border border-bone/10 bg-surface md:block md:min-h-0"
       >
         {/* Receding strata frames */}
         <div
@@ -103,6 +130,9 @@ export default function Descent() {
         >
           {Array.from({ length: TUNNEL_LAYERS }, (_, i) => {
             const step = (i + 1) / TUNNEL_LAYERS
+            // Bedding gets tighter with depth: the inner frames are rock
+            // compressed under everything stacked above them.
+            const band = (7 - step * 4).toFixed(1)
             return (
               <div
                 key={i}
@@ -112,19 +142,30 @@ export default function Descent() {
                   width: `${100 - step * 72}%`,
                   height: `${100 - step * 66}%`,
                   borderColor: `rgb(var(--bone-rgb) / ${0.05 + step * 0.09})`,
+                  backgroundImage: `repeating-linear-gradient(180deg, rgb(var(--bone-rgb) / 0.028) 0 1px, transparent 1px ${band}px)`,
                 }}
               />
             )
           })}
         </div>
 
-        {/* Bone glow rising from the bottom of the shaft. */}
+        {/* The bottom of the shaft is hot. Magma is the site's only hue and it
+            is used as light, never as UI colour — this is the deepest point,
+            so it is the one place the rock still glows. */}
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden="true"
           style={{
             background:
-              'radial-gradient(ellipse 55% 45% at 50% 100%, rgb(var(--bone-rgb) / 0.1), transparent 70%)',
+              'radial-gradient(ellipse 55% 42% at 50% 104%, rgb(var(--magma-rgb) / 0.16), rgb(var(--magma-deep-rgb) / 0.07) 45%, transparent 72%)',
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+          aria-hidden="true"
+          style={{
+            background:
+              'linear-gradient(90deg, transparent, rgb(var(--magma-rgb) / 0.5), transparent)',
           }}
         />
 
@@ -144,7 +185,7 @@ export default function Descent() {
           }}
         />
 
-        <div className="relative flex flex-col items-center px-5 py-24 text-center md:py-40">
+        <div className="relative flex flex-1 flex-col items-center justify-center px-5 py-16 text-center md:py-40">
           <DisplayHeading
             text={t.descent.titleA}
             className="display-title block max-w-3xl text-5xl text-bone sm:text-6xl md:text-8xl"
@@ -161,7 +202,21 @@ export default function Descent() {
             {t.descent.body}
           </p>
 
-          <div className="mt-12 flex w-full max-w-sm flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-4">
+          {/* The gauge that started in the preloader, finishing its count. */}
+          <p
+            className="font-mono-t mt-10 text-[11px] uppercase tracking-[0.22em] text-ash"
+            aria-hidden="true"
+          >
+            {t.eras.depthLabel}{' '}
+            <span className="text-bone/80 tabular-nums">
+              −<span ref={depthRef}>{formatNumber(COUNTDOWN_FROM_M)}</span>
+            </span>{' '}
+            {t.telemetry.unit}
+          </p>
+
+          {/* mt-auto on the phone drops the buttons to the foot of the well,
+              where a thumb already rests; on desktop they follow the text. */}
+          <div className="mt-auto flex w-full max-w-sm flex-col items-stretch gap-3 pt-12 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-4 md:mt-12 md:pt-0">
             <MagneticButton
               label={t.descent.ctaPrimary}
               href={CONTACT.telegram}

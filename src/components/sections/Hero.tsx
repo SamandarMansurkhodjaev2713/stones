@@ -6,6 +6,8 @@ import { useScrollTo } from '../../lib/scroll'
 import { useMediaQuery } from '../../lib/useMediaQuery'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 import { useDeviceTilt } from '../../lib/useDeviceTilt'
+import { ambient } from '../../lib/ambient'
+import { haptic } from '../../lib/haptics'
 import {
   CURSOR_SMOOTHING,
   HEADER_OFFSET,
@@ -43,6 +45,16 @@ const TILT_TRAVEL_Y = 0.1
 const HEADLINE_PARALLAX_X = 26
 const HEADLINE_PARALLAX_Y = 16
 
+/** Press and hold to narrow the beam onto one spot, like leaning a lamp in. */
+const LONG_PRESS_MS = 320
+/** How tight the focused beam gets, as a factor of the resting radius. */
+const FOCUS_RADIUS_FACTOR = 0.62
+/** Per-frame blend toward the focused radius — slow, like a real lamp. */
+const FOCUS_BLEND = 0.07
+/** Two taps closer together than this, within reach, fire the flash. */
+const DOUBLE_TAP_MS = 320
+const DOUBLE_TAP_SLOP_PX = 44
+
 /** Auto-sweep: two incommensurate sine pairs, primary period ≈ 11 s. */
 const SWEEP = {
   x1: 0.00057,
@@ -63,6 +75,7 @@ export default function Hero() {
   const tiltWrapRef = useRef<HTMLDivElement>(null)
   const headlineRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const flashRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef(0)
   const tiltRef = useRef(tilt)
   const touchRef = useRef({ x: 0, y: 0, ts: -Infinity })
@@ -77,7 +90,9 @@ export default function Hero() {
 
     const hasFinePointer = window.matchMedia(MQ_FINE_POINTER).matches
     const radiusFor = (w: number) => Math.min(SPOTLIGHT_RADIUS, w * 0.38)
-    let radius = radiusFor(window.innerWidth)
+    let restRadius = radiusFor(window.innerWidth)
+    // The beam's live radius, eased toward the focused one while held.
+    let radius = restRadius
 
     const target = { x: window.innerWidth / 2, y: window.innerHeight * 0.55 }
     const smooth = { ...target }
@@ -96,9 +111,51 @@ export default function Hero() {
     if (hasFinePointer) window.addEventListener('mousemove', onMouseMove)
 
     const onResize = () => {
-      radius = radiusFor(window.innerWidth)
+      restRadius = radiusFor(window.innerWidth)
     }
     window.addEventListener('resize', onResize)
+
+    // Touch gestures on the monolith: hold to lean the lamp in and narrow the
+    // beam onto one spot; tap twice to fire it — the rock flares and the whole
+    // face is lit for an instant. Both are additive, so a reader who never
+    // discovers them still gets the full auto-sweep.
+    let holdTimer = 0
+    let focused = false
+    let lastTap = { x: 0, y: 0, ts: -Infinity }
+
+    const onTouchDown = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch') return
+      window.clearTimeout(holdTimer)
+      holdTimer = window.setTimeout(() => {
+        focused = true
+        haptic('snap')
+      }, LONG_PRESS_MS)
+
+      const now = performance.now()
+      const near =
+        Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < DOUBLE_TAP_SLOP_PX
+      if (now - lastTap.ts < DOUBLE_TAP_MS && near) {
+        const flash = flashRef.current
+        if (flash) {
+          // Restart the animation even if it is already mid-flight.
+          flash.classList.remove('is-live')
+          void flash.offsetWidth
+          flash.classList.add('is-live')
+        }
+        ambient.play('drill')
+        haptic('edge')
+        lastTap.ts = -Infinity
+      } else {
+        lastTap = { x: event.clientX, y: event.clientY, ts: now }
+      }
+    }
+    const onTouchUp = () => {
+      window.clearTimeout(holdTimer)
+      focused = false
+    }
+    window.addEventListener('pointerdown', onTouchDown, { passive: true })
+    window.addEventListener('pointerup', onTouchUp, { passive: true })
+    window.addEventListener('pointercancel', onTouchUp, { passive: true })
 
     const glowEl = glowRef.current
     const paint = (x: number, y: number) => {
@@ -122,6 +179,10 @@ export default function Hero() {
     const tick = (time: number) => {
       const w = window.innerWidth
       const h = window.innerHeight
+
+      // Ease the aperture rather than snapping it — a lamp has mass.
+      const wanted = focused ? restRadius * FOCUS_RADIUS_FACTOR : restRadius
+      radius += (wanted - radius) * FOCUS_BLEND
 
       if (hasFinePointer) {
         // Blend toward the wandering path while idle, back to the cursor on move.
@@ -199,6 +260,10 @@ export default function Hero() {
     return () => {
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('resize', onResize)
+      window.removeEventListener('pointerdown', onTouchDown)
+      window.removeEventListener('pointerup', onTouchUp)
+      window.removeEventListener('pointercancel', onTouchUp)
+      window.clearTimeout(holdTimer)
       video?.removeEventListener('loadeddata', kickPlayback)
       window.removeEventListener('pointerdown', kickPlayback)
       window.removeEventListener('touchstart', kickPlayback)
@@ -234,6 +299,14 @@ export default function Hero() {
     >
       {/* THE HEADLINE — behind the monolith. Glyph tops clear the ridge, the
           feet sink into the rock: the depth sandwich. */}
+      {/* Double-tap flare: the whole face lit for an instant, then dark again.
+          Sits above every layer so it reads as light, not as a surface. */}
+      <div
+        ref={flashRef}
+        aria-hidden="true"
+        className="hero-flash pointer-events-none absolute inset-0 z-30"
+      />
+
       {/* Cave haze: the air between the letters and the monolith. Sitting
           between the two layers, it is what makes the text read as BEHIND. */}
       <div

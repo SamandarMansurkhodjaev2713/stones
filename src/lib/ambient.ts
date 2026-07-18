@@ -113,6 +113,73 @@ class AmbientEngine {
     if (hidden) ctx.suspend().catch(() => {})
     else if (this.running) ctx.resume().catch(() => {})
   }
+
+  /**
+   * One-shot interaction sounds, all synthesised — no asset files. Silent
+   * unless the visitor switched sound on, so they can never surprise anyone.
+   *
+   * - `click` — a dry stone tap (CTA, menu items)
+   * - `shift` — a low rock groan (section boundaries, era changes)
+   * - `drill` — a rising rumble (preloader)
+   */
+  play(kind: 'click' | 'shift' | 'drill') {
+    const ctx = this.ctx
+    if (!ctx || !this.running || ctx.state !== 'running') return
+    const now = ctx.currentTime
+
+    if (kind === 'click') {
+      // Short filtered noise burst = two pebbles meeting.
+      const length = Math.floor(ctx.sampleRate * 0.06)
+      const buffer = ctx.createBuffer(1, length, ctx.sampleRate)
+      const data = buffer.getChannelData(0)
+      for (let i = 0; i < length; i += 1) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / length) ** 3
+      }
+      const src = ctx.createBufferSource()
+      src.buffer = buffer
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'bandpass'
+      filter.frequency.value = 1600
+      filter.Q.value = 1.2
+      const gain = ctx.createGain()
+      gain.gain.value = 0.16
+      src.connect(filter)
+      filter.connect(gain)
+      gain.connect(ctx.destination)
+      src.start()
+      return
+    }
+
+    // Tonal moves: a slow downward sweep for rock shifting, upward for drilling.
+    const osc = ctx.createOscillator()
+    osc.type = 'sine'
+    const gain = ctx.createGain()
+    const filter = ctx.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = kind === 'drill' ? 420 : 220
+
+    if (kind === 'shift') {
+      osc.frequency.setValueAtTime(90, now)
+      osc.frequency.exponentialRampToValueAtTime(52, now + 0.55)
+      gain.gain.setValueAtTime(0.0001, now)
+      gain.gain.exponentialRampToValueAtTime(0.09, now + 0.06)
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6)
+      osc.start(now)
+      osc.stop(now + 0.62)
+    } else {
+      osc.frequency.setValueAtTime(48, now)
+      osc.frequency.exponentialRampToValueAtTime(120, now + 1.2)
+      gain.gain.setValueAtTime(0.0001, now)
+      gain.gain.exponentialRampToValueAtTime(0.07, now + 0.3)
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.3)
+      osc.start(now)
+      osc.stop(now + 1.32)
+    }
+
+    osc.connect(filter)
+    filter.connect(gain)
+    gain.connect(ctx.destination)
+  }
 }
 
 export const ambient = new AmbientEngine()

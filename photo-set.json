@@ -82,5 +82,29 @@
   "page": "https://commons.wikimedia.org/wiki/File:Desert_landscape_with_rocks_in_the_middle_in_Wadi_Rum.jpg",
   "license": "CC BY-SA 4.0",
   "title": "File:Desert landscape with rocks in the middle in Wadi Rum.jpg"
+ },
+ "route-wadi-rum": {
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Desert_landscape_with_rocks_in_the_middle_in_Wadi_Rum.jpg/960px-Desert_landscape_with_rocks_in_the_middle_in_Wadi_Rum.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Desert_landscape_with_rocks_in_the_middle_in_Wadi_Rum.jpg",
+  "license": "CC BY-SA 4.0",
+  "title": "File:Desert landscape with rocks in the middle in Wadi Rum.jpg"
+ },
+ "route-charyn": {
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Charyn_Canyon%2C_Kazakhstan_01.jpg/960px-Charyn_Canyon%2C_Kazakhstan_01.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Charyn_Canyon,_Kazakhstan_01.jpg",
+  "license": "CC0",
+  "title": "File:Charyn Canyon, Kazakhstan 01.jpg"
+ },
+ "route-ustyurt": {
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Sunrise_on_the_Aral_Sea_from_the_top_of_the_Ustyurt_Plateau_cliff_-_panoramio.jpg/960px-Sunrise_on_the_Aral_Sea_from_the_top_of_the_Ustyurt_Plateau_cliff_-_panoramio.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sunrise_on_the_Aral_Sea_from_the_top_of_the_Ustyurt_Plateau_cliff_-_panoramio.jpg",
+  "license": "CC BY-SA 3.0",
+  "title": "File:Sunrise on the Aral Sea from the top of the Ustyurt Plateau cliff - panoramio.jpg"
+ },
+ "route-stevns-klint": {
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Stevns_Klint_027.jpg/960px-Stevns_Klint_027.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Stevns_Klint_027.jpg",
+  "license": "CC BY-SA 4.0",
+  "title": "File:Stevns Klint 027.jpg"
  }
 }

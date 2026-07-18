@@ -1,16 +1,21 @@
-import { useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, Plus } from 'lucide-react'
 import SectionShell from '../ui/SectionShell'
 import MagneticButton from '../ui/MagneticButton'
 import DisplayHeading from '../ui/DisplayHeading'
 import SectionStrata from '../ui/SectionStrata'
+import CursorPreview from '../ui/CursorPreview'
 import { useI18n } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
+import { useViewportFocus } from '../../lib/useViewportFocus'
 import { HEADER_OFFSET } from '../../lib/constants'
+import { ROUTE_PHOTO } from '../../lib/media'
 
 const PROFILE_W = 560
 const PROFILE_H = 72
 const PROFILE_SAMPLES = 28
+/** How long the surveyor's pen takes to draw an opened route's ridge, in ms. */
+const PROFILE_DRAW_MS = 1300
 
 /** Deterministic elevation polyline — a different ridge for every route. */
 function profilePoints(routeIndex: number): string {
@@ -39,6 +44,12 @@ export default function Expeditions() {
   const { t } = useI18n()
   const scrollTo = useScrollTo()
   const [open, setOpen] = useState<number | null>(null)
+  /** Route the pointer is over — drives the photograph trailing the cursor. */
+  const [hovered, setHovered] = useState<number | null>(null)
+  const listRef = useRef<HTMLUListElement>(null)
+  /** Touch equivalent: the row crossing the viewport's focus line. */
+  const focused = useViewportFocus(listRef, 'li')
+  const places = useMemo(() => t.expeditions.items.map((r) => r.place), [t])
 
   return (
     <SectionShell
@@ -49,6 +60,9 @@ export default function Expeditions() {
       className="bg-surface py-28 md:py-40"
     >
       <SectionStrata depth={0.75} />
+
+      {/* The destination, trailing the pointer while the list is hovered. */}
+      <CursorPreview index={hovered} images={ROUTE_PHOTO} labels={places} />
 
       <div className="relative mx-auto max-w-7xl px-5">
         <div className="mb-12 max-w-3xl md:mb-16">
@@ -62,14 +76,26 @@ export default function Expeditions() {
           </p>
         </div>
 
-        <ul className="border-b border-bone/10">
+        <ul
+          ref={listRef}
+          className="border-b border-bone/10"
+          onPointerLeave={() => setHovered(null)}
+        >
           {t.expeditions.items.map((route, i) => {
             const expanded = open === i
+            // On touch there is no hover, so the row crossing the focus line
+            // takes the highlight instead — the list stays alive under a thumb.
+            const lit = hovered === i || focused === i
             return (
               <li key={route.place} data-reveal-row className="row-ruled border-t border-bone/10">
                 <button
                   type="button"
                   onClick={() => setOpen(expanded ? null : i)}
+                  onPointerEnter={(event) => {
+                    // Touch fires enter on tap and never leaves; the preview is
+                    // a pointer affordance, so only a real mouse arms it.
+                    if (event.pointerType === 'mouse') setHovered(i)
+                  }}
                   aria-expanded={expanded}
                   data-cursor="label"
                   data-cursor-label={t.cursor.explore}
@@ -77,7 +103,9 @@ export default function Expeditions() {
                 >
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-gradient-to-r from-bone/[0.05] to-transparent transition-transform duration-500 ease-out-expo group-hover:scale-x-100"
+                    className={`pointer-events-none absolute inset-0 origin-left bg-gradient-to-r from-bone/[0.05] to-transparent transition-transform duration-500 ease-out-expo group-hover:scale-x-100 ${
+                      lit ? 'scale-x-100' : 'scale-x-0'
+                    }`}
                   />
                   <span data-row-body className="relative grid grid-cols-12 items-center gap-x-4 gap-y-2 py-7 md:py-10">
                     <span className="font-mono-t col-span-2 text-xs text-ash md:col-span-1">
@@ -85,11 +113,17 @@ export default function Expeditions() {
                     </span>
 
                     <span className="col-span-10 md:col-span-4">
-                      <span className="display-title flex items-center gap-2 text-2xl text-bone transition-transform duration-500 ease-out-expo group-hover:translate-x-1.5 md:text-4xl">
+                      <span
+                        className={`display-title flex items-center gap-2 text-2xl text-bone transition-transform duration-500 ease-out-expo group-hover:translate-x-1.5 md:text-4xl ${
+                          lit ? 'translate-x-1.5' : ''
+                        }`}
+                      >
                         {route.place}
                         <ArrowUpRight
                           size={20}
-                          className="text-bone/70 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                          className={`text-bone/70 transition-opacity duration-500 group-hover:opacity-100 ${
+                            lit ? 'opacity-100' : 'opacity-0'
+                          }`}
                         />
                       </span>
                       <span className="font-mono-t mt-1 block text-xs uppercase tracking-[0.14em] text-ash">
@@ -137,7 +171,24 @@ export default function Expeditions() {
                   style={{ gridTemplateRows: expanded ? '1fr' : '0fr' }}
                 >
                   <div className="overflow-hidden">
-                    <div className="flex flex-col gap-5 pb-9 pl-[8.5%] pr-2 md:flex-row md:items-end md:justify-between md:pb-12">
+                    <div className="flex flex-col gap-6 pb-9 pl-[8.5%] pr-2 md:flex-row md:items-end md:pb-12">
+                      {/* The place itself — a plate clipped into the file. */}
+                      <figure className="relative h-40 w-full shrink-0 overflow-hidden rounded-xl border border-bone/10 md:h-44 md:w-64">
+                        <img
+                          src={ROUTE_PHOTO[i % ROUTE_PHOTO.length]}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className={`photo-tone absolute inset-0 h-full w-full object-cover transition-transform duration-[1400ms] ease-out-expo ${
+                            expanded ? 'scale-100' : 'scale-110'
+                          }`}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-surface/70 to-transparent" />
+                        <figcaption className="font-mono-t absolute bottom-2.5 left-3 text-[10px] uppercase tracking-[0.16em] text-bone/75">
+                          {route.region}
+                        </figcaption>
+                      </figure>
+
                       <div className="max-w-xl flex-1">
                         <p className="font-mono-t mb-3 text-[10px] uppercase tracking-[0.2em] text-ash">
                           {t.expeditions.profile} · {route.coords}
@@ -151,12 +202,22 @@ export default function Expeditions() {
                             points={`0,${PROFILE_H} ${PROFILES[i % PROFILES.length]} ${PROFILE_W},${PROFILE_H}`}
                             fill="rgb(var(--bone-rgb) / 0.06)"
                             stroke="none"
+                            className="transition-opacity duration-700 ease-out-expo"
+                            style={{ opacity: expanded ? 1 : 0, transitionDelay: expanded ? `${PROFILE_DRAW_MS * 0.6}ms` : '0ms' }}
                           />
+                          {/* Drawn, not revealed: pathLength normalises the
+                              polyline to 1, so one dash pair fits any ridge. */}
                           <polyline
                             points={PROFILES[i % PROFILES.length]}
                             fill="none"
                             stroke="rgb(var(--bone-rgb) / 0.55)"
                             strokeWidth="1.5"
+                            pathLength={1}
+                            style={{
+                              strokeDasharray: 1,
+                              strokeDashoffset: expanded ? 0 : 1,
+                              transition: `stroke-dashoffset ${PROFILE_DRAW_MS}ms var(--ease-out)`,
+                            }}
                           />
                           <line
                             x1="0"
@@ -166,13 +227,16 @@ export default function Expeditions() {
                             stroke="rgb(var(--bone-rgb) / 0.15)"
                           />
                         </svg>
+
+                        <div className="mt-5">
+                          <MagneticButton
+                            label={t.expeditions.cta}
+                            variant="ghost"
+                            cursorLabel={t.cursor.dig}
+                            onClick={() => scrollTo('#descent', { offset: HEADER_OFFSET })}
+                          />
+                        </div>
                       </div>
-                      <MagneticButton
-                        label={t.expeditions.cta}
-                        variant="ghost"
-                        cursorLabel={t.cursor.dig}
-                        onClick={() => scrollTo('#descent', { offset: HEADER_OFFSET })}
-                      />
                     </div>
                   </div>
                 </div>

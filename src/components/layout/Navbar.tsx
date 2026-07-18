@@ -5,8 +5,13 @@ import { LOCALES } from '../../i18n/dictionary'
 import type { Locale } from '../../i18n/dictionary'
 import { useScrollTo } from '../../lib/scroll'
 import { ambient } from '../../lib/ambient'
+import { haptic } from '../../lib/haptics'
+import SectionStrata from '../ui/SectionStrata'
 import { MENU_PREVIEW } from '../../lib/media'
-import { HEADER_OFFSET, MAX_DEPTH_M, STATION_COORDS } from '../../lib/constants'
+import { HEADER_OFFSET, MAX_DEPTH_M, MQ_MOBILE, STATION_COORDS } from '../../lib/constants'
+import { useMediaQuery } from '../../lib/useMediaQuery'
+import { useReducedMotion } from '../../lib/useReducedMotion'
+import { useDeviceTilt } from '../../lib/useDeviceTilt'
 
 const SCROLLED_THRESHOLD = 24
 const MENU_LINK_STAGGER_MS = 70
@@ -31,7 +36,9 @@ function LangToggle({ compact = false }: { compact?: boolean }) {
             aria-pressed={locale === code}
             data-cursor="label"
             data-cursor-label={code.toUpperCase()}
-            className={`p-1 uppercase tracking-[0.12em] transition-colors duration-300 ${
+            // Generous padding, not a bigger glyph: the hit area clears the
+            // 44px guideline while the label stays as small as the design wants.
+            className={`min-h-[44px] min-w-[44px] uppercase tracking-[0.12em] transition-colors duration-300 ${
               locale === code ? 'text-bone' : 'text-ash/70 hover:text-bone'
             }`}
           >
@@ -106,6 +113,13 @@ function Wordmark() {
   )
 }
 
+/** Full-scale tilt shown in the telemetry strip, in degrees. */
+const TILT_READOUT_DEG = 35
+
+/** Everything the Tab key may reach inside the open shaft menu. */
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
+
 /**
  * Field-station chrome. A hairline telemetry strip runs across the very top:
  * station coordinates, a live depth readout driven by scroll (1 m per million
@@ -120,15 +134,19 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [previewIdx, setPreviewIdx] = useState(0)
+  const isMobile = useMediaQuery(MQ_MOBILE)
+  const reduced = useReducedMotion()
+  const tilt = useDeviceTilt(isMobile && !reduced)
   const depthRef = useRef<HTMLSpanElement>(null)
   const clockRef = useRef<HTMLSpanElement>(null)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   // Depth readout + scrolled state.
   useEffect(() => {
-    let ticking = false
+    let raf = 0
     const update = () => {
-      ticking = false
+      raf = 0
       setScrolled(window.scrollY > SCROLLED_THRESHOLD)
       const max = document.documentElement.scrollHeight - window.innerHeight
       const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0
@@ -137,13 +155,15 @@ export default function Navbar() {
       }
     }
     const onScroll = () => {
-      if (ticking) return
-      ticking = true
-      requestAnimationFrame(update)
+      if (raf) return
+      raf = requestAnimationFrame(update)
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     update()
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(raf)
+    }
   }, [])
 
   // Station clock.
@@ -160,26 +180,65 @@ export default function Navbar() {
     return () => window.clearInterval(id)
   }, [])
 
-  // Scroll lock + Escape while the shaft menu is open.
+  // Scroll lock + Escape while the shaft menu is open. The page itself sinks
+  // away behind the plates, so the menu reads as rock closing over the world
+  // rather than a panel floating above it.
   useEffect(() => {
     const root = document.documentElement
-    if (menuOpen) root.classList.add('overflow-hidden')
-    else root.classList.remove('overflow-hidden')
+    const main = document.querySelector('main')
+    const overlay = menuRef.current
+    if (menuOpen) {
+      root.classList.add('overflow-hidden')
+      main?.classList.add('page-sunk')
+      ambient.play('shift')
+      haptic('open')
+    } else {
+      root.classList.remove('overflow-hidden')
+      main?.classList.remove('page-sunk')
+    }
+    // One switch for the whole closed overlay: `inert` takes every control
+    // inside it out of the tab order and off the a11y tree, so no keyboard
+    // user can land on a menu item hidden behind the rock.
+    if (overlay) overlay.inert = !menuOpen
 
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setMenuOpen(false)
         menuButtonRef.current?.focus()
+        return
+      }
+      // Focus trap: while the rock is closed over the page, Tab must not walk
+      // out into the content behind it.
+      if (event.key !== 'Tab') return
+      const overlay = menuRef.current
+      if (!overlay) return
+      const focusable = overlay.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      if (!focusable.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement
+      if (event.shiftKey && (active === first || !overlay.contains(active))) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (active === last || !overlay.contains(active))) {
+        event.preventDefault()
+        first.focus()
       }
     }
-    if (menuOpen) window.addEventListener('keydown', onKey)
+    if (menuOpen) {
+      window.addEventListener('keydown', onKey)
+      // Hand focus to the menu itself, so the first Tab lands inside it.
+      menuRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus()
+    }
     return () => {
       root.classList.remove('overflow-hidden')
+      document.querySelector('main')?.classList.remove('page-sunk')
       window.removeEventListener('keydown', onKey)
     }
   }, [menuOpen])
 
   const go = (id: string) => {
+    ambient.play('click')
     setMenuOpen(false)
     scrollTo(`#${id}`, { offset: HEADER_OFFSET })
   }
@@ -187,6 +246,10 @@ export default function Navbar() {
   /** Fictional shaft level for a menu entry — evenly spaced station stops. */
   const levelDepth = (index: number) =>
     Math.round(((index + 1) / (t.nav.links.length + 1)) * MAX_DEPTH_M)
+
+  // Attitude readout: the raw −1..1 tilt mapped back to a plausible angle.
+  const hasTilt = tilt.x !== 0 || tilt.y !== 0
+  const tiltDeg = Math.round(tilt.x * TILT_READOUT_DEG)
 
   return (
     <>
@@ -201,6 +264,14 @@ export default function Navbar() {
             <span className="hidden sm:inline">
               LAT {STATION_COORDS.lat.toFixed(2)} · LON {STATION_COORDS.lon.toFixed(2)}
             </span>
+            {/* On a phone the station reports the instrument's own attitude —
+                the readout only appears once a sensor is actually talking. */}
+            {hasTilt && (
+              <span className="tabular-nums sm:hidden">
+                {t.telemetry.tilt} {tiltDeg > 0 ? '+' : ''}
+                {tiltDeg}°
+              </span>
+            )}
             <span>
               {t.eras.depthLabel}{' '}
               <span ref={depthRef} className="text-bone/80">
@@ -220,6 +291,7 @@ export default function Navbar() {
             data-cursor="label"
             data-cursor-label={t.meta.brand}
             aria-label={t.meta.brand}
+            className="flex min-h-[44px] items-center"
           >
             <Wordmark />
           </button>
@@ -257,6 +329,10 @@ export default function Navbar() {
           FAULT: two rock plates slide in from above and below and meet at the
           seam; the content settles on top of them. */}
       <div
+        ref={menuRef}
+        role="dialog"
+        aria-modal={menuOpen}
+        aria-label={t.nav.menu}
         className={`fixed inset-0 z-[110] flex flex-col ${
           menuOpen ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
@@ -265,16 +341,20 @@ export default function Navbar() {
         {/* The plates */}
         <div
           aria-hidden="true"
-          className={`absolute inset-x-0 top-0 h-1/2 border-b border-bone/15 bg-surface transition-transform duration-700 ease-out-expo ${
+          className={`absolute inset-x-0 top-0 h-1/2 overflow-hidden border-b border-bone/15 bg-surface transition-transform duration-700 ease-out-expo ${
             menuOpen ? 'translate-y-0' : '-translate-y-full'
           }`}
-        />
+        >
+          <SectionStrata depth={0.2} />
+        </div>
         <div
           aria-hidden="true"
-          className={`absolute inset-x-0 bottom-0 h-1/2 border-t border-bone/15 bg-surface transition-transform duration-700 ease-out-expo ${
+          className={`absolute inset-x-0 bottom-0 h-1/2 overflow-hidden border-t border-bone/15 bg-surface transition-transform duration-700 ease-out-expo ${
             menuOpen ? 'translate-y-0' : 'translate-y-full'
           }`}
-        />
+        >
+          <SectionStrata depth={0.8} />
+        </div>
 
         {/* Section preview — the scene behind the list (desktop). */}
         <div
@@ -337,7 +417,6 @@ export default function Navbar() {
             type="button"
             onClick={() => setMenuOpen(false)}
             aria-label={t.a11y.closeMenu}
-            tabIndex={menuOpen ? 0 : -1}
             className="group flex items-center gap-3"
           >
             <span className="font-mono-t text-xs uppercase tracking-[0.2em] text-bone/80 transition-colors duration-300 group-hover:text-bone">
@@ -358,6 +437,9 @@ export default function Navbar() {
               onClick={() => go(link.id)}
               onMouseEnter={() => setPreviewIdx(i)}
               onFocus={() => setPreviewIdx(i)}
+              // The overlay is aria-hidden when shut; anything focusable inside
+              // it must leave the tab order too, or keyboard users land on
+              // controls they cannot see.
               data-cursor="label"
               data-cursor-label={link.label}
               className={`group flex items-baseline justify-between gap-6 border-b border-bone/10 py-4 text-left transition-[opacity,transform] duration-500 ease-out-expo sm:py-5 ${
@@ -369,16 +451,38 @@ export default function Navbar() {
                   : '0ms',
               }}
             >
-              <span className="flex items-baseline gap-5">
+              <span className="flex min-w-0 items-baseline gap-5">
                 <span className="font-mono-t text-xs text-ash">
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <span className="display-title text-5xl text-bone transition-transform duration-500 ease-out-expo group-hover:translate-x-2 sm:text-7xl">
+                {/* The label becomes a WINDOW: on hover the section's own
+                    photograph shows through the letterforms themselves. */}
+                <span
+                  className="menu-window display-title text-5xl text-bone transition-[transform,letter-spacing] duration-500 ease-out-expo group-hover:translate-x-2 group-hover:tracking-[0.06em] group-focus-visible:translate-x-2 sm:text-7xl"
+                  style={{ backgroundImage: `url(${MENU_PREVIEW[link.id]})` }}
+                >
                   {link.label}
                 </span>
               </span>
-              <span className="font-mono-t hidden shrink-0 text-xs text-ash/70 sm:inline">
-                −{formatNumber(levelDepth(i))} {t.telemetry.unit}
+
+              <span className="flex shrink-0 items-center gap-4">
+                {/* Mobile preview: a slim photo strip instead of the big
+                    desktop window. */}
+                <span
+                  className="h-9 w-14 overflow-hidden rounded-sm border border-bone/15 opacity-70 lg:hidden"
+                  aria-hidden="true"
+                >
+                  <img
+                    src={MENU_PREVIEW[link.id]}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="photo-tone h-full w-full object-cover"
+                  />
+                </span>
+                <span className="font-mono-t hidden text-xs text-ash/70 sm:inline">
+                  −{formatNumber(levelDepth(i))} {t.telemetry.unit}
+                </span>
               </span>
             </button>
           ))}

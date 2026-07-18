@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { CURSOR_SMOOTHING } from '../../lib/constants'
 
 type CursorMode = 'default' | 'hover' | 'lens' | 'label' | 'drag'
+/** Which way to ink the cursor — flips inside light-ground sections. */
+type CursorTone = 'dark' | 'light'
 
 const INTERACTIVE_SELECTOR = '[data-cursor], a, button, [role="button"], input, label'
+/** `data-tone` value a section sets to declare a light ground. */
+const LIGHT_TONE = 'light'
 const OFFSCREEN = -100
 /** Pooled dust motes trailing the cursor; one is (re)armed every interval. */
 const DUST_POOL = 12
@@ -37,6 +41,7 @@ export default function CustomCursor() {
   const shardIndex = useRef(0)
 
   const [mode, setMode] = useState<CursorMode>('default')
+  const [tone, setTone] = useState<CursorTone>('dark')
   const [label, setLabel] = useState('')
   const [visible, setVisible] = useState(false)
 
@@ -88,6 +93,12 @@ export default function CustomCursor() {
 
     const onOver = (event: PointerEvent) => {
       const node = event.target
+      // Sections may declare a light ground; the cursor inks itself to match.
+      // Free of charge: pointerover already fires on every boundary crossing.
+      if (node instanceof Element) {
+        const light = node.closest(`[data-tone="${LIGHT_TONE}"]`) !== null
+        setTone(light ? LIGHT_TONE : 'dark')
+      }
       const el = node instanceof Element ? node.closest(INTERACTIVE_SELECTOR) : null
       if (!(el instanceof HTMLElement)) {
         setMode('default')
@@ -148,7 +159,8 @@ export default function CustomCursor() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[9999]"
+      data-tone={tone}
+      className="cursor-root pointer-events-none fixed inset-0 z-[9999]"
       style={{ opacity: visible ? 1 : 0, transition: 'opacity 300ms ease' }}
     >
       {/* Pooled particles: dust trail + click shards (reused nodes). */}

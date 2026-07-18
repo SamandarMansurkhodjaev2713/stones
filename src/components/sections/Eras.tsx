@@ -1,15 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import SectionShell from '../ui/SectionShell'
 import ParticleField from '../ui/ParticleField'
 import DisplayHeading from '../ui/DisplayHeading'
 import { useI18n, formatNumber } from '../../i18n'
 import type { Dictionary } from '../../i18n/dictionary'
 import { gsap, ScrollTrigger } from '../../lib/gsap'
-import { ERA_SEQUENCE, MAX_DEPTH_M } from '../../lib/constants'
+import { ERA_SEQUENCE, MAX_DEPTH_M, MQ_MOBILE } from '../../lib/constants'
+import { useMediaQuery } from '../../lib/useMediaQuery'
+import { useReducedMotion } from '../../lib/useReducedMotion'
+import { useDeviceTilt } from '../../lib/useDeviceTilt'
+import type { Tilt } from '../../lib/useDeviceTilt'
+import { ambient } from '../../lib/ambient'
+import { haptic } from '../../lib/haptics'
 import { ERA_PHOTO } from '../../lib/media'
 
 /** Scroll distance per era while the stage is pinned, in viewport heights. */
 const PIN_VH_PER_ERA = 0.65
+/** Pointer parallax of the era backdrop, in percent of its own size. */
+const PHOTO_PARALLAX_PCT = 3.5
+/** Seconds the backdrop takes to follow the pointer — slow, like rock. */
+const PHOTO_EASE_S = 1.4
 
 const depthOf = (depth: number) => Math.round(depth * MAX_DEPTH_M)
 
@@ -19,9 +30,23 @@ const depthOf = (depth: number) => Math.round(depth * MAX_DEPTH_M)
  * poster scale, depth readout, level rail on the right, darkness deepening
  * with every era. Visual-only: the full era list is mirrored for AT below.
  */
-function PinnedEras({ t }: { t: Dictionary }) {
+function PinnedEras({ t, tilt }: { t: Dictionary; tilt: Tilt }) {
   const wrapRef = useRef<HTMLDivElement>(null)
+  const photoStackRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<ScrollTrigger | null>(null)
   const [idx, setIdx] = useState(0)
+  /** How far through the current era the reader is, 0..1. */
+  const [eraProgress, setEraProgress] = useState(0)
+
+  /** Jump the page scroll so a given era becomes current. */
+  const onJump = (target: number) => {
+    const st = triggerRef.current
+    if (!st) return
+    const span = st.end - st.start
+    // Land in the middle of the requested era's slice.
+    const at = st.start + ((target + 0.5) / ERA_SEQUENCE.length) * span
+    window.scrollTo({ top: at, behavior: 'smooth' })
+  }
 
   // The stage stays mounted on every breakpoint (CSS decides visibility);
   // gsap.matchMedia creates the pin only where it applies and tears it down
@@ -40,18 +65,66 @@ function PinnedEras({ t }: { t: Dictionary }) {
         anticipatePin: 1,
         onUpdate: (self) => {
           const count = ERA_SEQUENCE.length
-          const next = Math.min(count - 1, Math.floor(self.progress * count))
-          setIdx((cur) => (cur === next ? cur : next))
+          const scaled = self.progress * count
+          const next = Math.min(count - 1, Math.floor(scaled))
+          setIdx((cur) => {
+            if (cur !== next) {
+              ambient.play('shift')
+              haptic('edge')
+            }
+            return cur === next ? cur : next
+          })
+          setEraProgress(Math.min(1, scaled - next))
         },
       })
-      return () => trigger.kill()
+      triggerRef.current = trigger
+      return () => {
+        triggerRef.current = null
+        trigger.kill()
+      }
     })
 
     return () => mm.revert()
   }, [])
 
+  // On a phone the same parallax comes from the wrist instead of the pointer:
+  // tilt the device and the landscape leans with it.
+  useEffect(() => {
+    const stack = photoStackRef.current
+    // No sensor reading means no claim on the transform — the pointer
+    // parallax below owns it on desktop and must not be overwritten.
+    if (!stack || (tilt.x === 0 && tilt.y === 0)) return
+    stack.style.transform =
+      `translate3d(${(-tilt.x * PHOTO_PARALLAX_PCT).toFixed(2)}%, ` +
+      `${(-tilt.y * PHOTO_PARALLAX_PCT).toFixed(2)}%, 0)`
+  }, [tilt])
+
+  // The landscape leans against the pointer: the wall of rock has a near side.
+  useEffect(() => {
+    const stack = photoStackRef.current
+    if (!stack) return
+    if (!window.matchMedia('(pointer: fine) and (prefers-reduced-motion: no-preference)').matches) {
+      return
+    }
+
+    const moveX = gsap.quickTo(stack, 'xPercent', { duration: PHOTO_EASE_S, ease: 'power3' })
+    const moveY = gsap.quickTo(stack, 'yPercent', { duration: PHOTO_EASE_S, ease: 'power3' })
+    const onMove = (event: PointerEvent) => {
+      moveX((event.clientX / window.innerWidth - 0.5) * -PHOTO_PARALLAX_PCT)
+      moveY((event.clientY / window.innerHeight - 0.5) * -PHOTO_PARALLAX_PCT)
+    }
+
+    window.addEventListener('pointermove', onMove, { passive: true })
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      gsap.killTweensOf(stack)
+      gsap.set(stack, { clearProps: 'xPercent,yPercent' })
+    }
+  }, [])
+
   const era = ERA_SEQUENCE[idx]
   const copy = t.eras.items[era.id]
+  const isFinalEra = idx === ERA_SEQUENCE.length - 1
 
   return (
     <div
@@ -61,8 +134,9 @@ function PinnedEras({ t }: { t: Dictionary }) {
       style={{ height: '100dvh' }}
     >
       {/* Era backdrops: one monochrome landscape per level, crossfading with
-          the text. All stay mounted so the fade is instant on revisit. */}
-      <div className="absolute inset-0">
+          the text. All stay mounted so the fade is instant on revisit. The
+          stack is oversized so pointer parallax never exposes an edge. */}
+      <div ref={photoStackRef} className="absolute -inset-[4%]">
         {ERA_SEQUENCE.map((item, i) => (
           <img
             key={item.id}
@@ -70,8 +144,8 @@ function PinnedEras({ t }: { t: Dictionary }) {
             alt=""
             loading={i === 0 ? 'eager' : 'lazy'}
             decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover photo-tone transition-opacity duration-[900ms] ease-out-expo ${
-              i === idx ? 'opacity-40' : 'opacity-0'
+            className={`absolute inset-0 h-full w-full object-cover photo-tone transition-[opacity,transform] duration-[1600ms] ease-out ${
+              i === idx ? 'scale-105 opacity-40' : 'scale-100 opacity-0'
             }`}
           />
         ))}
@@ -88,6 +162,14 @@ function PinnedEras({ t }: { t: Dictionary }) {
 
       <ParticleField density={0.85} />
 
+      {/* Drilling horizon: a hairline sweeps down each time the bit crosses
+          into a new layer. Keyed on the era so it replays on every change. */}
+      <span
+        key={`horizon-${era.id}`}
+        aria-hidden="true"
+        className="drill-horizon pointer-events-none absolute inset-x-0 z-10 h-px bg-gradient-to-r from-transparent via-bone/70 to-transparent"
+      />
+
       {/* Static chapter header */}
       <div className="relative mx-auto w-full max-w-7xl px-5 pt-28 lg:pt-24">
         <h2 className="display-title text-4xl text-bone">{t.eras.title}</h2>
@@ -102,8 +184,22 @@ function PinnedEras({ t }: { t: Dictionary }) {
           <p className="font-mono-t text-sm text-bone/60">
             −{formatNumber(depthOf(era.depth))} {t.telemetry.unit}
           </p>
-          <h3 className="display-title mt-3 text-6xl leading-[0.9] text-bone sm:text-7xl xl:text-[9rem]">
-            {copy.name}
+          {/* Each era assembles glyph by glyph out of the dark — except the
+              Hadean, the floor of the descent, which does not assemble but
+              burns: its gradient is clipped to the heading as a single molten
+              block, so those letters must stay unsplit. The stage is
+              aria-hidden and the sr-only list below carries the text, so
+              splitting costs nothing for assistive tech. */}
+          <h3
+            className={`display-title mt-3 text-6xl leading-[0.9] sm:text-7xl xl:text-[9rem] ${
+              isFinalEra ? 'era-molten' : 'glyph-assemble text-bone'
+            }`}
+          >
+            {isFinalEra ? copy.name : [...copy.name].map((char, i) => (
+              <span key={`${char}-${i}`} style={{ '--i': i } as CSSProperties}>
+                {char === ' ' ? ' ' : char}
+              </span>
+            ))}
           </h3>
           <p className="font-mono-t mt-4 text-sm uppercase tracking-[0.14em] text-bone/45">
             {copy.age}
@@ -113,23 +209,39 @@ function PinnedEras({ t }: { t: Dictionary }) {
           </p>
         </div>
 
-        {/* Level rail */}
-        <div className="absolute right-5 top-1/2 hidden -translate-y-1/2 flex-col items-end gap-3 xl:flex">
+        {/* Level rail — clickable time navigation with in-era progress. */}
+        <div className="pointer-events-auto absolute right-5 top-1/2 hidden -translate-y-1/2 flex-col items-end gap-3 xl:flex">
           {ERA_SEQUENCE.map((item, i) => (
-            <div key={item.id} className="flex items-center gap-3">
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onJump?.(i)}
+              data-cursor="label"
+              data-cursor-label={t.eras.items[item.id].name}
+              aria-label={`${t.a11y.toSection}: ${t.eras.items[item.id].name}`}
+              className="group flex min-h-[24px] items-center gap-3 py-1"
+            >
               <span
                 className={`font-mono-t text-[10px] uppercase tracking-[0.14em] transition-colors duration-500 ${
-                  i === idx ? 'text-bone' : 'text-ash/45'
+                  i === idx ? 'text-bone' : 'text-ash/45 group-hover:text-ash'
                 }`}
               >
                 {t.eras.items[item.id].name}
               </span>
               <span
-                className={`block h-px transition-all duration-500 ${
-                  i === idx ? 'w-10 bg-bone' : 'w-5 bg-bone/25'
+                className={`relative block h-px overflow-hidden transition-all duration-500 ${
+                  i === idx ? 'w-10 bg-bone/30' : 'w-5 bg-bone/25 group-hover:bg-bone/50'
                 }`}
-              />
-            </div>
+              >
+                {/* How far through THIS era the reader currently is. */}
+                {i === idx && (
+                  <span
+                    className="absolute inset-y-0 left-0 bg-bone transition-[width] duration-200"
+                    style={{ width: `${(eraProgress * 100).toFixed(1)}%` }}
+                  />
+                )}
+              </span>
+            </button>
           ))}
         </div>
       </div>
@@ -243,11 +355,14 @@ function ErasList({ t, srOnly = false }: { t: Dictionary; srOnly?: boolean }) {
 
 export default function Eras() {
   const { t } = useI18n()
+  const isMobile = useMediaQuery(MQ_MOBILE)
+  const reduced = useReducedMotion()
+  const tilt = useDeviceTilt(isMobile && !reduced)
 
   return (
     <SectionShell id="eras" index="02" eyebrow={t.eras.eyebrow} depthM={1600} depart={false} className="bg-surface">
-      {/* Pinned stage — desktop with motion allowed (CSS gate, always mounted). */}
-      <PinnedEras t={t} />
+      {/* Pinned stage — motion allowed (CSS gate, always mounted). */}
+      <PinnedEras t={t} tilt={tilt} />
       {/* Its AT mirror, active only where the visual stage is the one shown. */}
       <div className="hidden motion-safe:block">
         <ErasList t={t} srOnly />

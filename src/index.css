@@ -39,6 +39,9 @@
     --magma-rgb: 255 122 47;
     --magma-deep-rgb: 176 58 12;
 
+    /* Type — one display face, declared once so utilities agree on the stack. */
+    --font-display: 'Bebas Neue', 'Oswald', system-ui, sans-serif;
+
     /* Scroll depth 0..1 (surface → origin), used by gauges. */
     --depth: 0;
 
@@ -130,7 +133,7 @@
   /* The single display voice: ultra-condensed poster caps, monument scale.
      Bebas Neue ships one weight — hierarchy comes from size and tone. */
   .display-title {
-    font-family: 'Bebas Neue', 'Oswald', system-ui, sans-serif;
+    font-family: var(--font-display);
     font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 0.02em;
@@ -161,6 +164,202 @@
   .vertical-mark {
     writing-mode: vertical-rl;
     text-orientation: mixed;
+  }
+
+  /* Illuminated initial — the manifesto opens like a printed book. Set in the
+     display face so the letter reads as carved rather than typed. */
+  .drop-cap::first-letter {
+    float: left;
+    font-family: var(--font-display);
+    font-size: 4.2em;
+    line-height: 0.78;
+    padding-right: 0.09em;
+    padding-top: 0.06em;
+    color: rgb(var(--bone-rgb) / 0.9);
+  }
+
+  /* Survey scanner: a hairline crosses the plate on hover, the way a field
+     scanner reads a rock face, and the strata brighten as it passes. */
+  .plate-scan::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--bone-rgb) / 0.75),
+      transparent
+    );
+    opacity: 0;
+    pointer-events: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .plate-scan:hover::after {
+      animation: plateScan 1400ms var(--ease-out) forwards;
+    }
+    .plate-scan svg {
+      transition: filter 700ms var(--ease-out);
+    }
+    .plate-scan:hover svg {
+      filter: brightness(1.5) contrast(1.06);
+    }
+  }
+  /* Driven by `top` rather than a transform so one keyframe set works at any
+     plate height — it is a single hairline, and only on desktop hover. */
+  @keyframes plateScan {
+    0% {
+      top: 0;
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 1;
+    }
+    100% {
+      top: 100%;
+      opacity: 0;
+    }
+  }
+
+  /* Archive drawer: hovering slides it out of the shelf and tilts it toward
+     the viewer, as if you had pulled the box to look inside. */
+  .drawer {
+    transform-style: preserve-3d;
+    transition:
+      transform 550ms var(--ease-out),
+      border-color 550ms var(--ease-out),
+      box-shadow 550ms var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .drawer:hover {
+      transform: perspective(1100px) translateY(-14px) translateZ(34px) rotateX(4deg);
+      border-color: rgb(var(--bone-rgb) / 0.3);
+      box-shadow: 0 40px 70px -34px rgb(0 0 0 / 0.85);
+    }
+  }
+
+  /* The specimen code types itself in when the drawer opens. */
+  @keyframes codeType {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .group:hover .code-type {
+      animation: codeType 620ms steps(14) forwards;
+    }
+  }
+
+  /* The drill crossing a bedding plane: one downward sweep per era change. */
+  @keyframes drillHorizon {
+    0% {
+      top: 8%;
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    100% {
+      top: 92%;
+      opacity: 0;
+    }
+  }
+  .drill-horizon {
+    animation: drillHorizon 900ms var(--ease-out) forwards;
+  }
+
+  /* The Hadean: the name lit from inside by the molten world it describes.
+     Magma appears here as heat, not as brand colour. */
+  .era-molten {
+    background-image: linear-gradient(
+      175deg,
+      rgb(var(--bone-rgb)) 8%,
+      rgb(var(--magma-rgb)) 58%,
+      rgb(var(--magma-deep-rgb)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: moltenPulse 5.5s var(--ease-in-out) infinite;
+  }
+  /* Heat haze, not a blink: the glow swells while the letters shiver by a
+     fraction of a pixel — the rock is still moving down here. */
+  @keyframes moltenPulse {
+    0%,
+    100% {
+      filter: brightness(1);
+      transform: translate3d(0, 0, 0);
+    }
+    25% {
+      transform: translate3d(0.4px, -0.3px, 0);
+    }
+    50% {
+      filter: brightness(1.22);
+      transform: translate3d(-0.3px, 0.4px, 0);
+    }
+    75% {
+      transform: translate3d(0.2px, 0.3px, 0);
+    }
+  }
+
+  /* Era change: the old name breaks into its glyphs and falls away, the new
+     one assembles out of the dark. Applied per character via `--i`. */
+  .glyph-assemble > span {
+    display: inline-block;
+    animation: glyphAssemble 700ms var(--ease-out) backwards;
+    animation-delay: calc(var(--i) * 26ms);
+  }
+  @keyframes glyphAssemble {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 0.5em, 0) rotate(4deg);
+      filter: blur(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) rotate(0);
+      filter: blur(0);
+    }
+  }
+
+  /* Menu label as a window into the section's photograph. The image is
+     clipped to the glyphs; on hover the fill fades from bone to the picture,
+     so type and media become one object. */
+  .menu-window {
+    background-size: cover;
+    background-position: center;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: rgb(var(--bone-rgb));
+    transition:
+      -webkit-text-fill-color 500ms var(--ease-out),
+      transform 500ms var(--ease-out),
+      letter-spacing 500ms var(--ease-out);
+  }
+  .group:hover .menu-window,
+  .group:focus-visible .menu-window {
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* The page receding while the shaft menu covers it. */
+  .page-sunk {
+    transform: scale(0.97);
+    filter: brightness(0.55);
+    transition:
+      transform 700ms var(--ease-out),
+      filter 700ms var(--ease-out);
+  }
+  main {
+    transition:
+      transform 700ms var(--ease-out),
+      filter 700ms var(--ease-out);
   }
 
   /* A list row whose ruled line is drawn by GSAP via the --row-line variable
@@ -529,6 +728,34 @@ html.pre-boot .anim {
   color: rgb(var(--bone-rgb));
 }
 
+/* Light-ground sections (the Voice interlude) invert the whole cursor rig —
+   ring, dot, dust and shards — so it never disappears into the bone. */
+.cursor-root[data-tone='light'] .cursor-ring {
+  border-color: rgb(var(--void-rgb) / 0.6);
+}
+.cursor-root[data-tone='light'] .cursor-dot,
+.cursor-root[data-tone='light'] .dust-mote,
+.cursor-root[data-tone='light'] .shard {
+  background: rgb(var(--void-rgb) / 0.85);
+}
+.cursor-root[data-tone='light'] .cursor-ring[data-mode='hover'],
+.cursor-root[data-tone='light'] .cursor-ring[data-mode='drag'] {
+  background: rgb(var(--void-rgb) / 0.08);
+}
+.cursor-root[data-tone='light'] .cursor-ring[data-mode='label'] {
+  background: rgb(var(--void-rgb) / 0.92);
+}
+.cursor-root[data-tone='light'] .cursor-label {
+  color: var(--bone);
+}
+.cursor-root[data-tone='light'] .cursor-ring[data-mode='lens'] {
+  background: rgb(var(--void-rgb) / 0.05);
+  border-color: rgb(var(--void-rgb) / 0.85);
+}
+.cursor-root[data-tone='light'] .cursor-ring[data-mode='lens'] .cursor-label {
+  color: var(--void);
+}
+
 /* Drag affordance over the archive shelf: a wide ring with ← → inside. */
 .cursor-ring[data-mode='drag'] {
   width: 78px;
@@ -571,6 +798,57 @@ html.pre-boot .anim {
 /* ============================================================================
    REDUCED MOTION — kill all cinematic motion, reveal everything instantly.
    ============================================================================ */
+/* Double-tap flare on the monolith: a short bone wash with a magma core, as
+   if the lamp had been fired at full power for a moment. Idle by default —
+   the class is added only when the gesture lands. */
+.hero-flash {
+  opacity: 0;
+  background: radial-gradient(
+    ellipse 70% 55% at 50% 50%,
+    rgb(var(--magma-rgb) / 0.22),
+    rgb(var(--bone-rgb) / 0.3) 35%,
+    transparent 72%
+  );
+}
+.hero-flash.is-live {
+  animation: heroFlash 620ms var(--ease-out) forwards;
+}
+@keyframes heroFlash {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  14% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-flash.is-live {
+    animation: none;
+  }
+}
+
+/* ── Performance floor ────────────────────────────────────────────────────
+   Set by usePerfTier when the device could not hold frame rate. Everything
+   dropped here is decoration: the layout, the type and the story are
+   untouched, so a slow phone gets the same site, just without the garnish
+   that was costing it frames. */
+.perf-plain .grain-layer {
+  display: none;
+}
+.perf-plain * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.perf-plain .dust-mote,
+.perf-plain .shard {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

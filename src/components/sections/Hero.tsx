@@ -327,8 +327,12 @@ export default function Hero() {
         style={{
           background:
             'radial-gradient(120% 80% at 50% 30%, rgb(var(--void-rgb) / 0.5), transparent 65%)',
-          backdropFilter: 'blur(1.5px)',
-          WebkitBackdropFilter: 'blur(1.5px)',
+          // Only where the headline sits BEHIND the monolith does hazing it
+          // read as depth. On mobile the type is above the stone, so the same
+          // blur would just look like the headline is out of focus.
+          ...(isMobile
+            ? {}
+            : { backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)' }),
         }}
       />
 

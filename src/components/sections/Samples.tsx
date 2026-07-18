@@ -289,7 +289,7 @@ export default function Samples() {
             SAY it moves sideways: a counter, a rail that fills, and two real
             buttons — the peeking edge of the next drawer alone is not enough,
             and on touch there is no hover to discover it with. */}
-        <div className="mb-5 flex items-center gap-4 lg:motion-safe:hidden">
+        <div className="-mt-4 mb-5 flex items-center gap-4 lg:motion-safe:hidden">
           <span className="font-mono-t shrink-0 text-xs tabular-nums text-bone/70">
             {String(active + 1).padStart(2, '0')}
             <span className="text-ash/60"> / {String(cardCount).padStart(2, '0')}</span>

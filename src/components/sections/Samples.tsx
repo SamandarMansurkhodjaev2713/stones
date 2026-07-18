@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, MoveHorizontal } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, MoveHorizontal } from 'lucide-react'
 import SectionShell from '../ui/SectionShell'
 import DisplayHeading from '../ui/DisplayHeading'
 import SectionStrata from '../ui/SectionStrata'
@@ -204,6 +204,9 @@ export default function Samples() {
     }
   }, [])
 
+  /** Specimens only — the closing CTA is not a numbered drawer. */
+  const cardCount = t.samples.items.length
+
   const scrollByCard = (dir: 1 | -1) => {
     const scroller = scrollerRef.current
     const track = trackRef.current
@@ -273,13 +276,50 @@ export default function Samples() {
               ))}
             </div>
 
-            <span className="hidden items-center gap-2 text-ash sm:flex lg:motion-safe:hidden">
+            <span className="flex items-center gap-2 text-ash lg:motion-safe:hidden">
               <MoveHorizontal size={14} aria-hidden="true" />
               <span className="font-mono-t text-[10px] uppercase tracking-[0.16em]">
                 {t.samples.dragHint}
               </span>
             </span>
           </div>
+        </div>
+
+        {/* Shelf controls. A horizontal strip inside a vertical page has to
+            SAY it moves sideways: a counter, a rail that fills, and two real
+            buttons — the peeking edge of the next drawer alone is not enough,
+            and on touch there is no hover to discover it with. */}
+        <div className="mb-5 flex items-center gap-4 lg:motion-safe:hidden">
+          <span className="font-mono-t shrink-0 text-xs tabular-nums text-bone/70">
+            {String(active + 1).padStart(2, '0')}
+            <span className="text-ash/60"> / {String(cardCount).padStart(2, '0')}</span>
+          </span>
+
+          <span className="relative h-px flex-1 bg-bone/15" aria-hidden="true">
+            <span
+              className="absolute inset-y-0 left-0 bg-bone transition-[width] duration-500 ease-out-expo"
+              style={{ width: `${((active + 1) / cardCount) * 100}%` }}
+            />
+          </span>
+
+          <span className="flex shrink-0 gap-2">
+            {([-1, 1] as const).map((dir) => (
+              <button
+                key={dir}
+                type="button"
+                onClick={() => scrollByCard(dir)}
+                aria-label={dir === -1 ? t.a11y.prev : t.a11y.next}
+                disabled={dir === -1 ? active === 0 : active >= cardCount - 1}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-bone/20 text-bone transition-colors duration-300 disabled:opacity-25 active:bg-bone/10"
+              >
+                {dir === -1 ? (
+                  <ChevronLeft size={17} aria-hidden="true" />
+                ) : (
+                  <ChevronRight size={17} aria-hidden="true" />
+                )}
+              </button>
+            ))}
+          </span>
         </div>
       </div>
 
@@ -312,7 +352,7 @@ export default function Samples() {
             // transform GSAP writes from cancelling the hover transform.
             <article
               key={item.name}
-              className="flex min-w-[78vw] max-w-[420px] snap-start select-none xs:min-w-[340px] sm:min-w-[380px]"
+              className="flex w-[80vw] max-w-[380px] shrink-0 snap-start select-none"
             >
             <div className="drawer group flex w-full flex-col overflow-hidden rounded-2xl border border-bone/10 bg-layer">
               <div data-reveal-media className="relative h-44 overflow-hidden">
@@ -376,7 +416,7 @@ export default function Samples() {
             onClick={() => scrollTo('#expeditions', { offset: HEADER_OFFSET })}
             data-cursor="label"
             data-cursor-label={t.cursor.dig}
-            className="group flex min-w-[78vw] max-w-[420px] snap-start flex-col items-start justify-center gap-4 rounded-2xl border border-dashed border-bone/20 p-7 text-left transition-colors duration-500 hover:border-bone/45 xs:min-w-[340px] sm:min-w-[380px]"
+            className="group flex w-[80vw] max-w-[380px] shrink-0 snap-start flex-col items-start justify-center gap-4 rounded-2xl border border-dashed border-bone/20 p-7 text-left transition-colors duration-500 hover:border-bone/45"
           >
             <span className="font-mono-t text-[11px] uppercase tracking-[0.16em] text-ash">
               {t.samples.eyebrow} · STN-005

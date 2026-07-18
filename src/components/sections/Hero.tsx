@@ -25,12 +25,24 @@ import SplitChars from '../ui/SplitChars'
  * into the rock. Mobile: the monolith is a compact artifact under a single
  * museum beam, typography above, plinth shadow below.
  */
+/**
+ * Feathering the frame away. In `radial-gradient` a percentage is the ellipse
+ * RADIUS, not its diameter — anything above 50% reaches past the element and
+ * the mask stops clipping, leaving the raw rectangle of the footage on show.
+ * Both masks stay under 50% so the media always dissolves into the page.
+ */
 const DESKTOP_MEDIA_TRANSFORM = 'translateY(10vh) scale(0.94)'
 const DESKTOP_EDGE_MASK =
-  'radial-gradient(ellipse 66% 62% at 50% 56%, #000 46%, transparent 90%)'
+  'radial-gradient(ellipse 46% 44% at 50% 56%, #000 40%, transparent 92%)'
 const MOBILE_MEDIA_SCALE = 1.18
+/**
+ * On mobile the monolith gets its OWN band rather than a full-viewport layer.
+ * Masking a viewport-sized element whose image is letterboxed leaves the
+ * letterbox rectangle showing at the edges; sizing the wrapper to the stone
+ * means the ellipse has nothing rectangular left to reveal.
+ */
 const MOBILE_EDGE_MASK =
-  'radial-gradient(ellipse 62% 50% at 50% 46%, #000 48%, transparent 90%)'
+  'radial-gradient(ellipse 48% 46% at 50% 50%, #000 38%, transparent 86%)'
 
 /** How long a touch keeps steering the beam before the auto-sweep resumes. */
 const TOUCH_HOLD_MS = 2200
@@ -279,7 +291,7 @@ export default function Hero() {
       }
     : { transform: DESKTOP_MEDIA_TRANSFORM }
   const stillSizing = isMobile
-    ? { backgroundSize: 'contain', backgroundPosition: 'center 46%' }
+    ? { backgroundSize: 'contain', backgroundPosition: 'center center' }
     : {}
 
   return (
@@ -322,20 +334,20 @@ export default function Hero() {
 
       <div
         ref={headlineRef}
-        className="absolute inset-x-0 top-[13%] z-[8] px-4 text-center sm:top-[16%]"
+        className="absolute inset-x-0 top-[14%] z-[8] px-4 text-center sm:top-[16%]"
       >
         <h1 className="display-title text-bone">
           <SplitChars
             text={t.hero.titleA}
             baseDelayMs={300}
             stepMs={36}
-            className="block text-[16vw] leading-[0.92] sm:text-[11vw]"
+            className="block text-[15vw] leading-[0.9] sm:text-[11vw]"
           />
           <SplitChars
             text={t.hero.titleB}
             baseDelayMs={650}
             stepMs={22}
-            className="block text-[7.4vw] leading-[1.05] text-bone/45 sm:text-[3.6vw]"
+            className="mt-1 block text-[5.6vw] leading-[1.1] text-bone/45 sm:mt-0 sm:text-[3.6vw]"
           />
         </h1>
       </div>
@@ -343,7 +355,14 @@ export default function Hero() {
       {/* THE MONOLITH — an edge-masked object in front of the headline. One
           wrapper carries the still AND the masked footage so the cursor-lean
           never breaks their registration. */}
-      <div ref={tiltWrapRef} className="absolute inset-0 z-10 will-change-transform">
+      <div
+        ref={tiltWrapRef}
+        className={`absolute z-10 will-change-transform ${
+          // Mobile: a band the stone actually fills, sitting clear of the
+          // headline above it. Desktop keeps the full-bleed depth sandwich.
+          isMobile ? 'inset-x-0 top-[31%] h-[40%]' : 'inset-0'
+        }`}
+      >
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -378,7 +397,6 @@ export default function Hero() {
                   : 'brightness(1.18)',
                 maskImage: edgeMask,
                 WebkitMaskImage: edgeMask,
-                ...(isMobile ? { objectPosition: 'center 46%' } : {}),
               }}
             />
           </div>
@@ -389,11 +407,10 @@ export default function Hero() {
       {isMobile && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-[64%] z-[9] h-8 w-60 -translate-x-1/2 rounded-[100%]"
+          className="pointer-events-none absolute left-1/2 top-[70%] z-[9] h-6 w-52 -translate-x-1/2 rounded-[100%]"
           style={{
             background:
-              'radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%)',
-            boxShadow: '0 0 0 1px rgb(var(--bone-rgb) / 0.06)',
+              'radial-gradient(ellipse, rgba(0,0,0,0.6), transparent 72%)',
           }}
         />
       )}
@@ -425,7 +442,10 @@ export default function Hero() {
 
       {/* Eyebrow telemetry over everything, under the header. */}
       <p
-        className="anim anim-fade-down eyebrow pointer-events-none absolute left-1/2 top-[9%] z-40 -translate-x-1/2 sm:top-[11%]"
+        // Centred with inset+text-align, never with -translate-x-1/2: the
+        // entrance keyframes write `transform`, which would wipe the centring
+        // translate and leave the line hanging off the right edge.
+        className="anim anim-fade-down eyebrow pointer-events-none absolute inset-x-0 top-[9.5%] z-40 whitespace-nowrap px-4 text-center text-[9px] sm:top-[11%] sm:text-[10px]"
         style={{ animationDelay: '0.15s' }}
       >
         {t.hero.eyebrow}
@@ -466,7 +486,7 @@ export default function Hero() {
       </div>
 
       {/* Scroll hint */}
-      <div className="anim anim-fade pointer-events-none absolute bottom-4 left-1/2 z-40 -translate-x-1/2">
+      <div className="anim anim-fade pointer-events-none absolute inset-x-0 bottom-4 z-40 flex justify-center">
         <span className="flex items-center gap-2">
           <span className="eyebrow text-[10px]">{t.hero.scrollHint}</span>
           <ChevronDown

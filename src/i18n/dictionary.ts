@@ -164,6 +164,9 @@ export interface Dictionary {
     toSection: string
     langSwitch: string
     sound: string
+    /** Horizontal-strip controls. */
+    prev: string
+    next: string
   }
 }
 
@@ -408,6 +411,8 @@ const ru: Dictionary = {
     closeMenu: 'Закрыть меню',
     toSection: 'Перейти к разделу',
     langSwitch: 'Сменить язык',
+    prev: 'Предыдущий образец',
+    next: 'Следующий образец',
     sound: 'Звук',
   },
 }
@@ -653,6 +658,8 @@ const uz: Dictionary = {
     closeMenu: 'Menyuni yopish',
     toSection: 'Bo‘limga o‘tish',
     langSwitch: 'Tilni almashtirish',
+    prev: 'Oldingi namuna',
+    next: 'Keyingi namuna',
     sound: 'Ovoz',
   },
 }

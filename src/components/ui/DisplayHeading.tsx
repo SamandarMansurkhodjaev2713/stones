@@ -20,11 +20,20 @@ interface DisplayHeadingProps {
 }
 
 /**
- * The site's single display-headline voice: caps split per character, rising
- * out of a clipping mask in a scroll-triggered cascade, with selected words
- * rendered as outlines. Screen readers get the plain string; the animated
- * copy is aria-hidden. Under reduced motion nothing moves and the heading is
- * simply there.
+ * The site's single display-headline voice: caps that rise out of a clipping
+ * mask in a scroll-triggered cascade, with selected words rendered as outlines.
+ *
+ * Two rules this component must never break:
+ *  - **A word is never split across lines.** Each word is one inline-block, so
+ *    the browser can only break in the spaces between them.
+ *  - **The text is never invisible by default.** The hidden state is applied by
+ *    the tween itself (`immediateRender: false`), so if the ScrollTrigger never
+ *    runs — offscreen jump, refresh race, JS error elsewhere — the headline is
+ *    simply there. Hiding first and revealing on scroll would put the site's
+ *    largest text one missed event away from disappearing.
+ *
+ * Screen readers get the plain string; the animated copy is aria-hidden. Under
+ * reduced motion nothing moves and the heading is simply there.
  */
 export default function DisplayHeading({
   text,
@@ -44,22 +53,30 @@ export default function DisplayHeading({
     const ctx = gsap.context(() => {
       const chars = gsap.utils.toArray<HTMLElement>(el.querySelectorAll('[data-char]'))
       if (!chars.length) return
-      gsap.set(chars, { yPercent: 115, rotate: 2 })
-      gsap.to(chars, {
-        yPercent: 0,
-        rotate: 0,
-        duration: DURATION.slow,
-        ease: EASE_OUT,
-        stagger: step,
-        delay,
-        scrollTrigger: { trigger: el, start: 'top 82%', once: true },
-      })
+      gsap.fromTo(
+        chars,
+        { yPercent: 115, rotate: 2 },
+        {
+          yPercent: 0,
+          rotate: 0,
+          duration: DURATION.slow,
+          ease: EASE_OUT,
+          stagger: step,
+          delay,
+          // The glyphs only duck below the mask once the tween actually runs.
+          immediateRender: false,
+          scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+        },
+      )
     }, el)
 
     return () => ctx.revert()
   }, [reduced, delay, step, text])
 
   const words = text.split(' ')
+  // Running glyph index so the cascade reads across the whole line, not
+  // restarting inside every word.
+  let glyph = 0
 
   return (
     <Tag ref={ref} className={className}>
@@ -67,18 +84,22 @@ export default function DisplayHeading({
       <span aria-hidden="true">
         {words.map((word, wordIndex) => (
           <span key={wordIndex} className="inline-block whitespace-nowrap">
-            {Array.from(word).map((char, charIndex) => (
-              <span key={charIndex} className="inline-block overflow-hidden align-bottom">
-                <span
-                  data-char
-                  className={`inline-block ${
-                    outlineWords.includes(wordIndex) ? 'outline-word' : ''
-                  }`}
-                >
-                  {char}
+            {Array.from(word).map((char, charIndex) => {
+              glyph += 1
+              return (
+                <span key={charIndex} className="char-mask">
+                  <span
+                    data-char
+                    data-glyph={glyph}
+                    className={`char-glyph ${
+                      outlineWords.includes(wordIndex) ? 'outline-word' : ''
+                    }`}
+                  >
+                    {char}
+                  </span>
                 </span>
-              </span>
-            ))}
+              )
+            })}
             {wordIndex < words.length - 1 && <span className="inline-block">&nbsp;</span>}
           </span>
         ))}

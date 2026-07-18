@@ -55,9 +55,13 @@ function Counter({ stat, start }: { stat: StatItem; start: boolean }) {
   }, [start, stat, reduced])
 
   return (
-    <span>
+    <span className="whitespace-nowrap">
       {display}
-      <span className="text-bone/40">{stat.suffix}</span>
+      {/* The unit is an annotation, not part of the figure — kept small so a
+          long one ("млрд") can never wrap onto its own poster-sized line. */}
+      <span className="ml-1 align-baseline text-[0.32em] tracking-[0.06em] text-bone/40">
+        {stat.suffix}
+      </span>
     </span>
   )
 }

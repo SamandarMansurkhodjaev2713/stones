@@ -160,6 +160,24 @@
     }
   }
 
+  /* Glyph mask for display headlines. The mask and the glyph inside it must
+     resolve to the SAME box, or the caps get sliced in half — so both pin
+     line-height to 1em and the mask sizes itself from the glyph. */
+  .char-mask {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: bottom;
+    line-height: 1;
+  }
+  .char-glyph {
+    display: inline-block;
+    line-height: 1;
+    /* Bebas caps sit high in the em box; this trims the dead space under the
+       baseline so the mask hugs the letter instead of the metrics. */
+    margin-bottom: -0.08em;
+    padding-bottom: 0.08em;
+  }
+
   /* Chapter marker set sideways in the margin. */
   .vertical-mark {
     writing-mode: vertical-rl;

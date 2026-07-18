@@ -50,7 +50,18 @@ const TOUCH_HOLD_MS = 2200
 const IDLE_TAKEOVER_MS = 5000
 /** How fast the beam blends between cursor control and autopilot. */
 const AUTOPILOT_BLEND = 0.02
-/** Gyro tilt → beam travel, as a fraction of the viewport. */
+/**
+ * The wandering beam, in fractions of the LIT ROCK — not of the screen.
+ * Centre sits just above the middle so the lamp favours the mossy ridge,
+ * which is the part worth showing, and the swing keeps it on the stone.
+ */
+const BEAM_CENTER_Y = 0.44
+const BEAM_SWING_X = 0.24
+const BEAM_SWING_Y = 0.16
+/** Beam radius as a fraction of the stone's width, capped by SPOTLIGHT_RADIUS. */
+const BEAM_RADIUS_RATIO = 0.42
+
+/** Gyro tilt → beam travel, as a fraction of the stone. */
 const TILT_TRAVEL_X = 0.18
 const TILT_TRAVEL_Y = 0.1
 /** Depth-sandwich parallax: the headline drifts against the cursor. */
@@ -101,12 +112,24 @@ export default function Hero() {
     if (!maskEl || reduced) return
 
     const hasFinePointer = window.matchMedia(MQ_FINE_POINTER).matches
-    const radiusFor = (w: number) => Math.min(SPOTLIGHT_RADIUS, w * 0.38)
-    let restRadius = radiusFor(window.innerWidth)
+
+    // Where the lit rock actually is, in viewport coordinates. On desktop this
+    // is the whole hero; on mobile the monolith lives in its own band. The
+    // beam is aimed and drawn against THIS box — aiming it at the viewport
+    // instead sends it below the stone entirely on a phone.
+    let stone = maskEl.getBoundingClientRect()
+    let restRadius = Math.min(SPOTLIGHT_RADIUS, stone.width * BEAM_RADIUS_RATIO)
+    const measure = () => {
+      stone = maskEl.getBoundingClientRect()
+      restRadius = Math.min(SPOTLIGHT_RADIUS, stone.width * BEAM_RADIUS_RATIO)
+    }
     // The beam's live radius, eased toward the focused one while held.
     let radius = restRadius
 
-    const target = { x: window.innerWidth / 2, y: window.innerHeight * 0.55 }
+    const target = {
+      x: stone.left + stone.width / 2,
+      y: stone.top + stone.height * BEAM_CENTER_Y,
+    }
     const smooth = { ...target }
 
     // Desktop idle handoff: the beam drifts to autopilot when the pointer
@@ -122,10 +145,11 @@ export default function Hero() {
     }
     if (hasFinePointer) window.addEventListener('mousemove', onMouseMove)
 
-    const onResize = () => {
-      restRadius = radiusFor(window.innerWidth)
-    }
-    window.addEventListener('resize', onResize)
+    // The band is inside a sticky hero, so its viewport box shifts while the
+    // reader scrolls through it — remeasure rather than read the rect every
+    // frame, which would force a layout flush against the mask we just wrote.
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, { passive: true })
 
     // Touch gestures on the monolith: hold to lean the lamp in and narrow the
     // beam onto one spot; tap twice to fire it — the rock flares and the whole
@@ -171,10 +195,14 @@ export default function Hero() {
 
     const glowEl = glowRef.current
     const paint = (x: number, y: number) => {
-      const px = x.toFixed(1)
-      const py = y.toFixed(1)
+      // Aiming happens in viewport space (that is where pointer events live),
+      // but each layer resolves its gradient against its OWN box: the mask
+      // sits on the stone's band, the halo spans the whole hero. Painting both
+      // in one space detaches the light from the spot it is supposed to cast.
+      const maskX = (x - stone.left).toFixed(1)
+      const maskY = (y - stone.top).toFixed(1)
       const mask =
-        `radial-gradient(circle ${radius}px at ${px}px ${py}px, ` +
+        `radial-gradient(circle ${radius}px at ${maskX}px ${maskY}px, ` +
         `rgba(0,0,0,1) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,0.75) 60%, ` +
         `rgba(0,0,0,0.4) 75%, rgba(0,0,0,0.12) 88%, transparent 100%)`
       maskEl.style.maskImage = mask
@@ -182,11 +210,27 @@ export default function Hero() {
       if (glowEl) {
         // The lamp's core carries a trace of heat — the only hue in the hero.
         glowEl.style.background =
-          `radial-gradient(circle ${(radius * 1.05).toFixed(0)}px at ${px}px ${py}px, ` +
+          `radial-gradient(circle ${(radius * 1.05).toFixed(0)}px at ${x.toFixed(1)}px ${y.toFixed(1)}px, ` +
           `rgb(var(--magma-rgb) / 0.16), rgb(var(--bone-rgb) / 0.17) 24%, ` +
           `rgb(var(--bone-rgb) / 0.06) 46%, transparent 64%)`
       }
     }
+
+    // The wandering path, expressed as a fraction of the STONE rather than of
+    // the screen: the lamp rides the lit ridge wherever the band happens to
+    // sit, and one set of numbers is right on both breakpoints.
+    const sweepX = (time: number) =>
+      stone.left +
+      stone.width *
+        (0.5 +
+          Math.sin(time * SWEEP.x1) * BEAM_SWING_X +
+          Math.sin(time * SWEEP.x2 + 1.7) * BEAM_SWING_X * 0.42)
+    const sweepY = (time: number) =>
+      stone.top +
+      stone.height *
+        (BEAM_CENTER_Y +
+          Math.sin(time * SWEEP.y1 + 0.9) * BEAM_SWING_Y +
+          Math.cos(time * SWEEP.y2) * BEAM_SWING_Y * 0.5)
 
     const tick = (time: number) => {
       const w = window.innerWidth
@@ -201,16 +245,8 @@ export default function Hero() {
         const idle = performance.now() - lastMove > IDLE_TAKEOVER_MS
         autopilot += ((idle ? 1 : 0) - autopilot) * AUTOPILOT_BLEND
         if (autopilot > 0.001) {
-          const driftX =
-            w * 0.5 +
-            Math.sin(time * SWEEP.x1) * w * 0.24 +
-            Math.sin(time * SWEEP.x2 + 1.7) * w * 0.1
-          const driftY =
-            h * 0.44 +
-            Math.sin(time * SWEEP.y1 + 0.9) * h * 0.1 +
-            Math.cos(time * SWEEP.y2) * h * 0.05
-          target.x += (driftX - target.x) * autopilot
-          target.y += (driftY - target.y) * autopilot
+          target.x += (sweepX(time) - target.x) * autopilot
+          target.y += (sweepY(time) - target.y) * autopilot
         }
       }
 
@@ -220,16 +256,8 @@ export default function Hero() {
           target.x = touch.x
           target.y = touch.y
         } else {
-          target.x =
-            w * 0.5 +
-            Math.sin(time * SWEEP.x1) * w * 0.24 +
-            Math.sin(time * SWEEP.x2 + 1.7) * w * 0.1 +
-            tiltRef.current.x * w * TILT_TRAVEL_X
-          target.y =
-            h * 0.44 +
-            Math.sin(time * SWEEP.y1 + 0.9) * h * 0.1 +
-            Math.cos(time * SWEEP.y2) * h * 0.05 +
-            tiltRef.current.y * h * TILT_TRAVEL_Y
+          target.x = sweepX(time) + tiltRef.current.x * stone.width * TILT_TRAVEL_X
+          target.y = sweepY(time) + tiltRef.current.y * stone.height * TILT_TRAVEL_Y
         }
       }
       smooth.x += (target.x - smooth.x) * CURSOR_SMOOTHING
@@ -271,7 +299,8 @@ export default function Hero() {
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('resize', onResize)
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure)
       window.removeEventListener('pointerdown', onTouchDown)
       window.removeEventListener('pointerup', onTouchUp)
       window.removeEventListener('pointercancel', onTouchUp)

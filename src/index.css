@@ -31,6 +31,14 @@
     --accent: #e8e6e1;
     --accent-rgb: 232 230 225;
 
+    /* Magma — the ONLY hue on the site, and it is treated as LIGHT, never as
+       UI colour: the core of the beam, a fault line cooling after it is
+       crossed, a CTA heating under the cursor, the Hadean glowing from within.
+       Anything that is not physically hot stays monochrome. */
+    --magma: #ff7a2f;
+    --magma-rgb: 255 122 47;
+    --magma-deep-rgb: 176 58 12;
+
     /* Scroll depth 0..1 (surface → origin), used by gauges. */
     --depth: 0;
 
@@ -133,6 +141,44 @@
   .outline-title {
     color: transparent;
     -webkit-text-stroke: 1px rgb(var(--bone-rgb) / 0.16);
+  }
+
+  /* A single hollow word inside an otherwise solid headline — the poster
+     device that breaks the "one flat block of caps" rhythm. Stroke weight is
+     tuned per breakpoint so it never disappears at small sizes. */
+  .outline-word {
+    color: transparent;
+    -webkit-text-stroke: 1.2px rgb(var(--bone-rgb) / 0.75);
+    paint-order: stroke fill;
+  }
+  @media (min-width: 768px) {
+    .outline-word {
+      -webkit-text-stroke-width: 1.6px;
+    }
+  }
+
+  /* Chapter marker set sideways in the margin. */
+  .vertical-mark {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+
+  /* A list row whose ruled line is drawn by GSAP via the --row-line variable
+     (0 → 1). The border is replaced by a scalable gradient so it can animate. */
+  .row-ruled {
+    --row-line: 0;
+    position: relative;
+    border-top: 0 !important;
+  }
+  .row-ruled::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: rgb(var(--bone-rgb) / 0.14);
+    transform: scaleX(var(--row-line));
+    transform-origin: left;
   }
 
   /* Eyebrow / telemetry label */
@@ -481,6 +527,45 @@ html.pre-boot .anim {
 }
 .cursor-ring[data-mode='lens'] .cursor-label {
   color: rgb(var(--bone-rgb));
+}
+
+/* Drag affordance over the archive shelf: a wide ring with ← → inside. */
+.cursor-ring[data-mode='drag'] {
+  width: 78px;
+  height: 78px;
+  background: rgb(var(--bone-rgb) / 0.08);
+  border-color: rgb(var(--bone-rgb) / 0.6);
+}
+.cursor-arrows {
+  display: flex;
+  gap: 14px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 13px;
+  color: rgb(var(--bone-rgb) / 0.9);
+}
+.cursor-arrows span:first-child {
+  animation: nudgeLeft 1.6s var(--ease-in-out) infinite;
+}
+.cursor-arrows span:last-child {
+  animation: nudgeRight 1.6s var(--ease-in-out) infinite;
+}
+@keyframes nudgeLeft {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-3px);
+  }
+}
+@keyframes nudgeRight {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
 }
 
 /* ============================================================================

@@ -5,6 +5,9 @@ import type { StatItem } from '../../i18n/dictionary'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 
 const COUNT_DURATION_MS = 1800
+/** Needle settle: overshoot past the target, then fall back onto it. */
+const SETTLE_DURATION_MS = 420
+const SETTLE_OVERSHOOT = 0.012
 
 function Counter({ stat, start }: { stat: StatItem; start: boolean }) {
   const [display, setDisplay] = useState(() => formatNumber(0, stat.decimals ?? 0))
@@ -22,12 +25,27 @@ function Counter({ stat, start }: { stat: StatItem; start: boolean }) {
 
     let raf = 0
     let startTime: number | null = null
+    let settleStart: number | null = null
+
+    // Phase 2: the instrument needle overshoots the reading and settles back,
+    // decaying like a real dial. Gives the numbers a mechanical soul.
+    const settle = (now: number) => {
+      if (settleStart === null) settleStart = now
+      const p = Math.min(1, (now - settleStart) / SETTLE_DURATION_MS)
+      const decay = Math.exp(-5 * p) * Math.cos(p * Math.PI * 2)
+      const value = stat.value * (1 + SETTLE_OVERSHOOT * decay * (1 - p))
+      setDisplay(formatNumber(value, stat.decimals ?? 0))
+      if (p < 1) raf = requestAnimationFrame(settle)
+      else setDisplay(formatNumber(stat.value, stat.decimals ?? 0))
+    }
+
     const tick = (now: number) => {
       if (startTime === null) startTime = now
       const p = Math.min(1, (now - startTime) / COUNT_DURATION_MS)
       const eased = 1 - Math.pow(1 - p, 4)
       setDisplay(formatNumber(stat.value * eased, stat.decimals ?? 0))
       if (p < 1) raf = requestAnimationFrame(tick)
+      else raf = requestAnimationFrame(settle)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)

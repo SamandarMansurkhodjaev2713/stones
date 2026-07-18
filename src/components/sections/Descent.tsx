@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Send, ArrowUp } from 'lucide-react'
 import SectionShell from '../ui/SectionShell'
 import MagneticButton from '../ui/MagneticButton'
+import DisplayHeading from '../ui/DisplayHeading'
 import { useI18n } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
 import { useReducedMotion } from '../../lib/useReducedMotion'
@@ -144,13 +145,17 @@ export default function Descent() {
         />
 
         <div className="relative flex flex-col items-center px-5 py-24 text-center md:py-40">
-          <h2
-            data-reveal-mask
-            className="display-title max-w-3xl text-5xl text-bone sm:text-6xl md:text-8xl"
-          >
-            <span className="block">{t.descent.titleA}</span>
-            <span className="block text-bone/40">{t.descent.titleB}</span>
-          </h2>
+          <DisplayHeading
+            text={t.descent.titleA}
+            className="display-title block max-w-3xl text-5xl text-bone sm:text-6xl md:text-8xl"
+          />
+          <DisplayHeading
+            text={t.descent.titleB}
+            outlineWords={[1]}
+            as="p"
+            delay={0.14}
+            className="display-title block max-w-3xl text-5xl text-bone/70 sm:text-6xl md:text-8xl"
+          />
 
           <p className="mt-8 max-w-md text-base leading-relaxed text-bone/60 md:text-lg">
             {t.descent.body}

@@ -7,6 +7,7 @@ import CustomCursor from './components/cursor/CustomCursor'
 import Preloader from './components/layout/Preloader'
 import GrainOverlay from './components/ui/GrainOverlay'
 import DustForeground from './components/ui/DustForeground'
+import AmbientLight from './components/ui/AmbientLight'
 import EdgeRulers from './components/ui/EdgeRulers'
 import Navbar from './components/layout/Navbar'
 import DepthRail from './components/layout/DepthRail'
@@ -43,6 +44,7 @@ function Shell() {
       {showCustomCursor && <CustomCursor />}
       <GrainOverlay />
       <DustForeground />
+      <AmbientLight />
       <EdgeRulers />
       <SkipLink />
       <Navbar />

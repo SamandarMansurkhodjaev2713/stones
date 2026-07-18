@@ -108,6 +108,56 @@ export default function SectionShell({
         })
       }
 
+      // Media is excavated: a clip-path wipes upward as if soil were being
+      // brushed off a find. Cleared afterwards so nothing stays clipped.
+      const media = gsap.utils.toArray<HTMLElement>(
+        section.querySelectorAll('[data-reveal-media]'),
+      )
+      if (media.length) {
+        gsap.set(media, { clipPath: 'inset(100% 0% 0% 0%)' })
+        gsap.to(media, {
+          clipPath: 'inset(0% 0% 0% 0%)',
+          duration: DURATION.xslow,
+          ease: EASE_OUT,
+          stagger: 0.12,
+          scrollTrigger: { trigger: section, start: 'top 76%', once: true },
+          onComplete: () => gsap.set(media, { clearProps: 'clipPath' }),
+        })
+      }
+
+      // List rows: the ruled line is drawn first, the content climbs after it.
+      const rows = gsap.utils.toArray<HTMLElement>(
+        section.querySelectorAll('[data-reveal-row]'),
+      )
+      if (rows.length) {
+        rows.forEach((row, i) => {
+          const delay = i * 0.08
+          gsap.fromTo(
+            row,
+            { '--row-line': 0 },
+            {
+              '--row-line': 1,
+              duration: DURATION.med,
+              ease: EASE_OUT,
+              delay,
+              scrollTrigger: { trigger: row, start: 'top 90%', once: true },
+            },
+          )
+          const body = row.querySelector('[data-row-body]')
+          if (body) {
+            gsap.set(body, { opacity: 0, y: 26 })
+            gsap.to(body, {
+              opacity: 1,
+              y: 0,
+              duration: DURATION.med,
+              ease: EASE_OUT,
+              delay: delay + 0.18,
+              scrollTrigger: { trigger: row, start: 'top 90%', once: true },
+            })
+          }
+        })
+      }
+
       // Display headlines rise out of a clipping mask — the line-reveal.
       const masked = gsap.utils.toArray<HTMLElement>(
         section.querySelectorAll('[data-reveal-mask]'),

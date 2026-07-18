@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { MoveHorizontal } from 'lucide-react'
 import SectionShell from '../ui/SectionShell'
+import DisplayHeading from '../ui/DisplayHeading'
+import SectionStrata from '../ui/SectionStrata'
 import { useI18n } from '../../i18n'
 import { gsap } from '../../lib/gsap'
 import { SAMPLE_PHOTO } from '../../lib/media'
@@ -153,12 +155,16 @@ export default function Samples() {
         ref={wrapRef}
         className="lg:motion-safe:flex lg:motion-safe:h-screen lg:motion-safe:flex-col lg:motion-safe:justify-center"
       >
-      <div className="mx-auto w-full max-w-7xl px-5">
+      <SectionStrata depth={0.55} />
+
+      <div className="relative mx-auto w-full max-w-7xl px-5">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-6 md:mb-14">
           <div className="max-w-3xl">
-            <h2 data-reveal-mask className="display-title text-5xl text-bone md:text-7xl">
-              {t.samples.title}
-            </h2>
+            <DisplayHeading
+              text={t.samples.title}
+              outlineWords={[1]}
+              className="display-title text-5xl text-bone md:text-7xl"
+            />
             <p data-reveal className="mt-5 max-w-xl text-lg leading-relaxed text-bone/60">
               {t.samples.sub}
             </p>
@@ -194,6 +200,7 @@ export default function Samples() {
               scrollByCard(-1)
             }
           }}
+          data-cursor="drag"
           className="scrollbar-hide cursor-grab snap-x snap-mandatory overflow-x-auto lg:motion-safe:snap-none lg:motion-safe:overflow-x-hidden"
         >
           <div
@@ -205,7 +212,7 @@ export default function Samples() {
               key={item.name}
               className="group flex min-w-[78vw] max-w-[420px] snap-start flex-col overflow-hidden rounded-2xl border border-bone/10 bg-layer select-none xs:min-w-[340px] sm:min-w-[380px]"
             >
-              <div className="relative h-44 overflow-hidden">
+              <div data-reveal-media className="relative h-44 overflow-hidden">
                 {/* Eager on purpose: lazy-loading is unreliable for items in a
                     horizontal scroller (no vertical intersection), and these
                     four are lightweight (w=900). */}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { CURSOR_SMOOTHING } from '../../lib/constants'
 
-type CursorMode = 'default' | 'hover' | 'lens' | 'label'
+type CursorMode = 'default' | 'hover' | 'lens' | 'label' | 'drag'
 
 const INTERACTIVE_SELECTOR = '[data-cursor], a, button, [role="button"], input, label'
 const OFFSCREEN = -100
@@ -95,7 +95,10 @@ export default function CustomCursor() {
         return
       }
       const kind = el.dataset.cursor
-      if (kind === 'lens') {
+      if (kind === 'drag') {
+        setMode('drag')
+        setLabel('')
+      } else if (kind === 'lens') {
         setMode('lens')
         setLabel(el.dataset.cursorLabel ?? '')
       } else if (kind === 'label') {
@@ -161,7 +164,14 @@ export default function CustomCursor() {
       </div>
 
       <div ref={ringRef} data-mode={mode} className="cursor-ring">
-        {label ? <span className="cursor-label">{label}</span> : null}
+        {mode === 'drag' ? (
+          <span className="cursor-arrows" aria-hidden="true">
+            <span>←</span>
+            <span>→</span>
+          </span>
+        ) : label ? (
+          <span className="cursor-label">{label}</span>
+        ) : null}
       </div>
       <div ref={dotRef} data-mode={mode} className="cursor-dot" />
     </div>

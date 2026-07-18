@@ -12,6 +12,8 @@ export default {
         bone: 'rgb(var(--bone-rgb) / <alpha-value>)',
         ash: 'rgb(var(--ash-rgb) / <alpha-value>)',
         accent: 'rgb(var(--accent-rgb) / <alpha-value>)',
+        magma: 'rgb(var(--magma-rgb) / <alpha-value>)',
+        'magma-deep': 'rgb(var(--magma-deep-rgb) / <alpha-value>)',
       },
       fontFamily: {
         display: ['"Bebas Neue"', 'Oswald', 'system-ui', 'sans-serif'],

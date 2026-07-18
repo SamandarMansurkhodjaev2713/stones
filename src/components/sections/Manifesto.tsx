@@ -1,5 +1,7 @@
 import SectionShell from '../ui/SectionShell'
 import GhostEpoch from '../ui/GhostEpoch'
+import DisplayHeading from '../ui/DisplayHeading'
+import SectionStrata from '../ui/SectionStrata'
 import PillButton from '../ui/PillButton'
 import StrataPlate from '../ui/StrataPlate'
 import ContourPlate from '../ui/ContourPlate'
@@ -19,6 +21,8 @@ export default function Manifesto() {
       eyebrow={t.manifesto.eyebrow}
       className="bg-void py-32 md:py-44"
     >
+      <SectionStrata depth={0.1} />
+
       <GhostEpoch
         text={t.eras.title}
         className="left-[-2%] top-[6%] text-[24vw] md:text-[16vw]"
@@ -26,20 +30,24 @@ export default function Manifesto() {
 
       <div className="relative mx-auto max-w-7xl px-5">
         <div className="max-w-3xl">
-          <h2
-            data-reveal-mask
-            className="display-title text-5xl text-bone sm:text-6xl md:text-8xl"
-          >
-            <span className="block">{t.manifesto.titleA}</span>
-            <span className="block text-bone/40">{t.manifesto.titleB}</span>
-          </h2>
+          <DisplayHeading
+            text={t.manifesto.titleA}
+            className="display-title block text-5xl text-bone sm:text-6xl md:text-8xl"
+          />
+          <DisplayHeading
+            text={t.manifesto.titleB}
+            outlineWords={[1]}
+            as="p"
+            delay={0.14}
+            className="display-title block text-5xl text-bone/70 sm:text-6xl md:text-8xl"
+          />
         </div>
 
         <div className="mt-16 grid grid-cols-12 items-start gap-5 md:mt-24">
           <div className="col-span-12 md:col-span-7">
             <div ref={bigImage} className="will-change-transform">
               <figure
-                data-reveal
+                data-reveal-media
                 data-cursor="lens"
                 data-cursor-label={t.cursor.read}
                 className="relative overflow-hidden rounded-3xl border border-bone/10"

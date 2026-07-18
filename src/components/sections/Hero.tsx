@@ -32,6 +32,10 @@ const MOBILE_EDGE_MASK =
 
 /** How long a touch keeps steering the beam before the auto-sweep resumes. */
 const TOUCH_HOLD_MS = 2200
+/** Desktop idle: after this long without a mouse move the beam self-drives. */
+const IDLE_TAKEOVER_MS = 5000
+/** How fast the beam blends between cursor control and autopilot. */
+const AUTOPILOT_BLEND = 0.02
 /** Gyro tilt → beam travel, as a fraction of the viewport. */
 const TILT_TRAVEL_X = 0.18
 const TILT_TRAVEL_Y = 0.1
@@ -78,9 +82,16 @@ export default function Hero() {
     const target = { x: window.innerWidth / 2, y: window.innerHeight * 0.55 }
     const smooth = { ...target }
 
+    // Desktop idle handoff: the beam drifts to autopilot when the pointer
+    // rests, and returns to the cursor the moment it moves again. The site is
+    // never dead during a demo.
+    let lastMove = performance.now()
+    let autopilot = 0
+
     const onMouseMove = (event: MouseEvent) => {
       target.x = event.clientX
       target.y = event.clientY
+      lastMove = performance.now()
     }
     if (hasFinePointer) window.addEventListener('mousemove', onMouseMove)
 
@@ -100,15 +111,36 @@ export default function Hero() {
       maskEl.style.maskImage = mask
       maskEl.style.webkitMaskImage = mask
       if (glowEl) {
+        // The lamp's core carries a trace of heat — the only hue in the hero.
         glowEl.style.background =
           `radial-gradient(circle ${(radius * 1.05).toFixed(0)}px at ${px}px ${py}px, ` +
-          `rgb(var(--bone-rgb) / 0.2), rgb(var(--bone-rgb) / 0.07) 42%, transparent 62%)`
+          `rgb(var(--magma-rgb) / 0.16), rgb(var(--bone-rgb) / 0.17) 24%, ` +
+          `rgb(var(--bone-rgb) / 0.06) 46%, transparent 64%)`
       }
     }
 
     const tick = (time: number) => {
       const w = window.innerWidth
       const h = window.innerHeight
+
+      if (hasFinePointer) {
+        // Blend toward the wandering path while idle, back to the cursor on move.
+        const idle = performance.now() - lastMove > IDLE_TAKEOVER_MS
+        autopilot += ((idle ? 1 : 0) - autopilot) * AUTOPILOT_BLEND
+        if (autopilot > 0.001) {
+          const driftX =
+            w * 0.5 +
+            Math.sin(time * SWEEP.x1) * w * 0.24 +
+            Math.sin(time * SWEEP.x2 + 1.7) * w * 0.1
+          const driftY =
+            h * 0.44 +
+            Math.sin(time * SWEEP.y1 + 0.9) * h * 0.1 +
+            Math.cos(time * SWEEP.y2) * h * 0.05
+          target.x += (driftX - target.x) * autopilot
+          target.y += (driftY - target.y) * autopilot
+        }
+      }
+
       if (!hasFinePointer) {
         const touch = touchRef.current
         if (time - touch.ts < TOUCH_HOLD_MS) {
@@ -202,6 +234,19 @@ export default function Hero() {
     >
       {/* THE HEADLINE — behind the monolith. Glyph tops clear the ridge, the
           feet sink into the rock: the depth sandwich. */}
+      {/* Cave haze: the air between the letters and the monolith. Sitting
+          between the two layers, it is what makes the text read as BEHIND. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-[9]"
+        style={{
+          background:
+            'radial-gradient(120% 80% at 50% 30%, rgb(var(--void-rgb) / 0.5), transparent 65%)',
+          backdropFilter: 'blur(1.5px)',
+          WebkitBackdropFilter: 'blur(1.5px)',
+        }}
+      />
+
       <div
         ref={headlineRef}
         className="absolute inset-x-0 top-[13%] z-[8] px-4 text-center sm:top-[16%]"

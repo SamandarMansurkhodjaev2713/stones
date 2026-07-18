@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import SectionShell from '../ui/SectionShell'
 import ParticleField from '../ui/ParticleField'
+import DisplayHeading from '../ui/DisplayHeading'
 import { useI18n, formatNumber } from '../../i18n'
 import type { Dictionary } from '../../i18n/dictionary'
 import { gsap, ScrollTrigger } from '../../lib/gsap'
@@ -181,9 +182,11 @@ function ErasList({ t, srOnly = false }: { t: Dictionary; srOnly?: boolean }) {
     <div className="py-28 md:py-40">
       <div className="relative mx-auto max-w-7xl px-5">
         <div className="mb-14 max-w-3xl md:mb-20">
-          <h2 data-reveal-mask className="display-title text-5xl text-bone md:text-7xl">
-            {t.eras.title}
-          </h2>
+          <DisplayHeading
+            text={t.eras.title}
+            outlineWords={[1]}
+            className="display-title text-5xl text-bone md:text-7xl"
+          />
           <p data-reveal className="mt-5 max-w-xl text-lg leading-relaxed text-bone/60">
             {t.eras.sub}
           </p>

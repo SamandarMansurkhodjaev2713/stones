@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ArrowUpRight, Plus } from 'lucide-react'
 import SectionShell from '../ui/SectionShell'
 import MagneticButton from '../ui/MagneticButton'
+import DisplayHeading from '../ui/DisplayHeading'
+import SectionStrata from '../ui/SectionStrata'
 import { useI18n } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
 import { HEADER_OFFSET } from '../../lib/constants'
@@ -46,11 +48,15 @@ export default function Expeditions() {
       eyebrow={t.expeditions.eyebrow}
       className="bg-surface py-28 md:py-40"
     >
-      <div className="mx-auto max-w-7xl px-5">
+      <SectionStrata depth={0.75} />
+
+      <div className="relative mx-auto max-w-7xl px-5">
         <div className="mb-12 max-w-3xl md:mb-16">
-          <h2 data-reveal-mask className="display-title text-5xl text-bone md:text-7xl">
-            {t.expeditions.title}
-          </h2>
+          <DisplayHeading
+            text={t.expeditions.title}
+            outlineWords={[1]}
+            className="display-title text-5xl text-bone md:text-7xl"
+          />
           <p data-reveal className="mt-5 max-w-xl text-lg leading-relaxed text-bone/60">
             {t.expeditions.sub}
           </p>
@@ -60,7 +66,7 @@ export default function Expeditions() {
           {t.expeditions.items.map((route, i) => {
             const expanded = open === i
             return (
-              <li key={route.place} data-reveal className="border-t border-bone/10">
+              <li key={route.place} data-reveal-row className="row-ruled border-t border-bone/10">
                 <button
                   type="button"
                   onClick={() => setOpen(expanded ? null : i)}
@@ -73,7 +79,7 @@ export default function Expeditions() {
                     aria-hidden="true"
                     className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-gradient-to-r from-bone/[0.05] to-transparent transition-transform duration-500 ease-out-expo group-hover:scale-x-100"
                   />
-                  <span className="relative grid grid-cols-12 items-center gap-x-4 gap-y-2 py-7 md:py-10">
+                  <span data-row-body className="relative grid grid-cols-12 items-center gap-x-4 gap-y-2 py-7 md:py-10">
                     <span className="font-mono-t col-span-2 text-xs text-ash md:col-span-1">
                       {String(i + 1).padStart(2, '0')}
                     </span>

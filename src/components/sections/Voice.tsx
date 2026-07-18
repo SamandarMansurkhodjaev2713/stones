@@ -1,6 +1,12 @@
+import { useEffect, useRef } from 'react'
 import ScrubText from '../ui/ScrubText'
 import useReveal from '../../hooks/useReveal'
 import { useI18n } from '../../i18n'
+import { gsap } from '../../lib/gsap'
+import { useReducedMotion } from '../../lib/useReducedMotion'
+
+/** How far past the section the light has fully risen (fraction of its height). */
+const SUNRISE_END = 0.55
 
 function MarqueeRow({ words }: { words: string[] }) {
   const items = [...words, ...words]
@@ -24,22 +30,69 @@ function MarqueeRow({ words }: { words: string[] }) {
 }
 
 /**
- * The one lit room in the shaft. Everything above and below is graphite; here
- * the ground flips to bone and the reader surfaces for a breath before the
- * final descent — the same material, lit from the other side. The quote is
- * read by scrolling, word by word, so the sentence lands at the reader's pace.
- * `data-tone="light"` tells the custom cursor to ink itself dark in here.
+ * The one lit room in the shaft — and the site's only light ground.
+ *
+ * The entrance is a sunrise: as the reader arrives, light floods up from the
+ * floor of the section and pushes the graphite off the top, the way daylight
+ * arrives when you climb out of a shaft. The quote then reads word by word at
+ * the reader's own scroll pace. `data-tone="light"` tells the custom cursor to
+ * ink itself dark in here.
+ *
+ * Under reduced motion the room is simply lit — no rising edge, no scrub.
  */
 export default function Voice() {
   const { t } = useI18n()
+  const reduced = useReducedMotion()
+  const sectionRef = useRef<HTMLElement>(null)
+  const duskRef = useRef<HTMLDivElement>(null)
   const attribution = useReveal<HTMLDivElement>({ threshold: 0.3 })
+
+  useEffect(() => {
+    const section = sectionRef.current
+    const dusk = duskRef.current
+    if (!section || !dusk || reduced) return
+
+    const ctx = gsap.context(() => {
+      // A graphite sheet covering the light room, retreating upward as the
+      // reader descends into it. Scrubbed, so the sunrise is theirs to drive.
+      gsap.fromTo(
+        dusk,
+        { yPercent: 0 },
+        {
+          yPercent: -100,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: section,
+            start: 'top bottom',
+            end: `top ${(1 - SUNRISE_END) * 100}%`,
+            scrub: 0.5,
+          },
+        },
+      )
+    }, section)
+
+    return () => ctx.revert()
+  }, [reduced])
 
   return (
     <section
+      ref={sectionRef}
       id="voice"
       data-tone="light"
       className="relative overflow-hidden bg-bone py-24 text-void md:py-32"
     >
+      {/* The retreating night. Sits above the content but below nothing else,
+          so the room is genuinely revealed rather than cross-faded. */}
+      <div
+        ref={duskRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-20 hidden motion-safe:block"
+        style={{
+          background:
+            'linear-gradient(180deg, rgb(var(--void-rgb)) 0%, rgb(var(--void-rgb)) 78%, rgb(var(--void-rgb) / 0.86) 92%, transparent 100%)',
+        }}
+      />
+
       {/* Sun through the shaft mouth: the light has a source, not a switch. */}
       <div
         aria-hidden="true"
@@ -57,7 +110,7 @@ export default function Voice() {
         <blockquote>
           <ScrubText
             text={`${t.voice.quoteA} ${t.voice.quoteB}`}
-            className="display-title text-center text-4xl leading-[1.02] text-void sm:text-5xl md:text-7xl"
+            className="display-title text-balance text-center text-[10vw] leading-[1.02] text-void sm:text-5xl md:text-7xl"
           />
         </blockquote>
 

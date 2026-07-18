@@ -260,7 +260,7 @@ function PinnedEras({ t, tilt }: { t: Dictionary; tilt: Tilt }) {
 
       {/* Bottom telemetry */}
       <div className="relative mx-auto flex w-full max-w-7xl items-center justify-between px-5 pb-10">
-        <span className="font-mono-t text-xs text-ash">
+        <span className="font-mono-t shrink-0 whitespace-nowrap text-xs text-ash">
           {String(idx + 1).padStart(2, '0')} /{' '}
           {String(ERA_SEQUENCE.length).padStart(2, '0')}
         </span>

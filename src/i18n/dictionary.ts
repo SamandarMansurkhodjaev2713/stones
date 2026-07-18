@@ -60,7 +60,8 @@ export interface Dictionary {
   /** `tilt` labels the phone's own attitude readout in the station strip. */
   telemetry: { unit: string; tilt: string }
   /** Full-screen act titles punctuating the descent. */
-  acts: { deep: string; bottom: string }
+  /** Full-screen act titles punctuating the descent: word + its standfirst. */
+  acts: { deep: string; deepNote: string; bottom: string; bottomNote: string }
   hero: {
     eyebrow: string
     titleA: string
@@ -188,7 +189,12 @@ const ru: Dictionary = {
   },
   preloader: { label: 'Погружение' },
   telemetry: { unit: 'М', tilt: 'КРЕН' },
-  acts: { deep: 'Вглубь', bottom: 'Дно' },
+  acts: {
+    deep: 'Вглубь',
+    deepNote: 'Ниже — восемь эпох. Каждая тяжелее предыдущей.',
+    bottom: 'Дно',
+    bottomNote: 'Дальше только то, из чего всё началось.',
+  },
   hero: {
     eyebrow: 'ПОЛЕ 01 · ГЛУБИНА 0 М',
     titleA: 'Камень помнит',
@@ -435,7 +441,12 @@ const uz: Dictionary = {
   },
   preloader: { label: 'Tushish' },
   telemetry: { unit: 'M', tilt: 'QIYALIK' },
-  acts: { deep: 'Qa’riga', bottom: 'Tub' },
+  acts: {
+    deep: 'Qa’riga',
+    deepNote: 'Quyida — sakkiz davr. Har biri oldingisidan og‘irroq.',
+    bottom: 'Tub',
+    bottomNote: 'Undan narida — hammasi boshlangan narsa.',
+  },
   hero: {
     eyebrow: 'DALA 01 · CHUQURLIK 0 M',
     titleA: 'Tosh eslaydi',

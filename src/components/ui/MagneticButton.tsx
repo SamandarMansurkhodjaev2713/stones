@@ -66,8 +66,9 @@ export default function MagneticButton({
         <span className="grid h-5 w-5 place-items-center">
           {icon ?? <ArrowDown size={16} strokeWidth={2.25} />}
         </span>
-        {/* Text drum: two stacked copies inside a clipping window. */}
-        <span className="relative grid overflow-hidden">
+        {/* Text drum: two stacked copies inside a clipping window. Never wraps
+            — a two-line label breaks the drum's fixed-height window. */}
+        <span className="relative grid overflow-hidden whitespace-nowrap">
           <span className="col-start-1 row-start-1 block transition-transform duration-500 ease-out-expo group-hover:-translate-y-full">
             {label}
           </span>

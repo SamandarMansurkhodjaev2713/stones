@@ -8,6 +8,7 @@ import StrataPlate from '../ui/StrataPlate'
 import ContourPlate from '../ui/ContourPlate'
 import { useI18n } from '../../i18n'
 import { useParallax } from '../../lib/useParallax'
+import { MANIFESTO_PHOTO } from '../../lib/media'
 
 export default function Manifesto() {
   const { t } = useI18n()
@@ -45,7 +46,7 @@ export default function Manifesto() {
           />
         </div>
 
-        <div className="mt-16 grid grid-cols-12 items-start gap-5 md:mt-24">
+        <div className="mt-10 grid grid-cols-12 items-start gap-5 md:mt-24">
           <div className="col-span-12 md:col-span-7">
             <div ref={bigImage} className="will-change-transform">
               <figure
@@ -54,8 +55,21 @@ export default function Manifesto() {
                 data-cursor-label={t.cursor.read}
                 className="plate-scan relative overflow-hidden rounded-3xl border border-bone/10"
               >
-                <StrataPlate className="h-[420px] w-full md:h-[560px]" />
-                <div className="absolute inset-0 bg-gradient-to-t from-void/70 via-transparent to-void/25" />
+                <img
+                  src={MANIFESTO_PHOTO.grain}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  // Crop toward the rock: a tall frame on a wide landscape
+                  // otherwise fills itself with sky.
+                  className="photo-tone h-[340px] w-full object-cover object-[50%_78%] sm:h-[420px] md:h-[560px]"
+                />
+                {/* The procedural bedding planes stay — now as a survey overlay
+                    drawn ON the rock rather than standing in for it. */}
+                <StrataPlate className="absolute inset-0 h-full w-full opacity-40 mix-blend-screen" />
+                {/* Sky is the brightest thing a landscape brings; the site is
+                    graphite, so the plate is pulled back down into it. */}
+                <div className="absolute inset-0 bg-gradient-to-t from-void/90 via-void/45 to-void/60" />
                 <span className="font-mono-t absolute left-5 top-5 border border-bone/25 bg-void/55 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-bone/85 backdrop-blur-sm">
                   {t.manifesto.tag1}
                 </span>
@@ -101,8 +115,15 @@ export default function Manifesto() {
                 data-cursor-label={t.cursor.read}
                 className="plate-scan relative overflow-hidden rounded-3xl border border-bone/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]"
               >
-                <ContourPlate className="h-[220px] w-full" />
-                <div className="absolute inset-0 bg-gradient-to-t from-void/70 to-transparent" />
+                <img
+                  src={MANIFESTO_PHOTO.ridges}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="photo-tone h-[220px] w-full object-cover"
+                />
+                <ContourPlate className="absolute inset-0 h-full w-full opacity-45 mix-blend-screen" />
+                <div className="absolute inset-0 bg-gradient-to-t from-void/90 via-void/40 to-void/55" />
                 <span className="font-mono-t absolute left-4 top-4 border border-bone/25 bg-void/55 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-bone/85 backdrop-blur-sm">
                   {t.manifesto.tag2}
                 </span>

@@ -64,6 +64,7 @@ function Shell() {
           <Manifesto />
           <ActTitle
             word={t.acts.deep}
+            note={t.acts.deepNote}
             depthM={1200}
             numeral="II"
             unit={t.telemetry.unit}
@@ -75,6 +76,7 @@ function Shell() {
           <Voice />
           <ActTitle
             word={t.acts.bottom}
+            note={t.acts.bottomNote}
             depthM={4600}
             numeral="V"
             unit={t.telemetry.unit}

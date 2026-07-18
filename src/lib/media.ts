@@ -99,6 +99,22 @@ export const ROUTE_PHOTO: readonly string[] = [
   commons('5/5d/Stevns_Klint_027.jpg/960px-Stevns_Klint_027.jpg'),
 ]
 
+/**
+ * The manifesto plates. Procedural strata drawn in SVG all but vanish on a
+ * small dark screen — they read as an area that failed to load — so the two
+ * plates carry real rock, matched to the captions beside them.
+ */
+export const MANIFESTO_PHOTO = {
+  /** Вади-Рам: тот самый песчаник из подписи. */
+  grain: commons(
+    'f/fc/Desert_landscape_with_rocks_in_the_middle_in_Wadi_Rum.jpg/1920px-Desert_landscape_with_rocks_in_the_middle_in_Wadi_Rum.jpg',
+  ),
+  /** Гранд-Каньон: хребты, сложенные, как страницы. */
+  ridges: commons(
+    'd/d5/Grand_Canyon_National_Park_South_Rim_-_Panorama_from_Moran_Point_4941_%287290025068%29.jpg/1920px-Grand_Canyon_National_Park_South_Rim_-_Panorama_from_Moran_Point_4941_%287290025068%29.jpg',
+  ),
+} as const
+
 /** Shaft-menu hover previews, keyed by nav section id. */
 export const MENU_PREVIEW: Record<string, string> = {
   manifesto: commons(

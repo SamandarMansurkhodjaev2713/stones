@@ -108,11 +108,14 @@ export default function Expeditions() {
                     }`}
                   />
                   <span data-row-body className="relative grid grid-cols-12 items-center gap-x-4 gap-y-2 py-7 md:py-10">
-                    <span className="font-mono-t col-span-2 text-xs text-ash md:col-span-1">
+                    {/* On a phone the index sits inline above the name rather
+                        than in its own gutter — a 40px column of empty space
+                        beside a poster word reads as a layout slip. */}
+                    <span className="font-mono-t col-span-12 text-xs text-ash md:col-span-1">
                       {String(i + 1).padStart(2, '0')}
                     </span>
 
-                    <span className="col-span-10 md:col-span-4">
+                    <span className="col-span-12 md:col-span-4">
                       <span
                         className={`display-title flex items-center gap-2 text-2xl text-bone transition-transform duration-500 ease-out-expo group-hover:translate-x-1.5 md:text-4xl ${
                           lit ? 'translate-x-1.5' : ''

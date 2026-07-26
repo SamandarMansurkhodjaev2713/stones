@@ -71,6 +71,9 @@ export interface Dictionary {
     ctaSecondary: string
     sideNote: string
     scrollHint: string
+    /** Instrument readout attached to the hero monolith. */
+    specimenCode: string
+    specimenLabel: string
   }
   manifesto: {
     eyebrow: string
@@ -133,6 +136,9 @@ export interface Dictionary {
     author: string
     role: string
     marquee: string[]
+    ghost: string
+    folio: string
+    index: string
   }
   descent: {
     eyebrow: string
@@ -205,6 +211,8 @@ const ru: Dictionary = {
     sideNote:
       'Под каждым хребтом — летопись огня и потопов: страницы, спрессованные в камень, которые учатся читать лишь терпеливые.',
     scrollHint: 'Листайте вглубь',
+    specimenCode: 'STN-000 · ПОВЕРХНОСТЬ',
+    specimenLabel: 'Живой срез породы',
   },
   manifesto: {
     eyebrow: 'МАНИФЕСТ',
@@ -380,6 +388,9 @@ const ru: Dictionary = {
     quoteB: 'Мои ученики видят календарь.',
     author: 'Др. Елена Восс',
     role: 'Полевой геолог — 22 сезона в Атакаме, ведущий гид Stones',
+    ghost: 'КАЛЕНДАРЬ',
+    folio: 'СВИДЕТЕЛЬСТВО · ПОЛЕВОЙ ГОЛОС',
+    index: 'ЛИСТ 07 · СВЕТ',
     marquee: [
       'Страты',
       'Окаменелости',
@@ -457,6 +468,8 @@ const uz: Dictionary = {
     sideNote:
       'Har bir tizma ostida — olov va to‘fonlar yilnomasi: toshga siqilgan sahifalar, ularni faqat sabrlilar o‘qishni o‘rganadi.',
     scrollHint: 'Chuqurroq varaqlang',
+    specimenCode: 'STN-000 · SIRT',
+    specimenLabel: 'Jinsning jonli kesimi',
   },
   manifesto: {
     eyebrow: 'MANIFEST',
@@ -632,6 +645,9 @@ const uz: Dictionary = {
     quoteB: 'Mening o‘quvchilarim taqvimni ko‘radi.',
     author: 'Dr. Yelena Voss',
     role: 'Dala geologi — Atakamada 22 mavsum, Stones yetakchi gidi',
+    ghost: 'TAQVIM',
+    folio: 'GUVOHLIK · DALA OVOZI',
+    index: 'VARAQ 07 · YORUG‘LIK',
     marquee: [
       'Stratalar',
       'Qazilmalar',

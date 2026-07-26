@@ -31,7 +31,7 @@ export default function Footer() {
     <footer className="relative overflow-hidden bg-void">
       <CursorPreview index={hovered} images={previews} labels={labels} />
 
-      <div className="relative mx-auto max-w-7xl px-5 pt-20 md:pt-28">
+      <div className="site-footer-content relative mx-auto max-w-7xl px-5 pt-20 md:pt-28">
         {/* Final reading — the shaft bottoms out at the origin of the rock. */}
         <div className="flex flex-wrap items-end justify-between gap-6 border-b border-bone/10 pb-10">
           <div>

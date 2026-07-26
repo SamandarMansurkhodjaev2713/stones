@@ -5,7 +5,13 @@
  */
 
 /* ── Media queries ────────────────────────────────────────────────────────── */
-export const MQ_MOBILE = '(max-width: 639px)'
+/**
+ * Phones rotated to landscape can be wider than the visual mobile breakpoint
+ * while retaining a very short touch viewport. Treat them as mobile so pinned
+ * desktop scenes and dense pointer interactions never take over the screen.
+ */
+export const MQ_MOBILE =
+  '(max-width: 639px), (orientation: landscape) and (max-height: 520px)'
 export const MQ_DESKTOP = '(min-width: 1024px)'
 export const MQ_FINE_POINTER = '(pointer: fine)'
 export const MQ_REDUCED_MOTION = '(prefers-reduced-motion: reduce)'

@@ -142,7 +142,7 @@ function PinnedEras({ t, tilt }: { t: Dictionary; tilt: Tilt }) {
             key={item.id}
             src={ERA_PHOTO[item.id]}
             alt=""
-            loading={i === 0 ? 'eager' : 'lazy'}
+            loading="lazy"
             decoding="async"
             className={`absolute inset-0 h-full w-full object-cover photo-tone transition-[opacity,transform] duration-[1600ms] ease-out ${
               i === idx ? 'scale-105 opacity-40' : 'scale-100 opacity-0'

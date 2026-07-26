@@ -62,7 +62,7 @@ export default function MagneticButton({
         }`}
       />
 
-      <span className="pointer-events-none relative flex items-center gap-2.5">
+      <span className="pointer-events-none relative flex items-center gap-2.5 transition-transform duration-300 ease-out-expo group-active:scale-[0.97]">
         <span className="grid h-5 w-5 place-items-center">
           {icon ?? <ArrowDown size={16} strokeWidth={2.25} />}
         </span>

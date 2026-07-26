@@ -356,12 +356,12 @@ export default function Samples() {
             >
             <div className="drawer group flex w-full flex-col overflow-hidden rounded-2xl border border-bone/10 bg-layer">
               <div data-reveal-media className="relative h-44 overflow-hidden">
-                {/* Eager on purpose: lazy-loading is unreliable for items in a
-                    horizontal scroller (no vertical intersection), and these
-                    four are lightweight (w=900). */}
+                {/* The archive is far below the fold. Native lazy loading keeps
+                    full-resolution specimens off the mobile critical path. */}
                 <img
                   src={SAMPLE_PHOTO[i % SAMPLE_PHOTO.length]}
                   alt=""
+                  loading="lazy"
                   decoding="async"
                   className="absolute inset-0 h-full w-full object-cover photo-tone transition-transform duration-700 ease-out-expo group-hover:scale-110"
                 />

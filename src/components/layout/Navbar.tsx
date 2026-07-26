@@ -254,13 +254,13 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-[90] transition-colors duration-500 ${
+        className={`site-header fixed inset-x-0 top-0 z-[90] transition-colors duration-500 ${
           scrolled ? 'bg-void/85 backdrop-blur-md' : 'bg-transparent'
         }`}
       >
         {/* Telemetry strip */}
         <div className="anim anim-fade-down border-b border-bone/[0.06]">
-          <div className="font-mono-t mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-1.5 text-[10px] uppercase tracking-[0.16em] text-ash/80 sm:px-8">
+          <div className="station-telemetry font-mono-t mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-1.5 text-[10px] uppercase tracking-[0.16em] text-ash/80 sm:px-8">
             <span className="hidden sm:inline">
               LAT {STATION_COORDS.lat.toFixed(2)} · LON {STATION_COORDS.lon.toFixed(2)}
             </span>
@@ -284,19 +284,19 @@ export default function Navbar() {
         </div>
 
         {/* Wordmark + controls */}
-        <nav className="anim anim-fade-down mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3.5 sm:px-8">
+        <nav className="station-nav anim anim-fade-down mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3.5 sm:px-8">
           <button
             type="button"
             onClick={() => go('hero')}
             data-cursor="label"
             data-cursor-label={t.meta.brand}
             aria-label={t.meta.brand}
-            className="flex min-h-[44px] items-center"
+            className="station-brand flex min-h-[44px] shrink-0 items-center"
           >
             <Wordmark />
           </button>
 
-          <div className="flex items-center gap-3 sm:gap-5">
+          <div className="station-controls flex min-w-0 items-center gap-3 sm:gap-5">
             <LangToggle />
             <span className="hidden sm:block">
               <SoundToggle />
@@ -309,9 +309,9 @@ export default function Navbar() {
               aria-expanded={menuOpen}
               data-cursor="label"
               data-cursor-label={t.nav.menu}
-              className="group flex items-center gap-3"
+              className="group flex shrink-0 items-center gap-3"
             >
-              <span className="font-mono-t text-xs uppercase tracking-[0.2em] text-bone/80 transition-colors duration-300 group-hover:text-bone">
+              <span className="station-menu-label font-mono-t text-xs uppercase tracking-[0.2em] text-bone/80 transition-colors duration-300 group-hover:text-bone">
                 {t.nav.menu}
               </span>
               {/* Core-sample icon: three strata bands */}
@@ -333,7 +333,7 @@ export default function Navbar() {
         role="dialog"
         aria-modal={menuOpen}
         aria-label={t.nav.menu}
-        className={`fixed inset-0 z-[110] flex flex-col ${
+        className={`shaft-menu fixed inset-0 z-[110] flex flex-col overflow-y-auto overscroll-contain ${
           menuOpen ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
         aria-hidden={!menuOpen}
@@ -406,7 +406,7 @@ export default function Navbar() {
         </div>
 
         <div
-          className="relative flex items-center justify-between px-4 py-3.5 transition-opacity duration-300 ease-out-expo sm:px-8"
+          className="shaft-menu-header relative flex shrink-0 items-center justify-between px-4 py-3.5 transition-opacity duration-300 ease-out-expo sm:px-8"
           style={{
             opacity: menuOpen ? 1 : 0,
             transitionDelay: menuOpen ? '250ms' : '0ms',
@@ -417,19 +417,19 @@ export default function Navbar() {
             type="button"
             onClick={() => setMenuOpen(false)}
             aria-label={t.a11y.closeMenu}
-            className="group flex items-center gap-3"
+            className="group flex items-center gap-3 focus-visible:outline-none"
           >
             <span className="font-mono-t text-xs uppercase tracking-[0.2em] text-bone/80 transition-colors duration-300 group-hover:text-bone">
               {t.a11y.closeMenu}
             </span>
-            <span className="relative grid h-11 w-11 place-items-center rounded-full border border-bone/15 transition-colors duration-300 group-hover:border-bone/40">
+            <span className="relative grid h-11 w-11 place-items-center rounded-full border border-bone/15 transition-[border-color,box-shadow] duration-300 group-hover:border-bone/40 group-focus-visible:border-bone/70 group-focus-visible:ring-2 group-focus-visible:ring-bone/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-surface">
               <span className="absolute h-px w-4 rotate-45 bg-bone" />
               <span className="absolute h-px w-4 -rotate-45 bg-bone" />
             </span>
           </button>
         </div>
 
-        <nav className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-6 sm:px-8 lg:mx-[12%]">
+        <nav className="shaft-menu-nav relative mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-6 sm:px-8 lg:mx-[12%]">
           {t.nav.links.map((link, i) => (
             <button
               key={link.id}
@@ -442,7 +442,7 @@ export default function Navbar() {
               // controls they cannot see.
               data-cursor="label"
               data-cursor-label={link.label}
-              className={`group flex items-baseline justify-between gap-6 border-b border-bone/10 py-4 text-left transition-[opacity,transform] duration-500 ease-out-expo sm:py-5 ${
+              className={`shaft-menu-link group flex items-baseline justify-between gap-6 border-b border-bone/10 py-4 text-left transition-[opacity,transform] duration-500 ease-out-expo sm:py-5 ${
                 menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
               }`}
               style={{
@@ -489,7 +489,7 @@ export default function Navbar() {
         </nav>
 
         <div
-          className={`relative mx-auto w-full max-w-4xl px-6 pb-8 transition-[opacity,transform] duration-500 ease-out-expo sm:px-8 lg:mx-[12%] ${
+          className={`shaft-menu-footer relative mx-auto w-full max-w-4xl px-6 pb-8 transition-[opacity,transform] duration-500 ease-out-expo sm:px-8 lg:mx-[12%] ${
             menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
           }`}
           style={{
@@ -498,19 +498,21 @@ export default function Navbar() {
               : '0ms',
           }}
         >
-          <p className="font-mono-t mb-5 text-[10px] uppercase tracking-[0.2em] text-ash/70">
+          <p className="shaft-menu-note font-mono-t mb-5 text-[10px] uppercase tracking-[0.2em] text-ash/70">
             LAT {STATION_COORDS.lat.toFixed(2)} · LON {STATION_COORDS.lon.toFixed(2)} ·{' '}
             {t.meta.tagline}
           </p>
-          <div className="flex items-center justify-between gap-4">
+          <div className="shaft-menu-footer-row flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <LangToggle compact />
-              <SoundToggle />
+              <span className="shaft-menu-sound">
+                <SoundToggle />
+              </span>
             </div>
             <button
               type="button"
               onClick={() => go('descent')}
-              className="rounded-full bg-bone px-6 py-3.5 text-sm font-semibold text-void transition-colors duration-300 hover:bg-bone/85 sm:flex-none"
+              className="shaft-menu-cta shrink-0 whitespace-nowrap rounded-full bg-bone px-6 py-3.5 text-sm font-semibold text-void transition-colors duration-300 hover:bg-bone/85 sm:flex-none"
             >
               {t.nav.cta}
             </button>

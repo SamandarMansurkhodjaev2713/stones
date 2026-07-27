@@ -294,40 +294,65 @@ function ErasList({ t, srOnly = false }: { t: Dictionary; srOnly?: boolean }) {
         </div>
       </div>
 
-      <ol className="relative border-b border-bone/10">
+      <ol className="era-mobile-list relative border-b border-bone/10">
         {ERA_SEQUENCE.map((era, i) => {
           const copy = t.eras.items[era.id]
           return (
             <li
               key={era.id}
-              data-reveal
-              className="border-t border-bone/10"
-              style={{ backgroundColor: `rgba(0, 0, 0, ${i * 0.055})` }}
+              data-reveal-row
+              data-era={era.id}
+              className="era-mobile-card relative min-h-[68svh] overflow-hidden border-t border-bone/10 md:min-h-[58svh]"
             >
-              <div className="section-gutter mx-auto grid max-w-7xl grid-cols-12 items-baseline gap-x-4 gap-y-3 px-5 py-8 md:py-12">
-                <span className="font-mono-t col-span-4 text-xs text-ash md:col-span-2">
-                  −{formatNumber(depthOf(era.depth))} {t.telemetry.unit}
-                </span>
+              <img
+                src={ERA_PHOTO[era.id]}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="era-mobile-card__image photo-tone absolute inset-0 h-full w-full object-cover"
+                style={{ opacity: Math.max(0.2, 0.44 - i * 0.025) }}
+              />
+              <div className="era-mobile-card__shade absolute inset-0" aria-hidden="true" />
+              <span
+                aria-hidden="true"
+                className="era-mobile-card__index display-title absolute right-3 top-16 text-[34vw] leading-none text-bone/[0.055] md:right-8 md:top-20 md:text-[22vw]"
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
 
-                <div className="col-span-8 md:col-span-4">
+              <div
+                data-row-body
+                className="section-gutter relative z-[2] mx-auto grid min-h-[68svh] max-w-7xl grid-cols-12 content-end gap-x-4 gap-y-4 px-5 pb-12 pt-28 md:min-h-[58svh] md:items-end md:pb-16 md:pt-32"
+              >
+                <div className="col-span-12 flex items-center justify-between border-b border-bone/15 pb-3 lg:col-span-3 lg:block lg:border-b-0 lg:pb-0">
+                  <span className="font-mono-t text-[11px] uppercase tracking-[0.16em] text-bone/65">
+                    −{formatNumber(depthOf(era.depth))} {t.telemetry.unit}
+                  </span>
+                  <span className="font-mono-t text-[10px] uppercase tracking-[0.18em] text-ash lg:mt-3 lg:block">
+                    {String(i + 1).padStart(2, '0')} /{' '}
+                    {String(ERA_SEQUENCE.length).padStart(2, '0')}
+                  </span>
+                </div>
+
+                <div className="col-span-12 lg:col-span-5">
                   <h3
-                    className={`display-title text-4xl sm:text-5xl md:text-7xl ${
+                    className={`display-title text-[clamp(3.7rem,18vw,5.5rem)] leading-[0.86] lg:text-[clamp(5rem,9vw,8rem)] ${
                       era.id === 'hadean' ? 'era-molten' : 'text-bone'
                     }`}
                   >
                     {copy.name}
                   </h3>
-                  <p className="font-mono-t mt-2 text-xs uppercase tracking-[0.14em] text-bone/45">
+                  <p className="font-mono-t mt-3 text-[11px] uppercase tracking-[0.16em] text-bone/55">
                     {copy.age}
                   </p>
                 </div>
 
-                <div className="col-span-12 md:col-span-6 md:self-center">
-                  <p className="max-w-xl leading-relaxed text-bone/65">{copy.note}</p>
-                  <div className="mt-5 h-px w-full bg-bone/5" aria-hidden="true">
+                <div className="col-span-12 lg:col-span-4 lg:self-end">
+                  <p className="max-w-xl text-base leading-relaxed text-bone/75">{copy.note}</p>
+                  <div className="mt-6 h-px w-full bg-bone/10" aria-hidden="true">
                     <div
-                      className="h-px bg-gradient-to-r from-bone/20 to-bone/70"
-                      style={{ width: `${Math.max(4, era.depth * 100)}%` }}
+                      className="h-px bg-gradient-to-r from-lichen/35 to-bone/80"
+                      style={{ width: `${Math.max(5, era.depth * 100)}%` }}
                     />
                   </div>
                 </div>

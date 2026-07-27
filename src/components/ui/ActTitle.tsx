@@ -43,6 +43,10 @@ export default function ActTitle({ word, note, depthM, numeral, unit }: ActTitle
     const ctx = gsap.context(() => {
       const title = el.querySelector('[data-act-word]')
       const body = el.querySelector('[data-act-body]')
+      const core = el.querySelector('[data-act-core]')
+      const coreHalves = gsap.utils.toArray<HTMLElement>(
+        el.querySelectorAll('[data-act-core-half]'),
+      )
       const planes = gsap.utils.toArray<HTMLElement>(el.querySelectorAll('[data-plane]'))
       const track = { value: 0 }
 
@@ -72,6 +76,41 @@ export default function ActTitle({ word, note, depthM, numeral, unit }: ActTitle
           },
         )
       }
+
+      if (core) {
+        gsap.fromTo(
+          core,
+          { scaleY: 0.42, rotate: 5 },
+          {
+            scaleY: 1,
+            rotate: -3,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: el,
+              start: 'top bottom',
+              end: 'center center',
+              scrub: 0.55,
+            },
+          },
+        )
+      }
+
+      coreHalves.forEach((half, index) => {
+        gsap.fromTo(
+          half,
+          { xPercent: 0 },
+          {
+            xPercent: index === 0 ? -18 : 18,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: el,
+              start: 'top 65%',
+              end: 'bottom 35%',
+              scrub: 0.6,
+            },
+          },
+        )
+      })
 
       // The ground opens: planes spread symmetrically about the centre.
       planes.forEach((plane, i) => {
@@ -124,17 +163,33 @@ export default function ActTitle({ word, note, depthM, numeral, unit }: ActTitle
         ))}
       </div>
 
+      <div
+        data-act-core
+        aria-hidden="true"
+        className="act-core pointer-events-none absolute left-1/2 top-1/2 z-0 h-[68svh] w-[clamp(8.5rem,34vw,18rem)] -translate-x-1/2 -translate-y-1/2"
+      >
+        <span
+          data-act-core-half
+          className="act-core__half act-core__half--left absolute inset-y-0 left-0 w-1/2"
+        />
+        <span
+          data-act-core-half
+          className="act-core__half act-core__half--right absolute inset-y-0 right-0 w-1/2"
+        />
+        <span className="act-core__seam absolute inset-y-[-4%] left-1/2 w-px -translate-x-1/2" />
+      </div>
+
       <span
         data-act-word
         aria-hidden="true"
-        className="display-title outline-title whitespace-nowrap text-[clamp(4.25rem,24vw,9rem)] leading-none sm:text-[clamp(5rem,16vw,10rem)] md:text-[clamp(6rem,16vw,14rem)]"
+        className="display-title outline-title relative z-[1] whitespace-nowrap text-[clamp(4.25rem,24vw,9rem)] leading-none sm:text-[clamp(5rem,16vw,10rem)] md:text-[clamp(6rem,16vw,14rem)]"
       >
         {word}
       </span>
 
       <div
         data-act-body
-        className="relative mt-6 flex max-w-md flex-col items-center gap-4 px-2 text-center sm:px-6 md:mt-8"
+        className="relative z-[2] mt-6 flex max-w-md flex-col items-center gap-4 px-2 text-center sm:px-6 md:mt-8"
       >
         <p className="text-balance text-base leading-relaxed text-bone/60 md:text-lg">{note}</p>
         <p className="font-mono-t text-[10px] uppercase tracking-[0.3em] text-ash">

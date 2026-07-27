@@ -4,6 +4,7 @@ import { gsap } from '../../lib/gsap'
 import { DURATION, EASE_OUT } from '../../lib/constants'
 import { formatNumber } from '../../i18n'
 import { useReducedMotion } from '../../lib/useReducedMotion'
+import TectonicFault from './TectonicFault'
 
 interface SectionShellProps {
   /** DOM id — must match the nav/DepthRail target. */
@@ -60,6 +61,7 @@ export default function SectionShell({
   useEffect(() => {
     const section = sectionRef.current
     if (!section || reduced) return
+    const compactMotion = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches
 
     const ctx = gsap.context(() => {
       const seam = seamRef.current
@@ -100,7 +102,7 @@ export default function SectionShell({
         section.querySelectorAll('[data-reveal]'),
       )
       if (targets.length) {
-        gsap.set(targets, { opacity: 0, y: 44 })
+        gsap.set(targets, { opacity: 0, y: compactMotion ? 16 : 44 })
         gsap.to(targets, {
           opacity: 1,
           y: 0,
@@ -148,7 +150,7 @@ export default function SectionShell({
           )
           const body = row.querySelector('[data-row-body]')
           if (body) {
-            gsap.set(body, { opacity: 0, y: 26 })
+            gsap.set(body, { opacity: 0, y: compactMotion ? 12 : 26 })
             gsap.to(body, {
               opacity: 1,
               y: 0,
@@ -166,7 +168,10 @@ export default function SectionShell({
         section.querySelectorAll('[data-reveal-mask]'),
       )
       if (masked.length) {
-        gsap.set(masked, { clipPath: 'inset(0% 0% 100% 0%)', y: 48 })
+        gsap.set(masked, {
+          clipPath: 'inset(0% 0% 100% 0%)',
+          y: compactMotion ? 22 : 48,
+        })
         gsap.to(masked, {
           clipPath: 'inset(-12% 0% -12% 0%)',
           y: 0,
@@ -179,7 +184,7 @@ export default function SectionShell({
       }
 
       // Departure: the chapter sinks a layer deeper as the next rides over.
-      if (depart) {
+      if (depart && !compactMotion) {
         gsap.to(section, {
           scale: 0.965,
           opacity: 0.72,
@@ -233,6 +238,8 @@ export default function SectionShell({
           </span>
         ))}
       </div>
+
+      <TectonicFault variant={(Number.parseInt(index ?? '', 10) || id.length) % 3} />
 
       {/* Margin whisper: the chapter's nominal depth. */}
       {typeof depthM === 'number' && (

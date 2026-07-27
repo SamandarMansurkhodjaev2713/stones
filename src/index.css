@@ -1505,3 +1505,233 @@ html.pre-boot .anim {
     animation: none !important;
   }
 }
+
+/* ============================================================================
+   LIVING FAULT — the second-pass signature system
+   One fracture joins the chapters. Its geometry changes, its material colour
+   follows the conductor, and its probe travels only with the reader.
+   ============================================================================ */
+.display-title,
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p,
+blockquote {
+  text-wrap: pretty;
+}
+
+.tectonic-fault {
+  width: clamp(3.5rem, 6vw, 6rem);
+  opacity: 0.72;
+  mask-image: linear-gradient(
+    180deg,
+    transparent,
+    rgb(var(--bone-rgb)) 8%,
+    rgb(var(--bone-rgb)) 92%,
+    transparent
+  );
+}
+
+.tectonic-fault__live {
+  filter: drop-shadow(0 0 8px rgb(var(--chroma-rgb) / 0.46));
+}
+
+.tectonic-fault__probe {
+  width: 0.44rem;
+  height: 0.44rem;
+  border: 1px solid rgb(var(--chroma-rgb) / 0.9);
+  border-radius: 999px;
+  background: rgb(var(--void-rgb));
+  box-shadow:
+    0 0 0 4px rgb(var(--chroma-rgb) / 0.08),
+    0 0 18px rgb(var(--chroma-rgb) / 0.48);
+}
+
+/* Act breaks are no longer empty title cards. A core sample is split along
+   the fault while the giant act word slides behind it. */
+.act-core {
+  transform-origin: center;
+  filter: drop-shadow(0 28px 52px rgb(var(--void-rgb) / 0.76));
+}
+
+.act-core__half {
+  overflow: hidden;
+  border-block: 1px solid rgb(var(--bone-rgb) / 0.16);
+  background:
+    linear-gradient(90deg, rgb(var(--bone-rgb) / 0.08), transparent 22% 78%, rgb(var(--bone-rgb) / 0.06)),
+    repeating-linear-gradient(
+      177deg,
+      rgb(var(--bone-rgb) / 0.12) 0 1px,
+      transparent 1px 9px,
+      rgb(var(--bone-rgb) / 0.045) 9px 12px,
+      transparent 12px 19px
+    ),
+    radial-gradient(circle at 48% 32%, rgb(var(--chroma-rgb) / 0.13), transparent 54%),
+    rgb(var(--surface-rgb));
+}
+
+.act-core__half--left {
+  border-left: 1px solid rgb(var(--bone-rgb) / 0.18);
+  clip-path: polygon(0 2%, 100% 0, 94% 18%, 100% 34%, 91% 52%, 100% 71%, 93% 86%, 100% 100%, 0 98%);
+}
+
+.act-core__half--right {
+  border-right: 1px solid rgb(var(--bone-rgb) / 0.18);
+  clip-path: polygon(0 0, 100% 2%, 100% 98%, 0 100%, 7% 86%, 0 71%, 9% 52%, 0 34%, 6% 18%);
+}
+
+.act-core__seam {
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgb(var(--chroma-rgb) / 0.12) 12%,
+    rgb(var(--chroma-rgb) / 0.82) 48%,
+    rgb(var(--chroma-rgb) / 0.18) 86%,
+    transparent
+  );
+  box-shadow: 0 0 22px rgb(var(--chroma-rgb) / 0.42);
+}
+
+/* Mobile/tablet chronology: every era is now a landscape layer rather than a
+   typographic table row. The copy remains normal document flow. */
+.era-mobile-card__image {
+  transform: scale(1.08);
+  transform-origin: center;
+  transition: transform 1.4s var(--ease-out), opacity 900ms var(--ease-out);
+}
+
+.era-mobile-card__shade {
+  background:
+    linear-gradient(180deg, rgb(var(--void-rgb) / 0.68), transparent 32%),
+    linear-gradient(0deg, rgb(var(--void-rgb) / 0.98) 2%, rgb(var(--void-rgb) / 0.78) 44%, rgb(var(--void-rgb) / 0.12) 82%),
+    linear-gradient(90deg, rgb(var(--void-rgb) / 0.52), transparent 66%);
+}
+
+.era-mobile-card[data-era='hadean'] .era-mobile-card__shade {
+  background:
+    radial-gradient(circle at 72% 40%, rgb(var(--oxide-rgb) / 0.18), transparent 38%),
+    linear-gradient(180deg, rgb(var(--void-rgb) / 0.62), transparent 30%),
+    linear-gradient(0deg, rgb(var(--void-rgb) / 0.98) 2%, rgb(var(--void-rgb) / 0.72) 52%, rgb(var(--void-rgb) / 0.16));
+}
+
+.era-mobile-card:nth-child(even) .era-mobile-card__image {
+  transform: scale(1.08) translateX(2%);
+}
+
+.era-mobile-card:nth-child(odd) .era-mobile-card__image {
+  transform: scale(1.08) translateX(-2%);
+}
+
+/* The report becomes a live instrument without sacrificing the figures. */
+.stats-ghost {
+  opacity: 0.52;
+}
+
+.stats-seismograph {
+  opacity: 0.8;
+  filter: drop-shadow(0 0 8px rgb(var(--lichen-rgb) / 0.14));
+}
+
+.stats-seismograph__path {
+  stroke-dasharray: 0.015 0.012;
+}
+
+@media (max-width: 1023px) {
+  .tectonic-fault {
+    right: -1.1rem;
+    width: 4.3rem;
+    opacity: 0.52;
+  }
+
+  .act-core {
+    height: 62svh;
+    opacity: 0.88;
+  }
+
+  .era-mobile-list {
+    isolation: isolate;
+  }
+
+  .era-mobile-card {
+    background: var(--surface);
+  }
+
+  .era-mobile-card__index {
+    letter-spacing: -0.04em;
+  }
+
+  .route-list {
+    border-bottom: 0;
+  }
+
+  .route-row {
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    border: 1px solid rgb(var(--bone-rgb) / 0.11);
+    border-radius: 1.5rem;
+    background:
+      linear-gradient(145deg, rgb(var(--bone-rgb) / 0.035), transparent 46%),
+      var(--surface);
+    box-shadow: 0 24px 54px -42px rgb(var(--void-rgb) / 0.95);
+  }
+
+  .route-row__media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border: 1px solid rgb(var(--bone-rgb) / 0.09);
+    border-radius: 1.45rem 1.45rem 0 0;
+  }
+
+  .route-row__body {
+    min-height: 15.5rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .stats-ghost {
+    right: -10vw;
+    top: 12%;
+    font-size: 42vw;
+    opacity: 0.32;
+  }
+
+  .stats-seismograph {
+    top: 36%;
+    height: 18rem;
+    opacity: 0.56;
+  }
+}
+
+@media (max-width: 639px) {
+  html[lang='ru'] .hero-title-main {
+    font-size: clamp(2.15rem, 10vw, 2.65rem) !important;
+    letter-spacing: -0.012em;
+  }
+
+  html[lang='ru'] .hero-title-subline {
+    font-size: clamp(0.92rem, 4.1vw, 1.08rem) !important;
+    letter-spacing: 0.015em;
+  }
+}
+
+@media (min-width: 640px) {
+  html[lang='ru'] .hero-title-main {
+    font-size: clamp(4.65rem, 10vw, 10rem) !important;
+    letter-spacing: -0.012em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tectonic-fault__live {
+    stroke-dashoffset: 0;
+  }
+
+  .era-mobile-card__image {
+    transform: none !important;
+  }
+}

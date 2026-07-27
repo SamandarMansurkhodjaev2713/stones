@@ -113,7 +113,7 @@ export default function Expeditions() {
 
         <ul
           ref={listRef}
-          className="border-b border-bone/10"
+          className="route-list border-b border-bone/10"
           onPointerLeave={() => setHovered(null)}
         >
           {t.expeditions.items.map((route, i) => {
@@ -122,7 +122,11 @@ export default function Expeditions() {
             // takes the highlight instead — the list stays alive under a thumb.
             const lit = hovered === i || focused === i
             return (
-              <li key={route.place} data-reveal-row className="row-ruled border-t border-bone/10">
+              <li
+                key={route.place}
+                data-reveal-row
+                className="route-row row-ruled border-t border-bone/10"
+              >
                 <button
                   type="button"
                   onClick={() => setOpen(expanded ? null : i)}
@@ -136,13 +140,43 @@ export default function Expeditions() {
                   data-cursor-label={t.cursor.explore}
                   className="group relative block w-full overflow-hidden text-left"
                 >
+                  <span className="route-row__media relative block h-52 overflow-hidden lg:hidden">
+                    <img
+                      src={ROUTE_PHOTO[i % ROUTE_PHOTO.length]}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="photo-tone absolute inset-0 h-full w-full object-cover transition-transform duration-[1400ms] ease-out-expo group-active:scale-105"
+                    />
+                    <span className="absolute inset-0 bg-gradient-to-t from-surface via-void/15 to-void/35" />
+                    <span className="font-mono-t absolute left-4 top-4 border border-bone/25 bg-void/45 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-bone/85 backdrop-blur-sm">
+                      {String(i + 1).padStart(2, '0')} · {route.coords}
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      viewBox={`0 0 ${PROFILE_W} ${PROFILE_H}`}
+                      preserveAspectRatio="none"
+                      className="absolute bottom-4 left-4 right-4 h-12 w-auto"
+                    >
+                      <polyline
+                        points={PROFILES[i % PROFILES.length]}
+                        fill="none"
+                        stroke="rgb(var(--lichen-rgb) / 0.72)"
+                        strokeWidth="1.4"
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    </svg>
+                  </span>
                   <span
                     aria-hidden="true"
                     className={`pointer-events-none absolute inset-0 origin-left bg-gradient-to-r from-lichen/[0.07] via-bone/[0.025] to-transparent transition-transform duration-500 ease-out-expo group-hover:scale-x-100 ${
                       lit ? 'scale-x-100' : 'scale-x-0'
                     }`}
                   />
-                  <span data-row-body className="relative grid grid-cols-12 items-center gap-x-4 gap-y-2 py-7 md:py-10">
+                  <span
+                    data-row-body
+                    className="route-row__body relative grid grid-cols-12 items-center gap-x-4 gap-y-2 px-4 py-6 lg:px-0 lg:py-10"
+                  >
                     {/* On a phone the index sits inline above the name rather
                         than in its own gutter — a 40px column of empty space
                         beside a poster word reads as a layout slip. */}
@@ -209,7 +243,7 @@ export default function Expeditions() {
                   style={{ gridTemplateRows: expanded ? '1fr' : '0fr' }}
                 >
                   <div className="overflow-hidden">
-                    <div className="flex flex-col gap-6 pb-9 pl-[8.5%] pr-2 md:flex-row md:items-end md:pb-12">
+                    <div className="flex flex-col gap-6 px-4 pb-9 lg:flex-row lg:items-end lg:pb-12 lg:pl-[8.5%] lg:pr-2">
                       {/* The place itself — a plate clipped into the file. */}
                       <figure className="relative h-40 w-full shrink-0 overflow-hidden rounded-xl border border-bone/10 md:h-44 md:w-64">
                         <img

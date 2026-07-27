@@ -93,3 +93,21 @@
 - Canvas, cursor previews, ambient light and marquees pause outside their
   visible context or while the document is hidden. Reduced-motion removes the
   cinematic layer while leaving every section and action immediately readable.
+
+## 2026 polish addendum — Living Fault
+
+- `ui/TectonicFault.tsx` carries one scroll-drawn geological fracture through
+  the dark chapters. Its survey probe travels from the top to the bottom of
+  each section; reduced-motion renders the fracture as a static landmark.
+- `ui/ActTitle.tsx` opens a procedural core sample behind every act word. The
+  two halves separate with the scroll, turning chapter breaks into geological
+  events without adding raster assets.
+- On phones and tablets, Eras is a native vertical sequence of full-width
+  landscape layers and Expeditions is a stack of photographic field files.
+  Neither flow pins or hijacks touch scrolling.
+- Compact pointers keep section copy in normal document flow: departure scale
+  is disabled, reveal travel is shortened, and scrubbed manifesto text is
+  immediately readable.
+- The responsive QA gates are 320, 390, 768, phone landscape and 1440 pixels.
+  Russian hero sizing uses a dedicated fluid scale so its longer title never
+  clips between mobile and desktop breakpoints.

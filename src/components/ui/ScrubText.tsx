@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { gsap } from '../../lib/gsap'
 import { useReducedMotion } from '../../lib/useReducedMotion'
+import { useMediaQuery } from '../../lib/useMediaQuery'
+import { MQ_MOBILE } from '../../lib/constants'
 
 /** Opacity a word sits at before the reader's scroll reaches it. */
 const DIM = 0.16
@@ -23,11 +25,12 @@ interface ScrubTextProps {
 export default function ScrubText({ text, className = '' }: ScrubTextProps) {
   const ref = useRef<HTMLParagraphElement>(null)
   const reduced = useReducedMotion()
+  const mobile = useMediaQuery(MQ_MOBILE)
   const words = useMemo(() => text.split(' '), [text])
 
   useEffect(() => {
     const el = ref.current
-    if (!el || reduced) return
+    if (!el || reduced || mobile) return
 
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -48,7 +51,7 @@ export default function ScrubText({ text, className = '' }: ScrubTextProps) {
     }, el)
 
     return () => ctx.revert()
-  }, [reduced, words])
+  }, [mobile, reduced, words])
 
   return (
     <p ref={ref} className={className}>

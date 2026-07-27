@@ -15,6 +15,14 @@ export const MQ_MOBILE =
 export const MQ_DESKTOP = '(min-width: 1024px)'
 export const MQ_FINE_POINTER = '(pointer: fine)'
 export const MQ_REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
+/**
+ * Pinned scenes are reserved for a genuinely desktop-shaped, pointer-driven
+ * viewport. A 1024px tablet or a short landscape window keeps native flow.
+ */
+export const MQ_PINNED_DESKTOP =
+  '(min-width: 1024px) and (min-height: 640px) and (pointer: fine) and (prefers-reduced-motion: no-preference)'
+/** The fixed depth rail needs both spare horizontal room and a precise pointer. */
+export const MQ_WIDE_FINE_POINTER = '(min-width: 1280px) and (pointer: fine)'
 
 /* ── Motion (seconds — GSAP) ──────────────────────────────────────────────── */
 export const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)'
@@ -50,11 +58,19 @@ export const MAX_DEPTH_M = 4600
 export const PRELOADER_COUNT_MS = 1300
 export const PRELOADER_LIFT_MS = 900
 
-/** Scroll-to offset compensating the fixed field-station header. */
-export const HEADER_OFFSET = -88
+/**
+ * Scroll-to clearance for the two-storey field-station header. The extra
+ * breathing room keeps each section seam readable under mobile safe areas.
+ */
+export const HEADER_OFFSET = -120
 
 /* ── Persistence ──────────────────────────────────────────────────────────── */
-export const LOCALE_STORAGE_KEY = 'stones.locale'
+/**
+ * v2 intentionally resets the legacy RU-by-default preference. The previous
+ * build persisted RU even when the visitor never chose it, so reusing that key
+ * would make the new English default invisible to returning award jurors.
+ */
+export const LOCALE_STORAGE_KEY = 'stones.locale.v2'
 
 /** Contact channels — the author's real Telegram. */
 export const CONTACT = {

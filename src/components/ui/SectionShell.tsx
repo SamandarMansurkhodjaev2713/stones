@@ -23,6 +23,8 @@ interface SectionShellProps {
   className?: string
   /** Clip overflow (default true). Set false for sections with bleed/overlap. */
   clip?: boolean
+  /** Geological pigment conducted while this chapter crosses the viewport. */
+  chroma?: 'lichen' | 'neutral' | 'oxide' | 'light'
 }
 
 /** Survey cross positions, fractions of the section box. */
@@ -49,6 +51,7 @@ export default function SectionShell({
   children,
   className = '',
   clip = true,
+  chroma = 'neutral',
 }: SectionShellProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const seamRef = useRef<HTMLDivElement>(null)
@@ -199,12 +202,13 @@ export default function SectionShell({
     <section
       id={id}
       ref={sectionRef}
+      data-chroma={chroma}
       className={`relative shadow-[0_-32px_60px_-30px_rgba(0,0,0,0.65)] ${
         clip ? 'overflow-hidden' : ''
       } ${className}`}
     >
       {(index || eyebrow) && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-5 px-5 pt-6 sm:px-8">
+        <div className="section-gutter pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-5 px-5 pt-6 sm:px-8">
           <div
             ref={seamRef}
             className="h-px flex-1 origin-left bg-gradient-to-r from-bone/40 via-bone/10 to-transparent"

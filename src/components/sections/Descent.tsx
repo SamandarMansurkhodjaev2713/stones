@@ -26,6 +26,7 @@ export default function Descent() {
   const beamRef = useRef<HTMLDivElement>(null)
   const dimRef = useRef<HTMLDivElement>(null)
   const depthRef = useRef<HTMLSpanElement>(null)
+  const cracksRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
     const tunnel = tunnelRef.current
@@ -78,9 +79,17 @@ export default function Descent() {
       }
       dive.to(
         layers,
-        { borderColor: 'rgb(var(--bone-rgb) / 0.45)', stagger: 0.09, duration: 0.6 },
+        { borderColor: 'rgb(var(--oxide-rgb) / 0.52)', stagger: 0.09, duration: 0.6 },
         0,
       )
+      if (cracksRef.current) {
+        dive.fromTo(
+          cracksRef.current.querySelectorAll('path'),
+          { strokeDashoffset: 1, opacity: 0 },
+          { strokeDashoffset: 0, opacity: 1, stagger: 0.08, duration: 0.72 },
+          0.18,
+        )
+      }
 
       // The ring closes: the preloader drilled 0 → −4600, and the shaft
       // finishes the count on the way in. Written straight to the DOM — a
@@ -113,7 +122,8 @@ export default function Descent() {
       index="05"
       depthM={4400}
       eyebrow={t.descent.eyebrow}
-      className="bg-void px-5 py-24 md:py-32"
+      chroma="oxide"
+      className="section-gutter bg-void px-5 py-24 md:py-32"
     >
       {/* On a phone the shaft is not a card on a page — it is the page: a
           full-height well with the CTA parked in the thumb zone at the bottom.
@@ -137,7 +147,7 @@ export default function Descent() {
               <div
                 key={i}
                 data-tunnel-layer
-                className="absolute rounded-[2rem] border"
+                className={`absolute rounded-[2rem] border ${i >= 4 ? 'hidden sm:block' : ''}`}
                 style={{
                   width: `${100 - step * 72}%`,
                   height: `${100 - step * 66}%`,
@@ -181,9 +191,35 @@ export default function Descent() {
           aria-hidden="true"
           style={{
             background:
-              'radial-gradient(circle, rgb(var(--bone-rgb) / 0.28), rgb(var(--bone-rgb) / 0.08) 45%, transparent 70%)',
+              'radial-gradient(circle, rgb(var(--oxide-rgb) / 0.3), rgb(var(--bone-rgb) / 0.1) 42%, transparent 70%)',
           }}
         />
+
+        <svg
+          ref={cracksRef}
+          aria-hidden="true"
+          viewBox="0 0 100 100"
+          className="pointer-events-none absolute left-1/2 top-1/2 z-[1] h-[42%] w-[42%] -translate-x-1/2 -translate-y-1/2 opacity-80"
+        >
+          {[
+            'M50 50 L39 31 L43 15',
+            'M50 50 L66 39 L79 22',
+            'M50 50 L62 63 L72 86',
+            'M50 50 L35 66 L22 76',
+          ].map((path) => (
+            <path
+              key={path}
+              d={path}
+              fill="none"
+              stroke="rgb(var(--oxide-rgb) / 0.62)"
+              strokeWidth="0.42"
+              pathLength={1}
+              strokeDasharray={1}
+              strokeDashoffset={reduced ? 0 : 1}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </svg>
 
         <div className="relative flex flex-1 flex-col items-center justify-center px-5 py-16 text-center md:py-40">
           <DisplayHeading

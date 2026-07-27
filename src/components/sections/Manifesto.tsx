@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import SectionShell from '../ui/SectionShell'
 import GhostEpoch from '../ui/GhostEpoch'
 import DisplayHeading from '../ui/DisplayHeading'
@@ -9,11 +10,38 @@ import ContourPlate from '../ui/ContourPlate'
 import { useI18n } from '../../i18n'
 import { useParallax } from '../../lib/useParallax'
 import { MANIFESTO_PHOTO } from '../../lib/media'
+import { gsap } from '../../lib/gsap'
+import { useReducedMotion } from '../../lib/useReducedMotion'
 
 export default function Manifesto() {
   const { t } = useI18n()
   const bigImage = useParallax<HTMLDivElement>(48)
   const smallImage = useParallax<HTMLDivElement>(-32)
+  const veinRef = useRef<SVGPathElement>(null)
+  const reduced = useReducedMotion()
+
+  useEffect(() => {
+    const vein = veinRef.current
+    if (!vein || reduced) return
+    const tween = gsap.fromTo(
+      vein,
+      { strokeDashoffset: 1 },
+      {
+        strokeDashoffset: 0,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: vein,
+          start: 'top 86%',
+          end: 'bottom 56%',
+          scrub: 0.7,
+        },
+      },
+    )
+    return () => {
+      tween.scrollTrigger?.kill()
+      tween.kill()
+    }
+  }, [reduced])
 
   return (
     <SectionShell
@@ -21,6 +49,7 @@ export default function Manifesto() {
       index="01"
       depthM={400}
       eyebrow={t.manifesto.eyebrow}
+      chroma="lichen"
       className="bg-void py-32 md:py-44"
     >
       <SectionStrata depth={0.1} />
@@ -31,7 +60,7 @@ export default function Manifesto() {
         className="left-[-2%] top-[6%] text-[24vw] md:text-[16vw]"
       />
 
-      <div className="relative mx-auto max-w-7xl px-5">
+      <div className="section-gutter relative mx-auto max-w-7xl px-5">
         <div className="max-w-3xl">
           <DisplayHeading
             text={t.manifesto.titleA}
@@ -67,6 +96,25 @@ export default function Manifesto() {
                 {/* The procedural bedding planes stay — now as a survey overlay
                     drawn ON the rock rather than standing in for it. */}
                 <StrataPlate className="absolute inset-0 h-full w-full opacity-40 mix-blend-screen" />
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                  className="pointer-events-none absolute inset-0 z-[2] h-full w-full mix-blend-screen"
+                >
+                  <path
+                    ref={veinRef}
+                    d="M -4 82 C 16 72, 15 43, 36 51 S 61 30, 74 38 S 88 17, 104 23"
+                    fill="none"
+                    stroke="rgb(var(--lichen-rgb) / 0.72)"
+                    strokeWidth="0.42"
+                    pathLength={1}
+                    strokeDasharray={1}
+                    strokeDashoffset={reduced ? 0 : 1}
+                    vectorEffect="non-scaling-stroke"
+                    className="mineral-vein"
+                  />
+                </svg>
                 {/* Sky is the brightest thing a landscape brings; the site is
                     graphite, so the plate is pulled back down into it. */}
                 <div className="absolute inset-0 bg-gradient-to-t from-void/90 via-void/45 to-void/60" />
@@ -91,7 +139,7 @@ export default function Manifesto() {
             {/* The line the section is remembered by, set as a margin note. */}
             <blockquote
               data-reveal
-              className="relative my-10 border-l border-bone/25 pl-6 md:my-12"
+              className="manifesto-pigment relative my-10 border-l border-lichen/50 pl-6 md:my-12"
             >
               <p className="display-title text-3xl leading-[1.05] text-bone md:text-4xl">
                 {t.manifesto.pull}

@@ -4,8 +4,8 @@ import { useI18n, formatNumber } from '../../i18n'
 import { LOCALES } from '../../i18n/dictionary'
 import type { Locale } from '../../i18n/dictionary'
 import { useScrollTo } from '../../lib/scroll'
-import { ambient } from '../../lib/ambient'
 import { haptic } from '../../lib/haptics'
+import { useSound } from '../../lib/sound'
 import SectionStrata from '../ui/SectionStrata'
 import { MENU_PREVIEW } from '../../lib/media'
 import { HEADER_OFFSET, MAX_DEPTH_M, MQ_MOBILE, STATION_COORDS } from '../../lib/constants'
@@ -21,31 +21,98 @@ const CLOCK_TICK_MS = 1000
 
 function LangToggle({ compact = false }: { compact?: boolean }) {
   const { locale, setLocale, t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const pickerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const close = (event: PointerEvent) => {
+      if (!pickerRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', close)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', close)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const choose = (code: Locale) => {
+    setLocale(code)
+    setOpen(false)
+  }
+
   return (
-    <div
-      role="group"
-      aria-label={t.a11y.langSwitch}
-      className={`font-mono-t flex items-center gap-1 text-xs ${compact ? 'text-sm' : ''}`}
-    >
-      {LOCALES.map((code: Locale, i) => (
-        <span key={code} className="flex items-center">
-          {i > 0 && <span className="px-1 text-bone/25">/</span>}
+    <div ref={pickerRef} className="relative">
+      <div
+        role="group"
+        aria-label={t.a11y.langSwitch}
+        className={`font-mono-t hidden items-center gap-0 text-xs lg:flex ${
+          compact ? 'text-sm' : ''
+        }`}
+      >
+        {LOCALES.map((code: Locale, i) => (
+          <span key={code} className="flex items-center">
+            {i > 0 && <span className="text-bone/25">/</span>}
+            <button
+              type="button"
+              onClick={() => choose(code)}
+              aria-pressed={locale === code}
+              data-cursor="label"
+              data-cursor-label={code.toUpperCase()}
+              className={`min-h-[44px] min-w-[44px] uppercase tracking-[0.12em] transition-colors duration-300 ${
+                locale === code ? 'text-lichen' : 'text-ash hover:text-bone'
+              }`}
+            >
+              {code}
+            </button>
+          </span>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        aria-label={t.a11y.langSwitch}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className={`font-mono-t grid h-11 min-w-11 place-items-center rounded-full border text-[11px] uppercase tracking-[0.14em] transition-[border-color,color,background-color] duration-300 lg:hidden ${
+          open
+            ? 'border-lichen/65 bg-lichen/10 text-lichen'
+            : 'border-bone/15 text-bone/80 hover:border-bone/40'
+        }`}
+      >
+        {locale}
+      </button>
+
+      <div
+        role="group"
+        aria-label={t.a11y.langSwitch}
+        aria-hidden={!open}
+        className={`absolute right-0 z-[130] min-w-[9.25rem] overflow-hidden rounded-2xl border border-bone/15 bg-surface/95 p-1.5 shadow-2xl backdrop-blur-lg transition-[opacity,transform] duration-300 ${
+          compact ? 'bottom-full mb-2 origin-bottom-right' : 'top-full mt-2 origin-top-right'
+        } ${open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}`}
+      >
+        {LOCALES.map((code: Locale) => (
           <button
+            key={code}
             type="button"
-            onClick={() => setLocale(code)}
+            onClick={() => choose(code)}
             aria-pressed={locale === code}
-            data-cursor="label"
-            data-cursor-label={code.toUpperCase()}
-            // Generous padding, not a bigger glyph: the hit area clears the
-            // 44px guideline while the label stays as small as the design wants.
-            className={`min-h-[44px] min-w-[44px] uppercase tracking-[0.12em] transition-colors duration-300 ${
-              locale === code ? 'text-bone' : 'text-ash/70 hover:text-bone'
+            tabIndex={open ? 0 : -1}
+            className={`font-mono-t flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-xs uppercase tracking-[0.16em] transition-colors duration-300 ${
+              locale === code
+                ? 'bg-lichen/10 text-lichen'
+                : 'text-ash hover:bg-bone/5 hover:text-bone'
             }`}
           >
-            {code}
+            <span>{code}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
           </button>
-        </span>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }
@@ -55,42 +122,55 @@ function LangToggle({ compact = false }: { compact?: boolean }) {
  * persisted — autoplaying audio on return visits is hostile, sound is an
  * invitation renewed per session.
  */
-function SoundToggle() {
+function SoundToggle({ showVolume = false }: { showVolume?: boolean }) {
   const { t } = useI18n()
-  const [on, setOn] = useState(false)
-
-  useEffect(() => {
-    const onVis = () => ambient.onVisibility(document.hidden)
-    document.addEventListener('visibilitychange', onVis)
-    return () => {
-      document.removeEventListener('visibilitychange', onVis)
-      ambient.disable()
-    }
-  }, [])
-
-  const toggle = () => {
-    setOn((cur) => {
-      const next = !cur
-      if (next) void ambient.enable()
-      else ambient.disable()
-      return next
-    })
-  }
+  const { status, toggle, volume, setVolume } = useSound()
+  const on = status === 'on'
+  const starting = status === 'starting'
+  const label = status === 'unavailable' ? t.sound.unavailable : on ? t.sound.disable : t.sound.enable
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-label={t.a11y.sound}
-      aria-pressed={on}
-      data-cursor="label"
-      data-cursor-label={t.a11y.sound}
-      className={`grid h-11 w-11 place-items-center rounded-full border transition-colors duration-300 ${
-        on ? 'border-bone/50 text-bone' : 'border-bone/15 text-bone/50 hover:border-bone/40'
-      }`}
-    >
-      {on ? <Volume2 size={15} /> : <VolumeX size={15} />}
-    </button>
+    <div className={`flex items-center ${showVolume ? 'gap-3' : ''}`}>
+      <button
+        data-sound-toggle
+        type="button"
+        onClick={() => void toggle()}
+        aria-label={label}
+        aria-pressed={on}
+        disabled={starting}
+        data-cursor="label"
+        data-cursor-label={label}
+        className={`relative grid h-11 w-11 shrink-0 place-items-center rounded-full border transition-[border-color,color,background-color] duration-300 disabled:opacity-55 ${
+          on
+            ? 'border-lichen/55 bg-lichen/10 text-lichen'
+            : 'border-bone/15 text-bone/55 hover:border-bone/40 hover:text-bone'
+        }`}
+      >
+        {on ? <Volume2 size={15} /> : <VolumeX size={15} />}
+        {on && (
+          <span aria-hidden="true" className="sound-meter absolute bottom-1.5 right-1.5 flex h-2 items-end gap-px">
+            <i className="h-1 w-px bg-lichen" />
+            <i className="h-2 w-px bg-lichen" />
+            <i className="h-1.5 w-px bg-lichen" />
+          </span>
+        )}
+      </button>
+      {showVolume && (
+        <label className="font-mono-t hidden items-center gap-2 text-[10px] uppercase tracking-[0.15em] text-ash sm:flex">
+          <span>{t.sound.volume}</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={volume}
+            onChange={(event) => setVolume(Number(event.target.value))}
+            aria-label={t.sound.volume}
+            className="sound-range w-20 accent-lichen"
+          />
+        </label>
+      )}
+    </div>
   )
 }
 
@@ -129,7 +209,8 @@ const FOCUSABLE_SELECTOR =
  * straight to the DOM (refs), not through state.
  */
 export default function Navbar() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const { play } = useSound()
   const scrollTo = useScrollTo()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -170,7 +251,8 @@ export default function Navbar() {
   useEffect(() => {
     const tick = () => {
       if (clockRef.current) {
-        clockRef.current.textContent = new Date().toLocaleTimeString('ru-RU', {
+        const localeTag = locale === 'en' ? 'en-GB' : locale === 'uz' ? 'uz-Latn-UZ' : 'ru-RU'
+        clockRef.current.textContent = new Date().toLocaleTimeString(localeTag, {
           hour12: false,
         })
       }
@@ -178,7 +260,7 @@ export default function Navbar() {
     tick()
     const id = window.setInterval(tick, CLOCK_TICK_MS)
     return () => window.clearInterval(id)
-  }, [])
+  }, [locale])
 
   // Scroll lock + Escape while the shaft menu is open. The page itself sinks
   // away behind the plates, so the menu reads as rock closing over the world
@@ -190,7 +272,7 @@ export default function Navbar() {
     if (menuOpen) {
       root.classList.add('overflow-hidden')
       main?.classList.add('page-sunk')
-      ambient.play('shift')
+      play('shift')
       haptic('open')
     } else {
       root.classList.remove('overflow-hidden')
@@ -235,10 +317,10 @@ export default function Navbar() {
       document.querySelector('main')?.classList.remove('page-sunk')
       window.removeEventListener('keydown', onKey)
     }
-  }, [menuOpen])
+  }, [menuOpen, play])
 
   const go = (id: string) => {
-    ambient.play('click')
+    play('click')
     setMenuOpen(false)
     scrollTo(`#${id}`, { offset: HEADER_OFFSET })
   }
@@ -260,26 +342,30 @@ export default function Navbar() {
       >
         {/* Telemetry strip */}
         <div className="anim anim-fade-down border-b border-bone/[0.06]">
-          <div className="station-telemetry font-mono-t mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-1.5 text-[10px] uppercase tracking-[0.16em] text-ash/80 sm:px-8">
-            <span className="hidden sm:inline">
-              LAT {STATION_COORDS.lat.toFixed(2)} · LON {STATION_COORDS.lon.toFixed(2)}
-            </span>
-            {/* On a phone the station reports the instrument's own attitude —
-                the readout only appears once a sensor is actually talking. */}
-            {hasTilt && (
-              <span className="tabular-nums sm:hidden">
-                {t.telemetry.tilt} {tiltDeg > 0 ? '+' : ''}
-                {tiltDeg}°
+          <div className="station-telemetry font-mono-t mx-auto grid max-w-[1600px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-4 py-1.5 text-[10px] uppercase tracking-[0.14em] text-ash sm:gap-4 sm:px-8 sm:tracking-[0.16em]">
+            <span className="min-w-0 truncate text-left">
+              <span className="hidden sm:inline">
+                LAT {STATION_COORDS.lat.toFixed(2)} · LON {STATION_COORDS.lon.toFixed(2)}
               </span>
-            )}
-            <span>
+              <span className="sm:hidden">
+                {hasTilt ? (
+                  <>
+                    {t.telemetry.tilt} {tiltDeg > 0 ? '+' : ''}
+                    {tiltDeg}°
+                  </>
+                ) : (
+                  <>STN {STATION_COORDS.lat.toFixed(2)}</>
+                )}
+              </span>
+            </span>
+            <span className="whitespace-nowrap text-center">
               {t.eras.depthLabel}{' '}
-              <span ref={depthRef} className="text-bone/80">
+              <span ref={depthRef} className="text-lichen tabular-nums">
                 −0
               </span>{' '}
               {t.telemetry.unit}
             </span>
-            <span ref={clockRef} className="tabular-nums" />
+            <span ref={clockRef} className="min-w-0 truncate text-right tabular-nums" />
           </div>
         </div>
 
@@ -298,9 +384,7 @@ export default function Navbar() {
 
           <div className="station-controls flex min-w-0 items-center gap-3 sm:gap-5">
             <LangToggle />
-            <span className="hidden sm:block">
-              <SoundToggle />
-            </span>
+            <SoundToggle />
             <button
               ref={menuButtonRef}
               type="button"
@@ -506,7 +590,7 @@ export default function Navbar() {
             <div className="flex items-center gap-4">
               <LangToggle compact />
               <span className="shaft-menu-sound">
-                <SoundToggle />
+                <SoundToggle showVolume />
               </span>
             </div>
             <button

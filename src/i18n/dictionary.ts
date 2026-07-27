@@ -8,9 +8,9 @@ import type { EraId } from '../lib/constants'
  * translated in both locales.
  */
 
-export type Locale = 'ru' | 'uz'
-export const LOCALES: readonly Locale[] = ['ru', 'uz']
-export const DEFAULT_LOCALE: Locale = 'ru'
+export type Locale = 'en' | 'ru' | 'uz'
+export const LOCALES = ['en', 'ru', 'uz'] as const satisfies readonly Locale[]
+export const DEFAULT_LOCALE: Locale = 'en'
 
 export interface EraCopy {
   name: string
@@ -54,7 +54,14 @@ export interface NavLink {
 
 
 export interface Dictionary {
-  meta: { brand: string; tagline: string }
+  meta: {
+    brand: string
+    tagline: string
+    title: string
+    description: string
+    ogTitle: string
+    ogDescription: string
+  }
   nav: { links: NavLink[]; cta: string; menu: string }
   preloader: { label: string }
   /** `tilt` labels the phone's own attitude readout in the station strip. */
@@ -162,6 +169,21 @@ export interface Dictionary {
     credit: string
     wordmark: string
   }
+  author: {
+    eyebrow: string
+    title: string
+    body: string
+    cta: string
+    stamp: string
+  }
+  sound: {
+    enable: string
+    disable: string
+    volume: string
+    on: string
+    off: string
+    unavailable: string
+  }
   cursor: { explore: string; read: string; dig: string }
   rail: { now: string; origin: string }
   a11y: {
@@ -177,11 +199,295 @@ export interface Dictionary {
   }
 }
 
-/* ── RUSSIAN (source of truth) ────────────────────────────────────────────── */
+/* ── ENGLISH (international default) ─────────────────────────────────────── */
+const en: Dictionary = {
+  meta: {
+    brand: 'STONES',
+    tagline: 'Stone remembers what time forgot',
+    title: 'STONES — Stone Remembers What Time Forgot',
+    description:
+      'Field expeditions and the art of reading rock as pages of deep time — from the present surface to the molten birth of Earth.',
+    ogTitle: 'STONES — A Descent Through Deep Time',
+    ogDescription:
+      'Read strata, minerals and field routes on a cinematic descent through 4.6 billion years of Earth history.',
+  },
+  nav: {
+    links: [
+      { id: 'manifesto', label: 'Manifesto' },
+      { id: 'eras', label: 'Eras' },
+      { id: 'samples', label: 'Specimens' },
+      { id: 'expeditions', label: 'Routes' },
+    ],
+    cta: 'Begin the descent',
+    menu: 'Menu',
+  },
+  preloader: { label: 'Descending' },
+  telemetry: { unit: 'M', tilt: 'TILT' },
+  acts: {
+    deep: 'Below',
+    deepNote: 'Eight eras lie beneath. Each one heavier than the last.',
+    bottom: 'Bedrock',
+    bottomNote: 'Beyond this point lies only what everything began with.',
+  },
+  hero: {
+    eyebrow: 'FIELD 01 · DEPTH 0 M',
+    titleA: 'Stone remembers',
+    titleB: 'what time forgot',
+    sub: 'Field expeditions and the art of reading rock. We descend through the layers — from the present day to the morning Earth was fire.',
+    ctaPrimary: 'Begin the descent',
+    ctaSecondary: 'View the routes',
+    sideNote:
+      'Beneath every ridge lies a record of fire and flood: pages pressed into stone, legible only to those patient enough to learn.',
+    scrollHint: 'Scroll deeper',
+    specimenCode: 'STN-000 · SURFACE',
+    specimenLabel: 'Live rock section',
+  },
+  manifesto: {
+    eyebrow: 'MANIFESTO',
+    titleA: 'Every canyon is',
+    titleB: 'an open book',
+    body1:
+      'Wind wrote the first chapter. Water revised it for a hundred million years. Stones teaches the grammar of rock — bedding planes, cross-strata, the rust-red ink of iron oxide — until a cliff face begins to read like a page.',
+    body2:
+      'Walk a slot canyon with one of our guides and you stop seeing stone. You see weather four storeys high.',
+    pull: 'Rock does not preserve time. Rock is time.',
+    cta: 'Open the archive',
+    caption1:
+      'Wadi Rum sandstone — carved grain by grain, fifty million years deep',
+    caption2: 'Chapter II — ridges folded like pages',
+    tag1: 'SPC. STN-014 · SANDSTONE',
+    tag2: 'SPC. STN-027 · STRATA',
+    ghostTerms: ['BEDDING', 'STRATIFICATION', 'IRON OXIDE', 'EROSION'],
+  },
+  eras: {
+    eyebrow: 'CHRONOLOGY',
+    title: 'Down through time',
+    sub: 'Every layer underfoot is a sealed chapter. We open them from the top down.',
+    depthLabel: 'DEPTH',
+    footnote:
+      'The scale is interpretive: deep time will not fit inside any single cliff.',
+    items: {
+      holocene: {
+        name: 'Holocene',
+        age: '11.7 thousand years',
+        note: 'Our paper-thin layer. Everything recorded by human history rests here, almost at the surface.',
+      },
+      cretaceous: {
+        name: 'Cretaceous',
+        age: '145–66 million years',
+        note: 'The reign of dinosaurs ends with an asteroid strike. The chalk that named the period is compressed plankton.',
+      },
+      permian: {
+        name: 'Permian',
+        age: '299–252 million years',
+        note: 'The greatest extinction in Earth history erases up to 96% of marine species. A layer almost empty of fossils.',
+      },
+      devonian: {
+        name: 'Devonian',
+        age: '419–359 million years',
+        note: 'The age of fishes. Life steps onto land and the first forests rise above the mud.',
+      },
+      cambrian: {
+        name: 'Cambrian',
+        age: '541–485 million years',
+        note: 'The Cambrian explosion: in a geological instant, nearly every major animal body plan appears.',
+      },
+      proterozoic: {
+        name: 'Proterozoic',
+        age: '2.5 billion–541 million',
+        note: 'The Great Oxidation Event. Cyanobacteria flood the atmosphere with oxygen and remake the planet forever.',
+      },
+      archean: {
+        name: 'Archean',
+        age: '4–2.5 billion years',
+        note: 'The first continents and the earliest life. Rocks this old still survive in the shields of continents.',
+      },
+      hadean: {
+        name: 'Hadean',
+        age: '4.6–4 billion years',
+        note: 'A molten beginning: magma oceans, meteor storms, the birth of the Moon. Almost no stone survives to remember it.',
+      },
+    },
+  },
+  stats: {
+    eyebrow: 'ARCHIVE',
+    title: 'The record in numbers',
+    sub: 'Everything Stones has brought back from the field, reduced to one ledger. Measured evidence, never promises.',
+    doc: 'Form 04-R · consolidated field record · reviewed quarterly',
+    items: [
+      { value: 4.6, decimals: 1, suffix: ' BN', label: 'years of history indexed' },
+      { value: 12400, suffix: '+', label: 'strata mapped' },
+      { value: 380, suffix: '', label: 'guided field routes' },
+      { value: 96, suffix: '%', label: 'of students read rock unaided' },
+    ],
+  },
+  samples: {
+    eyebrow: 'SPECIMENS',
+    title: 'The rock files',
+    sub: 'Four witnesses. Each specimen records the conditions in which it became still.',
+    fields: { type: 'Type', age: 'Age', origin: 'Origin' },
+    dragHint: 'Drag to browse the archive',
+    stamp: 'Archive',
+    emptyTitle: 'The next specimen is yours',
+    emptyNote: 'An empty drawer awaits the next route’s discovery.',
+    items: [
+      {
+        name: 'Sandstone',
+        latin: 'Arenite',
+        type: 'Sedimentary',
+        age: 'up to 500 million years',
+        origin: 'Compressed sand from ancient deserts and deltas',
+        note: 'Read it layer by layer: every bed is a separate season of wind and water.',
+      },
+      {
+        name: 'Basalt',
+        latin: 'Basaltus',
+        type: 'Volcanic',
+        age: '0–4 billion years',
+        origin: 'Lava rapidly cooled on ocean floors and across flood-basalt plains',
+        note: 'As it cools, it fractures into hexagonal columns — the geometry of lost heat.',
+      },
+      {
+        name: 'Granite',
+        latin: 'Granitum',
+        type: 'Intrusive igneous',
+        age: '0.3–4 billion years',
+        origin: 'Magma slowly cooled deep beneath the crust',
+        note: 'Its large crystals reveal a cooling process measured in thousands of years.',
+      },
+      {
+        name: 'Amethyst',
+        latin: 'Amethystus',
+        type: 'Mineral · quartz',
+        age: 'variable',
+        origin: 'Grown from hot solutions inside cavities in volcanic rock',
+        note: 'Its violet colour records iron and natural irradiation within the quartz lattice.',
+      },
+    ],
+  },
+  expeditions: {
+    eyebrow: 'FIELD',
+    title: 'Field routes',
+    sub: 'Rock is not learned from photographs. We go where its pages stand upright.',
+    fields: { duration: 'Duration', difficulty: 'Difficulty' },
+    profile: 'Route profile',
+    cta: 'Discuss an expedition',
+    items: [
+      {
+        place: 'Wadi Rum',
+        region: 'Jordan',
+        tag: 'Sandstone towers',
+        coords: '29.57 N · 35.42 E',
+        duration: '3 days',
+        difficulty: 'Moderate',
+        note: 'Martian walls of red sandstone, cut by wind and time.',
+      },
+      {
+        place: 'Charyn Canyon',
+        region: 'Kazakhstan',
+        tag: 'Valley of Castles',
+        coords: '43.35 N · 79.05 E',
+        duration: '2 days',
+        difficulty: 'Easy',
+        note: 'Twelve-million-year-old orange cliffs — a younger sibling of the Grand Canyon.',
+      },
+      {
+        place: 'Ustyurt Plateau',
+        region: 'Uzbekistan',
+        tag: 'Chalk escarpments',
+        coords: '43.80 N · 58.80 E',
+        duration: '4 days',
+        difficulty: 'Demanding',
+        note: 'Cliffs of a vanished seabed: white chalk, ammonites and silence to the horizon.',
+      },
+      {
+        place: 'Stevns Klint',
+        region: 'Denmark',
+        tag: 'The chalk boundary',
+        coords: '55.28 N · 12.44 E',
+        duration: '1 day',
+        difficulty: 'Easy',
+        note: 'A thin dark seam in the cliff marks the day the dinosaurs disappeared.',
+      },
+    ],
+  },
+  voice: {
+    quoteA: 'Most people see a wall in a cliff.',
+    quoteB: 'My students see a calendar.',
+    author: 'Dr Elena Voss',
+    role: 'Field geologist — 22 seasons in the Atacama, lead guide at Stones',
+    ghost: 'CALENDAR',
+    folio: 'TESTIMONY · FIELD VOICE',
+    index: 'SHEET 07 · LIGHT',
+    marquee: [
+      'Strata',
+      'Fossils',
+      'Tectonics',
+      'Minerals',
+      'Deep time',
+      'Erosion',
+      'Bedrock',
+      'Sediment',
+    ],
+  },
+  descent: {
+    eyebrow: 'BEGIN THE DESCENT',
+    titleA: 'Start reading',
+    titleB: 'the ground beneath you',
+    body: 'One route. Eight eras. The stone underfoot will never fall silent again.',
+    ctaPrimary: 'Message us on Telegram',
+    ctaSecondary: 'Return to the surface',
+  },
+  footer: {
+    tagline: 'Four billion years of fire and flood — one layer at a time.',
+    stamp: 'End of core',
+    bottomLabel: 'Bedrock',
+    navLabel: 'Core',
+    contactLabel: 'Contact',
+    legal: '© 2026 Stones. All strata preserved.',
+    credit: 'Assembled on bedrock. Rendered in the browser.',
+    wordmark: 'Stones',
+  },
+  author: {
+    eyebrow: 'PROJECT NOTE · 2026',
+    title: 'Need a landing page with this much gravity?',
+    body: 'Designed and built by Samandar. I create cinematic digital experiences for brands that refuse to look ordinary.',
+    cta: 'Start a project',
+    stamp: 'SMN · DIGITAL FIELDWORK · 2026',
+  },
+  sound: {
+    enable: 'Enable sound',
+    disable: 'Disable sound',
+    volume: 'Sound level',
+    on: 'Sound on',
+    off: 'Sound off',
+    unavailable: 'Sound is unavailable on this device',
+  },
+  cursor: { explore: 'explore', read: 'read', dig: 'dig' },
+  rail: { now: 'Now', origin: 'Origin' },
+  a11y: {
+    skip: 'Skip to content',
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
+    toSection: 'Go to section',
+    langSwitch: 'Change language',
+    prev: 'Previous specimen',
+    next: 'Next specimen',
+    sound: 'Sound',
+  },
+}
+
+/* ── RUSSIAN ──────────────────────────────────────────────────────────────── */
 const ru: Dictionary = {
   meta: {
     brand: 'STONES',
     tagline: 'Камень помнит то, что забыло время',
+    title: 'STONES — Камень помнит то, что забыло время',
+    description:
+      'Полевые экспедиции и чтение горной породы как страниц глубокого времени — от поверхности до огненного рождения Земли.',
+    ogTitle: 'STONES — Спуск сквозь глубокое время',
+    ogDescription:
+      'Страты, минералы и полевые маршруты в кинематографичном путешествии через 4,6 миллиарда лет истории Земли.',
   },
   nav: {
     links: [
@@ -420,6 +726,21 @@ const ru: Dictionary = {
     credit: 'Собрано на коренной породе, отрендерено в браузере.',
     wordmark: 'Stones',
   },
+  author: {
+    eyebrow: 'О ПРОЕКТЕ · 2026',
+    title: 'Нужен лендинг с такой же силой притяжения?',
+    body: 'Дизайн и разработка — Самандар. Я создаю кинематографичные цифровые проекты для брендов, которым тесно в шаблонах.',
+    cta: 'Обсудить проект',
+    stamp: 'SMN · ЦИФРОВАЯ ЭКСПЕДИЦИЯ · 2026',
+  },
+  sound: {
+    enable: 'Включить звук',
+    disable: 'Выключить звук',
+    volume: 'Громкость звука',
+    on: 'Звук включён',
+    off: 'Звук выключен',
+    unavailable: 'Звук недоступен на этом устройстве',
+  },
   cursor: { explore: 'изучить', read: 'читать', dig: 'копать' },
   rail: { now: 'Сейчас', origin: 'Начало' },
   a11y: {
@@ -439,6 +760,12 @@ const uz: Dictionary = {
   meta: {
     brand: 'STONES',
     tagline: 'Tosh vaqt unutgan narsani eslaydi',
+    title: 'STONES — Tosh vaqt unutgan narsani eslaydi',
+    description:
+      'Dala ekspeditsiyalari va tog‘ jinslarini chuqur vaqt sahifalaridek o‘qish — bugungi sirtdan Yerning olovli tug‘ilishigacha.',
+    ogTitle: 'STONES — Chuqur vaqt bo‘ylab tushish',
+    ogDescription:
+      'Stratalar, minerallar va dala marshrutlari orqali Yer tarixining 4,6 milliard yillik kinematik sayohati.',
   },
   nav: {
     links: [
@@ -677,6 +1004,21 @@ const uz: Dictionary = {
     credit: 'Tub jinsda yig‘ilgan, brauzerda render qilingan.',
     wordmark: 'Stones',
   },
+  author: {
+    eyebrow: 'LOYIHA HAQIDA · 2026',
+    title: 'Shunday ta’sir kuchiga ega landing kerakmi?',
+    body: 'Dizayn va dasturlash — Samandar. Men qoliplarga sig‘maydigan brendlar uchun kinematik raqamli tajribalar yarataman.',
+    cta: 'Loyihani muhokama qilish',
+    stamp: 'SMN · RAQAMLI EKSPEDITSIYA · 2026',
+  },
+  sound: {
+    enable: 'Ovozni yoqish',
+    disable: 'Ovozni o‘chirish',
+    volume: 'Ovoz balandligi',
+    on: 'Ovoz yoqilgan',
+    off: 'Ovoz o‘chirilgan',
+    unavailable: 'Bu qurilmada ovoz ishlamaydi',
+  },
   cursor: { explore: 'ko‘rish', read: 'o‘qish', dig: 'qazish' },
   rail: { now: 'Hozir', origin: 'Boshlanish' },
   a11y: {
@@ -691,4 +1033,4 @@ const uz: Dictionary = {
   },
 }
 
-export const dictionaries: Record<Locale, Dictionary> = { ru, uz }
+export const dictionaries = { en, ru, uz } satisfies Record<Locale, Dictionary>

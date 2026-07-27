@@ -90,6 +90,8 @@ export default function Hero() {
     let autopilot = hasFinePointer ? 0 : 1
     let intersectsViewport = true
     let sceneActive = window.scrollY < window.innerHeight * HERO_ACTIVE_SCROLL_RATIO
+    let lastMaskPaint = -Infinity
+    const maskFrameMs = hasFinePointer ? 16 : 33
 
     const target = {
       x: stone.left + stone.width / 2,
@@ -118,16 +120,18 @@ export default function Hero() {
           Math.sin(time * SWEEP.y1 + 0.9) * BEAM_SWING_Y +
           Math.cos(time * SWEEP.y2) * BEAM_SWING_Y * 0.42)
 
-    const paint = (x: number, y: number) => {
+    const paint = (x: number, y: number, time = performance.now()) => {
       const localX = x - stone.left
       const localY = y - stone.top
-      const mask =
-        `radial-gradient(circle ${radius.toFixed(1)}px at ${localX.toFixed(1)}px ${localY.toFixed(1)}px, ` +
-        'rgb(0 0 0) 0%, rgb(0 0 0) 38%, rgb(0 0 0 / 0.78) 58%, ' +
-        'rgb(0 0 0 / 0.34) 76%, transparent 100%)'
-
-      video.style.maskImage = mask
-      video.style.webkitMaskImage = mask
+      if (time - lastMaskPaint >= maskFrameMs) {
+        const mask =
+          `radial-gradient(circle ${radius.toFixed(1)}px at ${localX.toFixed(1)}px ${localY.toFixed(1)}px, ` +
+          'rgb(0 0 0) 0%, rgb(0 0 0) 38%, rgb(0 0 0 / 0.78) 58%, ' +
+          'rgb(0 0 0 / 0.34) 76%, transparent 100%)'
+        video.style.maskImage = mask
+        video.style.webkitMaskImage = mask
+        lastMaskPaint = time
+      }
 
       if (reticleRef.current) {
         reticleRef.current.style.transform =
@@ -135,9 +139,9 @@ export default function Hero() {
       }
 
       if (glowRef.current) {
-        glowRef.current.style.background =
-          `radial-gradient(circle ${(radius * 1.22).toFixed(0)}px at ${x.toFixed(1)}px ${y.toFixed(1)}px, ` +
-          'rgb(var(--bone-rgb) / 0.12), rgb(var(--bone-rgb) / 0.045) 42%, transparent 68%)'
+        const scale = (radius / SPOTLIGHT_RADIUS) * 1.08
+        glowRef.current.style.transform =
+          `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%) scale(${scale.toFixed(3)})`
       }
     }
 
@@ -176,7 +180,7 @@ export default function Hero() {
       target.y = clamp(target.y, stone.top + stone.height * 0.1, stone.bottom - stone.height * 0.1)
       smooth.x += (target.x - smooth.x) * CURSOR_SMOOTHING
       smooth.y += (target.y - smooth.y) * CURSOR_SMOOTHING
-      paint(smooth.x, smooth.y)
+      paint(smooth.x, smooth.y, time)
 
       if (tiltWrapRef.current) {
         const localX = (smooth.x - stone.left) / stone.width - 0.5
@@ -359,6 +363,7 @@ export default function Hero() {
     <section
       ref={heroRef}
       id="hero"
+      data-chroma="lichen"
       className="sticky top-0 z-0 h-screen w-full overflow-hidden bg-void"
       style={{ height: '100dvh' }}
       onPointerMove={(event) => {
@@ -388,7 +393,7 @@ export default function Hero() {
               text={t.hero.titleA}
               baseDelayMs={300}
               stepMs={36}
-              className="hero-title-main block text-[clamp(4rem,17vw,5.4rem)] leading-[0.86] sm:text-[clamp(6.5rem,11vw,11rem)]"
+              className="hero-title-main block whitespace-nowrap text-[clamp(3.2rem,14.5vw,4.25rem)] leading-[0.86] sm:text-[clamp(6.5rem,11vw,11rem)]"
             />
             <SplitChars
               text={t.hero.titleB}
@@ -454,14 +459,14 @@ export default function Hero() {
                 <span className="specimen-reticle-ring block h-12 w-12 rounded-full border border-bone/30 sm:h-[4.5rem] sm:w-[4.5rem]" />
                 <span className="absolute left-1/2 top-[-8px] h-[calc(100%+16px)] w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-bone/25 to-transparent" />
                 <span className="absolute left-[-8px] top-1/2 h-px w-[calc(100%+16px)] -translate-y-1/2 bg-gradient-to-r from-transparent via-bone/25 to-transparent" />
-                <span className="font-mono-t absolute left-[calc(100%+12px)] top-1/2 hidden -translate-y-1/2 whitespace-nowrap text-[9px] uppercase tracking-[0.18em] text-bone/55 sm:block">
+                <span className="hero-reticle-code font-mono-t absolute left-[calc(100%+12px)] top-1/2 hidden -translate-y-1/2 whitespace-nowrap text-[10px] uppercase tracking-[0.16em] text-bone/65 sm:block">
                   {t.hero.specimenCode}
                 </span>
               </div>
             )}
           </div>
 
-          <span className="hero-specimen-label font-mono-t pointer-events-none absolute bottom-[2%] left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-[8px] uppercase tracking-[0.24em] text-bone/45 sm:bottom-[5%] sm:text-[9px]">
+          <span className="hero-specimen-label font-mono-t pointer-events-none absolute bottom-[2%] left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-[10px] uppercase tracking-[0.18em] text-bone/60 sm:bottom-[5%]">
             {t.hero.specimenLabel}
           </span>
         </div>
@@ -471,7 +476,7 @@ export default function Hero() {
         <div
           ref={glowRef}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-[15] mix-blend-screen"
+          className="hero-glow-disc pointer-events-none absolute left-0 top-0 z-[15] h-[520px] w-[520px] rounded-full mix-blend-screen will-change-transform"
         />
       )}
 
@@ -493,7 +498,7 @@ export default function Hero() {
       />
 
       <p
-        className="hero-eyebrow anim anim-fade-down eyebrow pointer-events-none absolute inset-x-0 top-[8.8%] z-40 whitespace-nowrap px-4 text-center text-[9px] sm:top-[10.5%] sm:text-[10px]"
+        className="hero-eyebrow anim anim-fade-down eyebrow pointer-events-none absolute inset-x-0 top-[8.8%] z-40 whitespace-nowrap px-4 text-center text-[10px] sm:top-[10.5%]"
         style={{ animationDelay: '0.15s' }}
       >
         {t.hero.eyebrow}
@@ -534,7 +539,7 @@ export default function Hero() {
 
       <div className="hero-scroll-hint anim anim-fade pointer-events-none absolute inset-x-0 bottom-3 z-40 flex justify-center">
         <span className="flex items-center gap-2">
-          <span className="eyebrow text-[9px] sm:text-[10px]">{t.hero.scrollHint}</span>
+          <span className="eyebrow text-[10px]">{t.hero.scrollHint}</span>
           <ChevronDown
             size={15}
             className="text-bone/60"

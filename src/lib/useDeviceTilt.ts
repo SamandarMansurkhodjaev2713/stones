@@ -31,8 +31,23 @@ export function useDeviceTilt(enabled: boolean): Tilt {
   const pending = useRef<Tilt>(ZERO)
 
   useEffect(() => {
-    if (!enabled || reduced || typeof window === 'undefined') return
-    if (!('DeviceOrientationEvent' in window)) return
+    const reset = () => {
+      pending.current = ZERO
+      if (frame.current) {
+        cancelAnimationFrame(frame.current)
+        frame.current = 0
+      }
+      setTilt((current) => (current.x === 0 && current.y === 0 ? current : ZERO))
+    }
+
+    if (!enabled || reduced || typeof window === 'undefined') {
+      reset()
+      return
+    }
+    if (!('DeviceOrientationEvent' in window)) {
+      reset()
+      return
+    }
 
     const onOrient = (event: DeviceOrientationEvent) => {
       if (event.gamma === null || event.beta === null) return
@@ -50,7 +65,10 @@ export function useDeviceTilt(enabled: boolean): Tilt {
     window.addEventListener('deviceorientation', onOrient)
     return () => {
       window.removeEventListener('deviceorientation', onOrient)
-      if (frame.current) cancelAnimationFrame(frame.current)
+      if (frame.current) {
+        cancelAnimationFrame(frame.current)
+        frame.current = 0
+      }
     }
   }, [enabled, reduced])
 

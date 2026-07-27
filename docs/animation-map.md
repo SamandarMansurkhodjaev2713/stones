@@ -72,3 +72,24 @@
 в уже существующем `pointerover` (лишних слушателей нет) и переносит значение
 на свой корень, откуда CSS перекрашивает кольцо, точку, пыль и осколки в
 `--void`. Добавляя новую светлую секцию, достаточно поставить атрибут.
+# 2026 addendum — conductor, sound and mobile choreography
+
+- `ui/ChromaticConductor.tsx` uses intersection ratios to select the dominant
+  chromatic scene and writes only CSS variables. It also hands the same scene
+  to the audio engine, keeping colour, depth and sound in one narrative arc.
+- `lib/ambient.ts` provides an opt-in procedural geological soundscape with
+  audible phone-safe mid-band texture, sub pressure, scene crossfades and
+  restrained stone cues. The user’s volume is remembered; sound never
+  auto-starts on a return visit.
+- Hero keeps the original interactive stone. Fine pointers steer its lichen
+  reveal directly; touch uses drag, an idle orbit and optional device tilt.
+  The reveal runs at a capped cadence on coarse pointers and pauses offscreen.
+- Manifesto draws a lichen mineral vein; Samples uses a lichen diffraction
+  edge on the active specimen; Expeditions draws topographic profiles; Hadean
+  and Descent reserve oxide for heat and fracture.
+- Eras and Samples pin only on desktop-class fine pointers. Phones and tablets
+  receive native vertical/swipe flows, preserving momentum and avoiding scroll
+  traps. DepthRail is reserved for wide fine-pointer displays.
+- Canvas, cursor previews, ambient light and marquees pause outside their
+  visible context or while the document is hidden. Reduced-motion removes the
+  cinematic layer while leaving every section and action immediately readable.

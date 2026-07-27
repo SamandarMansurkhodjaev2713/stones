@@ -10,12 +10,45 @@ const SUNRISE_END = 0.55
 
 function MarqueeRow({ words }: { words: string[] }) {
   const items = [...words, ...words]
+  const trackRef = useRef<HTMLDivElement>(null)
+  const reduced = useReducedMotion()
+
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track || reduced) return
+
+    let intersecting = false
+    const sync = () => {
+      track.style.animationPlayState =
+        intersecting && !document.hidden ? 'running' : 'paused'
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      intersecting = entry.isIntersecting
+      sync()
+    })
+    const onVisibility = () => sync()
+
+    observer.observe(track)
+    document.addEventListener('visibilitychange', onVisibility)
+    sync()
+
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
+      track.style.removeProperty('animation-play-state')
+    }
+  }, [reduced])
+
   return (
     <div
       aria-hidden="true"
       className="strip-fade-x select-none overflow-hidden border-y border-void/10 py-5"
     >
-      <div className="marquee-track flex w-max items-center gap-10 pr-10">
+      <div
+        ref={trackRef}
+        className="marquee-track flex w-max items-center gap-10 pr-10"
+        style={{ animationPlayState: 'paused' }}
+      >
         {items.map((word, i) => (
           <span key={i} className="flex shrink-0 items-center gap-10">
             <span className="font-mono-t text-sm uppercase tracking-[0.3em] text-void/35">
@@ -117,6 +150,7 @@ export default function Voice() {
       ref={sectionRef}
       id="voice"
       data-tone="light"
+      data-chroma="light"
       className="voice-stage relative flex min-h-[100svh] flex-col overflow-hidden bg-bone text-void"
     >
       {/* The retreating night. Sits above the content but below nothing else,
@@ -157,8 +191,8 @@ export default function Voice() {
 
       <MarqueeRow words={t.voice.marquee} />
 
-      <div className="relative z-[2] mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-5 py-14 md:py-20">
-        <p className="font-mono-t mb-8 text-center text-[9px] uppercase tracking-[0.28em] text-void/45 md:text-[10px]">
+      <div className="section-gutter relative z-[2] mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-5 py-14 md:py-20">
+        <p className="font-mono-t mb-8 text-center text-[10px] uppercase tracking-[0.24em] text-void/65">
           {t.voice.folio}
         </p>
 
@@ -179,7 +213,7 @@ export default function Voice() {
           <p className="mt-1 text-sm text-void/50">{t.voice.role}</p>
         </div>
 
-        <div className="font-mono-t mt-12 flex items-center gap-4 text-[9px] uppercase tracking-[0.2em] text-void/35">
+        <div className="font-mono-t mt-12 flex items-center gap-4 text-[10px] uppercase tracking-[0.18em] text-void/65">
           <span>{t.voice.index}</span>
           <span className="h-px flex-1 bg-void/15" aria-hidden="true" />
           <span aria-hidden="true">07 / 08</span>

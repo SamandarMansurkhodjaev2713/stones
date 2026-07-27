@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import SectionShell from '../ui/SectionShell'
 import DisplayHeading from '../ui/DisplayHeading'
 import useReveal from '../../hooks/useReveal'
@@ -13,16 +13,15 @@ const SETTLE_DURATION_MS = 420
 const SETTLE_OVERSHOOT = 0.012
 
 function Counter({ stat, start }: { stat: StatItem; start: boolean }) {
-  const [display, setDisplay] = useState(() => formatNumber(0, stat.decimals ?? 0))
-  const started = useRef(false)
+  const valueRef = useRef<HTMLSpanElement>(null)
   const reduced = useReducedMotion()
 
   useEffect(() => {
-    if (!start || started.current) return
-    started.current = true
+    const valueEl = valueRef.current
+    if (!start || !valueEl) return
 
     if (reduced) {
-      setDisplay(formatNumber(stat.value, stat.decimals ?? 0))
+      valueEl.textContent = formatNumber(stat.value, stat.decimals ?? 0)
       return
     }
 
@@ -37,16 +36,16 @@ function Counter({ stat, start }: { stat: StatItem; start: boolean }) {
       const p = Math.min(1, (now - settleStart) / SETTLE_DURATION_MS)
       const decay = Math.exp(-5 * p) * Math.cos(p * Math.PI * 2)
       const value = stat.value * (1 + SETTLE_OVERSHOOT * decay * (1 - p))
-      setDisplay(formatNumber(value, stat.decimals ?? 0))
+      valueEl.textContent = formatNumber(value, stat.decimals ?? 0)
       if (p < 1) raf = requestAnimationFrame(settle)
-      else setDisplay(formatNumber(stat.value, stat.decimals ?? 0))
+      else valueEl.textContent = formatNumber(stat.value, stat.decimals ?? 0)
     }
 
     const tick = (now: number) => {
       if (startTime === null) startTime = now
       const p = Math.min(1, (now - startTime) / COUNT_DURATION_MS)
       const eased = 1 - Math.pow(1 - p, 4)
-      setDisplay(formatNumber(stat.value * eased, stat.decimals ?? 0))
+      valueEl.textContent = formatNumber(stat.value * eased, stat.decimals ?? 0)
       if (p < 1) raf = requestAnimationFrame(tick)
       else raf = requestAnimationFrame(settle)
     }
@@ -56,7 +55,7 @@ function Counter({ stat, start }: { stat: StatItem; start: boolean }) {
 
   return (
     <span className="whitespace-nowrap">
-      {display}
+      <span ref={valueRef}>{formatNumber(0, stat.decimals ?? 0)}</span>
       {/* The unit is an annotation, not part of the figure — kept small so a
           long one ("млрд") can never wrap onto its own poster-sized line. */}
       <span className="ml-1 align-baseline text-[0.32em] tracking-[0.06em] text-bone/40">
@@ -77,8 +76,20 @@ function ReportRow({ stat, index }: { stat: StatItem; index: number }) {
     <li
       ref={row.ref}
       data-reveal-row
-      className="row-ruled border-t border-bone/10 last:border-b"
+      className="row-ruled relative border-t border-bone/10 last:border-b"
     >
+      <span
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-x-0 top-0 z-[1] h-px origin-left bg-gradient-to-r from-transparent via-lichen/80 to-transparent transition-transform duration-1100 ease-out-expo ${
+          row.inView ? 'scale-x-100' : 'scale-x-0'
+        }`}
+      />
+      <span
+        aria-hidden="true"
+        className={`absolute right-0 top-[-3px] z-[2] h-[7px] w-[7px] rounded-full border border-lichen bg-void transition-[opacity,transform] delay-700 duration-500 ${
+          row.inView ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
+        }`}
+      />
       <span
         data-row-body
         className="grid grid-cols-12 items-baseline gap-x-4 gap-y-1 py-7 md:py-9"
@@ -88,7 +99,7 @@ function ReportRow({ stat, index }: { stat: StatItem; index: number }) {
         </span>
 
         {/* Poster scale: the figure is the picture of this section. */}
-        <span className="display-title col-span-10 text-[4.4rem] leading-[0.86] text-bone tabular-nums md:col-span-6 md:text-[7.5rem] xl:text-[9.5rem]">
+        <span className="display-title col-span-10 text-[clamp(3.35rem,18vw,4.4rem)] leading-[0.86] text-bone tabular-nums md:col-span-6 md:text-[clamp(5rem,10vw,7.5rem)] xl:text-[9.5rem]">
           <Counter stat={stat} start={row.inView} />
         </span>
 
@@ -116,7 +127,7 @@ export default function Stats() {
       className="bg-void"
     >
       <div className="flex min-h-screen flex-col justify-center py-28 md:py-32">
-        <div className="mx-auto w-full max-w-7xl px-5">
+        <div className="section-gutter mx-auto w-full max-w-7xl px-5">
           <div className="mb-12 flex flex-col gap-6 md:mb-16 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
               <DisplayHeading

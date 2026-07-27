@@ -50,6 +50,7 @@ export default function Expeditions() {
   /** Touch equivalent: the row crossing the viewport's focus line. */
   const focused = useViewportFocus(listRef, 'li')
   const places = useMemo(() => t.expeditions.items.map((r) => r.place), [t])
+  const activeRoute = open ?? hovered ?? focused ?? 0
 
   return (
     <SectionShell
@@ -57,14 +58,48 @@ export default function Expeditions() {
       index="04"
       depthM={3400}
       eyebrow={t.expeditions.eyebrow}
+      chroma="lichen"
       className="bg-surface py-28 md:py-40"
     >
       <SectionStrata depth={0.75} />
 
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-y-[10%] right-0 hidden w-[46%] opacity-55 lg:block"
+      >
+        {[0, 1, 2, 3].map((line) => (
+          <path
+            key={line}
+            d={`M ${8 + line * 2} ${12 + line * 8} C ${24 + line * 3} ${2 + line * 14}, ${55 - line * 2} ${42 + line * 7}, 96 ${18 + line * 17}`}
+            fill="none"
+            stroke={
+              activeRoute === line
+                ? 'rgb(var(--lichen-rgb) / 0.62)'
+                : 'rgb(var(--bone-rgb) / 0.07)'
+            }
+            strokeWidth={activeRoute === line ? 0.34 : 0.18}
+            vectorEffect="non-scaling-stroke"
+            className="transition-[stroke,stroke-width,opacity] duration-800 ease-out-expo"
+          />
+        ))}
+        <circle
+          cx={18 + activeRoute * 18}
+          cy={24 + activeRoute * 15}
+          r="1.15"
+          fill="none"
+          stroke="rgb(var(--lichen-rgb) / 0.78)"
+          strokeWidth="0.35"
+          vectorEffect="non-scaling-stroke"
+          className="topographic-pulse transition-[cx,cy] duration-800 ease-out-expo"
+        />
+      </svg>
+
       {/* The destination, trailing the pointer while the list is hovered. */}
       <CursorPreview index={hovered} images={ROUTE_PHOTO} labels={places} />
 
-      <div className="relative mx-auto max-w-7xl px-5">
+      <div className="section-gutter relative mx-auto max-w-7xl px-5">
         <div className="mb-12 max-w-3xl md:mb-16">
           <DisplayHeading
             text={t.expeditions.title}
@@ -103,7 +138,7 @@ export default function Expeditions() {
                 >
                   <span
                     aria-hidden="true"
-                    className={`pointer-events-none absolute inset-0 origin-left bg-gradient-to-r from-bone/[0.05] to-transparent transition-transform duration-500 ease-out-expo group-hover:scale-x-100 ${
+                    className={`pointer-events-none absolute inset-0 origin-left bg-gradient-to-r from-lichen/[0.07] via-bone/[0.025] to-transparent transition-transform duration-500 ease-out-expo group-hover:scale-x-100 ${
                       lit ? 'scale-x-100' : 'scale-x-0'
                     }`}
                   />
@@ -213,7 +248,7 @@ export default function Expeditions() {
                           <polyline
                             points={PROFILES[i % PROFILES.length]}
                             fill="none"
-                            stroke="rgb(var(--bone-rgb) / 0.55)"
+                          stroke="rgb(var(--lichen-rgb) / 0.72)"
                             strokeWidth="1.5"
                             pathLength={1}
                             style={{

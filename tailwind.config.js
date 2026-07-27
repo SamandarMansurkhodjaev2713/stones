@@ -12,13 +12,16 @@ export default {
         bone: 'rgb(var(--bone-rgb) / <alpha-value>)',
         ash: 'rgb(var(--ash-rgb) / <alpha-value>)',
         accent: 'rgb(var(--accent-rgb) / <alpha-value>)',
+        lichen: 'rgb(var(--lichen-rgb) / <alpha-value>)',
+        oxide: 'rgb(var(--oxide-rgb) / <alpha-value>)',
+        'oxide-deep': 'rgb(var(--oxide-deep-rgb) / <alpha-value>)',
         magma: 'rgb(var(--magma-rgb) / <alpha-value>)',
         'magma-deep': 'rgb(var(--magma-deep-rgb) / <alpha-value>)',
       },
       fontFamily: {
         display: ['"Bebas Neue"', 'Oswald', 'system-ui', 'sans-serif'],
         sans: ['Manrope', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
       },
       transitionTimingFunction: {
         'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',

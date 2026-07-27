@@ -48,6 +48,7 @@ export default function CustomCursor() {
   useEffect(() => {
     const root = document.documentElement
     root.classList.add('has-custom-cursor')
+    let running = false
 
     const spawnDust = (x: number, y: number, now: number) => {
       if (now - dustLastTs.current < DUST_INTERVAL_MS) return
@@ -131,6 +132,7 @@ export default function CustomCursor() {
     document.addEventListener('pointerenter', onEnter)
 
     const render = () => {
+      if (!running) return
       ringPos.current.x += (target.current.x - ringPos.current.x) * CURSOR_SMOOTHING
       ringPos.current.y += (target.current.y - ringPos.current.y) * CURSOR_SMOOTHING
       const ring = ringRef.current
@@ -143,7 +145,28 @@ export default function CustomCursor() {
       }
       rafRef.current = requestAnimationFrame(render)
     }
-    rafRef.current = requestAnimationFrame(render)
+    const start = () => {
+      if (running || document.hidden) return
+      running = true
+      rafRef.current = requestAnimationFrame(render)
+    }
+    const stop = () => {
+      if (!running) return
+      running = false
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = 0
+    }
+    const onVisibility = () => {
+      if (document.hidden) {
+        setVisible(false)
+        stop()
+      } else {
+        start()
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibility)
+    start()
 
     return () => {
       root.classList.remove('has-custom-cursor')
@@ -152,7 +175,8 @@ export default function CustomCursor() {
       window.removeEventListener('pointerdown', onDown)
       document.removeEventListener('pointerleave', onLeave)
       document.removeEventListener('pointerenter', onEnter)
-      cancelAnimationFrame(rafRef.current)
+      document.removeEventListener('visibilitychange', onVisibility)
+      stop()
     }
   }, [])
 

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n, formatNumber } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
-import { HEADER_OFFSET, MAX_DEPTH_M } from '../../lib/constants'
+import { HEADER_OFFSET, MAX_DEPTH_M, MQ_WIDE_FINE_POINTER } from '../../lib/constants'
+import { useMediaQuery } from '../../lib/useMediaQuery'
 
 interface RailStop {
   id: string
@@ -22,6 +23,7 @@ export default function DepthRail() {
   const carriageRef = useRef<HTMLDivElement>(null)
   const depthRef = useRef<HTMLSpanElement>(null)
   const [activeId, setActiveId] = useState('hero')
+  const visible = useMediaQuery(MQ_WIDE_FINE_POINTER)
 
   const stops = useMemo<RailStop[]>(
     () => [
@@ -33,6 +35,8 @@ export default function DepthRail() {
   )
 
   useEffect(() => {
+    if (!visible) return
+
     const ids = stops.map((s) => s.id)
     let raf = 0
 
@@ -76,12 +80,14 @@ export default function DepthRail() {
       window.removeEventListener('resize', onScroll)
       cancelAnimationFrame(raf)
     }
-  }, [stops])
+  }, [stops, visible])
+
+  if (!visible) return null
 
   return (
     <nav
       aria-label={t.a11y.toSection}
-      className="fixed right-6 top-1/2 z-40 hidden -translate-y-1/2 lg:flex xl:right-9"
+      className="fixed right-9 top-1/2 z-40 flex -translate-y-1/2"
     >
       <div className="flex flex-col items-end gap-4">
         <span className="eyebrow [writing-mode:vertical-rl] rotate-180 text-[10px]">
@@ -133,8 +139,8 @@ export default function DepthRail() {
                     type="button"
                     onClick={() => scrollTo(`#${stop.id}`, { offset: HEADER_OFFSET })}
                     // Padding, not a fatter tick: the hairline stays a hairline
-                    // while the button clears the 24px minimum target size.
-                    className="group flex min-h-[24px] items-center gap-3 py-1"
+                    // while the button clears the 44px interaction target.
+                    className="group flex min-h-[44px] items-center gap-3 py-2"
                     data-cursor="label"
                     data-cursor-label={stop.label}
                     aria-label={`${t.a11y.toSection}: ${stop.label}`}

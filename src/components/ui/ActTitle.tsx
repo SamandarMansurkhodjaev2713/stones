@@ -110,7 +110,7 @@ export default function ActTitle({ word, note, depthM, numeral, unit }: ActTitle
     <section
       ref={ref}
       aria-label={`${word}. ${note}`}
-      className="relative flex h-[78vh] flex-col items-center justify-center overflow-hidden bg-void md:h-screen"
+      className="relative flex min-h-[78svh] flex-col items-center justify-center overflow-hidden bg-void px-4 py-20 md:min-h-[100svh] md:py-24"
     >
       {/* Bedding planes, pulling apart as the reader crosses the act. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -127,14 +127,14 @@ export default function ActTitle({ word, note, depthM, numeral, unit }: ActTitle
       <span
         data-act-word
         aria-hidden="true"
-        className="display-title outline-title whitespace-nowrap text-[24vw] leading-none md:text-[19vw]"
+        className="display-title outline-title whitespace-nowrap text-[clamp(4.25rem,24vw,9rem)] leading-none sm:text-[clamp(5rem,16vw,10rem)] md:text-[clamp(6rem,16vw,14rem)]"
       >
         {word}
       </span>
 
       <div
         data-act-body
-        className="relative mt-6 flex max-w-md flex-col items-center gap-4 px-6 text-center md:mt-8"
+        className="relative mt-6 flex max-w-md flex-col items-center gap-4 px-2 text-center sm:px-6 md:mt-8"
       >
         <p className="text-balance text-base leading-relaxed text-bone/60 md:text-lg">{note}</p>
         <p className="font-mono-t text-[10px] uppercase tracking-[0.3em] text-ash">

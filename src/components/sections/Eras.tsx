@@ -6,11 +6,8 @@ import DisplayHeading from '../ui/DisplayHeading'
 import { useI18n, formatNumber } from '../../i18n'
 import type { Dictionary } from '../../i18n/dictionary'
 import { gsap, ScrollTrigger } from '../../lib/gsap'
-import { ERA_SEQUENCE, MAX_DEPTH_M, MQ_MOBILE } from '../../lib/constants'
+import { ERA_SEQUENCE, MAX_DEPTH_M, MQ_PINNED_DESKTOP } from '../../lib/constants'
 import { useMediaQuery } from '../../lib/useMediaQuery'
-import { useReducedMotion } from '../../lib/useReducedMotion'
-import { useDeviceTilt } from '../../lib/useDeviceTilt'
-import type { Tilt } from '../../lib/useDeviceTilt'
 import { ambient } from '../../lib/ambient'
 import { haptic } from '../../lib/haptics'
 import { ERA_PHOTO } from '../../lib/media'
@@ -30,7 +27,7 @@ const depthOf = (depth: number) => Math.round(depth * MAX_DEPTH_M)
  * poster scale, depth readout, level rail on the right, darkness deepening
  * with every era. Visual-only: the full era list is mirrored for AT below.
  */
-function PinnedEras({ t, tilt }: { t: Dictionary; tilt: Tilt }) {
+function PinnedEras({ t }: { t: Dictionary }) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const photoStackRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<ScrollTrigger | null>(null)
@@ -56,7 +53,7 @@ function PinnedEras({ t, tilt }: { t: Dictionary; tilt: Tilt }) {
     if (!wrap) return
 
     const mm = gsap.matchMedia()
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
+    mm.add(MQ_PINNED_DESKTOP, () => {
       const trigger = ScrollTrigger.create({
         trigger: wrap,
         start: 'top top',
@@ -86,18 +83,6 @@ function PinnedEras({ t, tilt }: { t: Dictionary; tilt: Tilt }) {
 
     return () => mm.revert()
   }, [])
-
-  // On a phone the same parallax comes from the wrist instead of the pointer:
-  // tilt the device and the landscape leans with it.
-  useEffect(() => {
-    const stack = photoStackRef.current
-    // No sensor reading means no claim on the transform — the pointer
-    // parallax below owns it on desktop and must not be overwritten.
-    if (!stack || (tilt.x === 0 && tilt.y === 0)) return
-    stack.style.transform =
-      `translate3d(${(-tilt.x * PHOTO_PARALLAX_PCT).toFixed(2)}%, ` +
-      `${(-tilt.y * PHOTO_PARALLAX_PCT).toFixed(2)}%, 0)`
-  }, [tilt])
 
   // The landscape leans against the pointer: the wall of rock has a near side.
   useEffect(() => {
@@ -130,7 +115,7 @@ function PinnedEras({ t, tilt }: { t: Dictionary; tilt: Tilt }) {
     <div
       ref={wrapRef}
       aria-hidden="true"
-      className="relative hidden flex-col overflow-hidden motion-safe:flex"
+      className="relative flex flex-col overflow-hidden"
       style={{ height: '100dvh' }}
     >
       {/* Era backdrops: one monochrome landscape per level, crossfading with
@@ -171,7 +156,7 @@ function PinnedEras({ t, tilt }: { t: Dictionary; tilt: Tilt }) {
       />
 
       {/* Static chapter header */}
-      <div className="relative mx-auto w-full max-w-7xl px-5 pt-28 lg:pt-24">
+      <div className="section-gutter relative mx-auto w-full max-w-7xl px-5 pt-28 lg:pt-24">
         <h2 className="display-title text-4xl text-bone">{t.eras.title}</h2>
         <p className="mt-2 max-w-md text-sm leading-relaxed text-bone/55">
           {t.eras.sub}
@@ -179,7 +164,7 @@ function PinnedEras({ t, tilt }: { t: Dictionary; tilt: Tilt }) {
       </div>
 
       {/* The current level — remounts on change, .anim replays the entrance. */}
-      <div className="relative mx-auto flex w-full max-w-7xl flex-1 items-center px-5">
+      <div className="section-gutter relative mx-auto flex w-full max-w-7xl flex-1 items-center px-5">
         <div key={era.id} className="anim anim-fade max-w-3xl" style={{ animationDuration: '600ms' }}>
           <p className="font-mono-t text-sm text-bone/60">
             −{formatNumber(depthOf(era.depth))} {t.telemetry.unit}
@@ -196,7 +181,11 @@ function PinnedEras({ t, tilt }: { t: Dictionary; tilt: Tilt }) {
             }`}
           >
             {isFinalEra ? copy.name : [...copy.name].map((char, i) => (
-              <span key={`${char}-${i}`} style={{ '--i': i } as CSSProperties}>
+              <span
+                key={`${char}-${i}`}
+                data-fault-side={i % 2}
+                style={{ '--i': i } as CSSProperties}
+              >
                 {char === ' ' ? ' ' : char}
               </span>
             ))}
@@ -292,7 +281,7 @@ function ErasList({ t, srOnly = false }: { t: Dictionary; srOnly?: boolean }) {
 
   return (
     <div className="py-28 md:py-40">
-      <div className="relative mx-auto max-w-7xl px-5">
+      <div className="section-gutter relative mx-auto max-w-7xl px-5">
         <div className="mb-14 max-w-3xl md:mb-20">
           <DisplayHeading
             text={t.eras.title}
@@ -315,13 +304,17 @@ function ErasList({ t, srOnly = false }: { t: Dictionary; srOnly?: boolean }) {
               className="border-t border-bone/10"
               style={{ backgroundColor: `rgba(0, 0, 0, ${i * 0.055})` }}
             >
-              <div className="mx-auto grid max-w-7xl grid-cols-12 items-baseline gap-x-4 gap-y-3 px-5 py-8 md:py-12">
+              <div className="section-gutter mx-auto grid max-w-7xl grid-cols-12 items-baseline gap-x-4 gap-y-3 px-5 py-8 md:py-12">
                 <span className="font-mono-t col-span-4 text-xs text-ash md:col-span-2">
                   −{formatNumber(depthOf(era.depth))} {t.telemetry.unit}
                 </span>
 
                 <div className="col-span-8 md:col-span-4">
-                  <h3 className="display-title text-4xl text-bone sm:text-5xl md:text-7xl">
+                  <h3
+                    className={`display-title text-4xl sm:text-5xl md:text-7xl ${
+                      era.id === 'hadean' ? 'era-molten' : 'text-bone'
+                    }`}
+                  >
                     {copy.name}
                   </h3>
                   <p className="font-mono-t mt-2 text-xs uppercase tracking-[0.14em] text-bone/45">
@@ -344,7 +337,7 @@ function ErasList({ t, srOnly = false }: { t: Dictionary; srOnly?: boolean }) {
         })}
       </ol>
 
-      <div className="mx-auto max-w-7xl px-5">
+      <div className="section-gutter mx-auto max-w-7xl px-5">
         <p data-reveal className="font-mono-t mt-10 max-w-md text-xs leading-relaxed text-ash/70">
           {t.eras.footnote}
         </p>
@@ -355,23 +348,22 @@ function ErasList({ t, srOnly = false }: { t: Dictionary; srOnly?: boolean }) {
 
 export default function Eras() {
   const { t } = useI18n()
-  const isMobile = useMediaQuery(MQ_MOBILE)
-  const reduced = useReducedMotion()
-  const tilt = useDeviceTilt(isMobile && !reduced)
+  const pinned = useMediaQuery(MQ_PINNED_DESKTOP)
 
   return (
     <SectionShell id="eras" index="02" eyebrow={t.eras.eyebrow} depthM={1600} depart={false} className="bg-surface">
-      {/* Pinned stage — motion allowed (CSS gate, always mounted). */}
-      <PinnedEras t={t} tilt={tilt} />
+      {/* Pinned stage: only a tall, fine-pointer desktop earns the lock. */}
+      {pinned && <PinnedEras t={t} />}
       {/* Its AT mirror, active only where the visual stage is the one shown. */}
-      <div className="hidden motion-safe:block">
+      <div className={pinned ? 'block' : 'hidden'}>
         <ErasList t={t} srOnly />
       </div>
 
-      {/* Flat list — mobile and reduced-motion desktop. */}
-      <div className="motion-safe:hidden">
+      {/* Native list: phones, tablets, coarse pointers, short viewports and
+          reduced-motion users keep an uninterrupted document flow. */}
+      <div className={pinned ? 'hidden' : 'block'}>
         <div className="pointer-events-none absolute inset-0">
-          <ParticleField density={0.85} />
+          <ParticleField density={0.45} />
         </div>
         <ErasList t={t} />
       </div>

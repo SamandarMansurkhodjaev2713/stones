@@ -31,17 +31,20 @@ interface CursorPreviewProps {
 export default function CursorPreview({ index, images, labels }: CursorPreviewProps) {
   const ref = useRef<HTMLDivElement>(null)
   const reduced = useReducedMotion()
+  const active = index !== null
 
   useEffect(() => {
     const el = ref.current
-    if (!el || reduced) return
+    if (!el || reduced || !active) return
     if (!window.matchMedia('(pointer: fine)').matches) return
 
     const moveX = gsap.quickTo(el, 'x', { duration: FOLLOW_S, ease: 'power3' })
     const moveY = gsap.quickTo(el, 'y', { duration: FOLLOW_S, ease: 'power3' })
     let placed = false
+    let listening = false
 
     const onMove = (event: PointerEvent) => {
+      if (document.hidden) return
       const x = Math.min(event.clientX + OFFSET_X, window.innerWidth - W - EDGE_PAD)
       const y = Math.min(
         Math.max(event.clientY + OFFSET_Y, EDGE_PAD),
@@ -58,17 +61,33 @@ export default function CursorPreview({ index, images, labels }: CursorPreviewPr
       moveY(y)
     }
 
-    window.addEventListener('pointermove', onMove, { passive: true })
-    return () => {
+    const start = () => {
+      if (listening || document.hidden) return
+      listening = true
+      window.addEventListener('pointermove', onMove, { passive: true })
+    }
+    const stop = () => {
+      if (!listening) return
+      listening = false
       window.removeEventListener('pointermove', onMove)
       gsap.killTweensOf(el)
     }
-  }, [reduced])
+    const onVisibility = () => {
+      if (document.hidden) stop()
+      else start()
+    }
+
+    start()
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      stop()
+    }
+  }, [active, reduced])
 
   // Nothing to show and nothing to animate: keep it out of the DOM entirely.
   if (reduced) return null
 
-  const active = index !== null
   return (
     <div
       ref={ref}

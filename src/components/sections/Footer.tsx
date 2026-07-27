@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Send } from 'lucide-react'
 import useReveal from '../../hooks/useReveal'
 import CursorPreview from '../ui/CursorPreview'
+import MagneticButton from '../ui/MagneticButton'
 import { useI18n, formatNumber } from '../../i18n'
 import { useScrollTo } from '../../lib/scroll'
 import { useViewportFocus } from '../../lib/useViewportFocus'
@@ -19,6 +20,7 @@ export default function Footer() {
   const { t } = useI18n()
   const scrollTo = useScrollTo()
   const giant = useReveal<HTMLDivElement>({ threshold: 0.2 })
+  const authorship = useReveal<HTMLDivElement>({ threshold: 0.25 })
   const [hovered, setHovered] = useState<number | null>(null)
   const listRef = useRef<HTMLUListElement>(null)
   /** Touch stand-in for hover: the link crossing the viewport focus line. */
@@ -28,7 +30,7 @@ export default function Footer() {
   const labels = t.nav.links.map((link) => link.label)
 
   return (
-    <footer className="relative overflow-hidden bg-void">
+    <footer id="footer" data-chroma="lichen" className="relative overflow-hidden bg-void">
       <CursorPreview index={hovered} images={previews} labels={labels} />
 
       <div className="site-footer-content relative mx-auto max-w-7xl px-5 pt-20 md:pt-28">
@@ -115,6 +117,47 @@ export default function Footer() {
                 {t.descent.ctaPrimary}
               </span>
             </a>
+          </div>
+        </div>
+
+        {/* Authorship seam: the expedition is allowed to end before the
+            creator steps forward. It reads as a signed field plate, not a
+            generic portfolio banner dropped into the brand world. */}
+        <div
+          ref={authorship.ref}
+          className={`authorship-plate relative overflow-hidden border-y border-bone/10 py-10 transition-[opacity,transform] duration-1100 ease-out-expo md:py-14 ${
+            authorship.inView ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+          }`}
+        >
+          <span
+            aria-hidden="true"
+            className="absolute inset-x-0 top-0 h-px origin-left bg-gradient-to-r from-transparent via-lichen/80 to-transparent"
+          />
+          <div className="grid items-end gap-8 md:grid-cols-[minmax(0,1fr)_auto] md:gap-14">
+            <div className="max-w-3xl">
+              <p className="eyebrow mb-4 text-lichen">{t.author.eyebrow}</p>
+              <h2 className="display-title text-[clamp(2.8rem,7vw,6.5rem)] leading-[0.9] text-bone">
+                {t.author.title}
+              </h2>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-bone/70 md:text-lg">
+                {t.author.body}
+              </p>
+            </div>
+            <MagneticButton
+              label={t.author.cta}
+              href={CONTACT.telegram}
+              external
+              icon={<Send size={16} strokeWidth={2.25} />}
+              cursorLabel={t.cursor.dig}
+              className="w-full md:w-auto"
+            />
+          </div>
+          <div
+            aria-hidden="true"
+            className="font-mono-t mt-8 flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] text-ash"
+          >
+            <span className="h-2 w-2 rounded-full border border-lichen/70" />
+            <span>{t.author.stamp}</span>
           </div>
         </div>
 

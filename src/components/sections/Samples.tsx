@@ -10,7 +10,7 @@ import { haptic } from '../../lib/haptics'
 import { useMediaQuery } from '../../lib/useMediaQuery'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 import { useDeviceTilt } from '../../lib/useDeviceTilt'
-import { HEADER_OFFSET, MQ_MOBILE } from '../../lib/constants'
+import { HEADER_OFFSET, MQ_MOBILE, MQ_PINNED_DESKTOP } from '../../lib/constants'
 import { SAMPLE_PHOTO } from '../../lib/media'
 
 /** Archive shelf code for a specimen drawer. */
@@ -42,6 +42,7 @@ export default function Samples() {
   const { t } = useI18n()
   const scrollTo = useScrollTo()
   const isMobile = useMediaQuery(MQ_MOBILE)
+  const pinned = useMediaQuery(MQ_PINNED_DESKTOP)
   const reduced = useReducedMotion()
   const tilt = useDeviceTilt(isMobile && !reduced)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -95,7 +96,7 @@ export default function Samples() {
     const count = t.samples.items.length
 
     const mm = gsap.matchMedia()
-    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+    mm.add(MQ_PINNED_DESKTOP, () => {
       const dist = () => Math.max(0, track.scrollWidth - clip.clientWidth)
       const cards = gsap.utils.toArray<HTMLElement>(track.children)
       // Inertia: the drawers lag behind the shelf that carries them, leaning
@@ -154,8 +155,12 @@ export default function Samples() {
   // the same near-side that the pointer gives it on desktop.
   useEffect(() => {
     const track = trackRef.current
-    if (!track || (tilt.x === 0 && tilt.y === 0)) return
+    if (!track) return
     const cards = Array.from(track.children) as HTMLElement[]
+    if (tilt.x === 0 && tilt.y === 0) {
+      cards.forEach((card) => card.style.removeProperty('transform'))
+      return
+    }
     cards.forEach((card, i) => {
       // Depth on the shelf: further boxes lean a little more than near ones.
       const depth = 1 + (i % 3) * 0.22
@@ -223,17 +228,17 @@ export default function Samples() {
       depthM={2700}
       depart={false}
       eyebrow={t.samples.eyebrow}
-      className="bg-void py-28 md:py-40 lg:motion-safe:py-0"
+      className={`bg-void ${pinned ? 'py-0' : 'py-28 md:py-40'}`}
     >
       {/* Pinned on desktop: header + shelf lock to the viewport while the
           shelf rides horizontally. */}
       <div
         ref={wrapRef}
-        className="lg:motion-safe:flex lg:motion-safe:h-screen lg:motion-safe:flex-col lg:motion-safe:justify-center"
+        className={pinned ? 'flex h-[100dvh] flex-col justify-center' : ''}
       >
       <SectionStrata depth={0.55} />
 
-      <div className="relative mx-auto w-full max-w-7xl px-5">
+      <div className="section-gutter relative mx-auto w-full max-w-7xl px-5">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-6 md:mb-14">
           <div className="max-w-3xl">
             <DisplayHeading
@@ -276,12 +281,14 @@ export default function Samples() {
               ))}
             </div>
 
-            <span className="flex items-center gap-2 text-ash lg:motion-safe:hidden">
-              <MoveHorizontal size={14} aria-hidden="true" />
-              <span className="font-mono-t text-[10px] uppercase tracking-[0.16em]">
-                {t.samples.dragHint}
+            {!pinned && (
+              <span className="flex items-center gap-2 text-ash">
+                <MoveHorizontal size={14} aria-hidden="true" />
+                <span className="font-mono-t text-[10px] uppercase tracking-[0.16em]">
+                  {t.samples.dragHint}
+                </span>
               </span>
-            </span>
+            )}
           </div>
         </div>
 
@@ -289,7 +296,7 @@ export default function Samples() {
             SAY it moves sideways: a counter, a rail that fills, and two real
             buttons — the peeking edge of the next drawer alone is not enough,
             and on touch there is no hover to discover it with. */}
-        <div className="-mt-4 mb-5 flex items-center gap-4 lg:motion-safe:hidden">
+        <div className={`${pinned ? 'hidden' : 'flex'} -mt-4 mb-5 items-center gap-4`}>
           <span className="font-mono-t shrink-0 text-xs tabular-nums text-bone/70">
             {String(active + 1).padStart(2, '0')}
             <span className="text-ash/60"> / {String(cardCount).padStart(2, '0')}</span>
@@ -340,7 +347,9 @@ export default function Samples() {
             }
           }}
           data-cursor="drag"
-          className="scrollbar-hide cursor-grab snap-x snap-mandatory overflow-x-auto lg:motion-safe:snap-none lg:motion-safe:overflow-x-hidden"
+          className={`scrollbar-hide cursor-grab ${
+            pinned ? 'snap-none overflow-x-hidden' : 'snap-x snap-mandatory overflow-x-auto'
+          }`}
         >
           <div
             ref={trackRef}
@@ -354,7 +363,10 @@ export default function Samples() {
               key={item.name}
               className="flex w-[80vw] max-w-[380px] shrink-0 snap-start select-none"
             >
-            <div className="drawer group flex w-full flex-col overflow-hidden rounded-2xl border border-bone/10 bg-layer">
+            <div
+              data-active={active === i}
+              className="drawer group flex w-full flex-col overflow-hidden rounded-2xl border border-bone/10 bg-layer"
+            >
               <div data-reveal-media className="relative h-44 overflow-hidden">
                 {/* The archive is far below the fold. Native lazy loading keeps
                     full-resolution specimens off the mobile critical path. */}

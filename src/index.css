@@ -4,9 +4,9 @@
 
 /* ============================================================================
    DESIGN TOKENS — Stones · «Монолит»
-   Monochrome stone: neutral graphite surfaces, bone-white ink, and a single
-   accent that IS the bone tone. Tonal hierarchy (opacity steps of --bone)
-   replaces color. No hue shifts, no duotone — one material, like rock.
+   Chromatic Geology: neutral graphite and bone remain the field. Two pigments
+   appear only where the story calls for them — lichen near the surface and
+   iron oxide at the deepest pressure point. They are materials, not UI candy.
    RGB triples exist so Tailwind's `<alpha-value>` and rgba() work
    (e.g. `bg-accent/20`, `rgb(var(--bone-rgb) / 0.4)`).
    ============================================================================ */
@@ -26,13 +26,27 @@
     --bone-rgb: 232 230 225;
     --ash-rgb: 141 139 133;
 
-    /* Single accent = the bone tone. Kept as a separate token so the palette
-       can be re-pointed in one place without touching components. */
+    /* Structural accent stays bone so existing controls remain restrained. */
     --accent: #e8e6e1;
     --accent-rgb: 232 230 225;
 
+    /* Geological pigments. `--chroma-rgb` is the conductor used by global
+       atmosphere and can migrate without recolouring readable body copy. */
+    --lichen: #b8c66a;
+    --lichen-rgb: 184 198 106;
+    --oxide: #c45a3f;
+    --oxide-rgb: 196 90 63;
+    --oxide-deep: #71362b;
+    --oxide-deep-rgb: 113 54 43;
+    --chroma-rgb: var(--lichen-rgb);
+    --chroma-strength: 0.05;
+    /* Backwards-compatible aliases for the procedural shaft. */
+    --magma-rgb: var(--oxide-rgb);
+    --magma-deep-rgb: var(--oxide-deep-rgb);
+
     /* Type — one display face, declared once so utilities agree on the stack. */
     --font-display: 'Bebas Neue', 'Oswald', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
 
     /* Scroll depth 0..1 (surface → origin), used by gauges. */
     --depth: 0;
@@ -89,7 +103,7 @@
   }
 
   ::selection {
-    background: rgb(var(--bone-rgb) / 0.22);
+    background: rgb(var(--chroma-rgb) / 0.34);
     color: var(--bone);
   }
 
@@ -119,7 +133,7 @@
     font-family: 'Bebas Neue', 'Oswald', system-ui, sans-serif;
   }
   .font-mono-t {
-    font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+    font-family: var(--font-mono);
   }
 
   /* The single display voice: ultra-condensed poster caps, monument scale.
@@ -238,11 +252,35 @@
   /* Archive drawer: hovering slides it out of the shelf and tilts it toward
      the viewer, as if you had pulled the box to look inside. */
   .drawer {
+    position: relative;
     transform-style: preserve-3d;
     transition:
       transform 550ms var(--ease-out),
       border-color 550ms var(--ease-out),
       box-shadow 550ms var(--ease-out);
+  }
+  .drawer::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: 2px;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      rgb(var(--lichen-rgb) / 0.95) 42%,
+      rgb(var(--lichen-rgb) / 0.25) 72%,
+      transparent
+    );
+    box-shadow: 0 0 18px rgb(var(--lichen-rgb) / 0.28);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 850ms var(--ease-out);
+  }
+  .drawer[data-active='true']::before,
+  .drawer:focus-within::before {
+    transform: scaleY(1);
   }
   @media (hover: hover) and (pointer: fine) {
     .drawer:hover {
@@ -290,9 +328,9 @@
   .era-molten {
     background-image: linear-gradient(
       175deg,
-      rgb(var(--bone-rgb)) 8%,
-      rgb(var(--bone-rgb) / 0.72) 58%,
-      rgb(var(--bone-rgb) / 0.34) 100%
+      rgb(var(--bone-rgb)) 4%,
+      rgb(var(--oxide-rgb)) 54%,
+      rgb(var(--oxide-deep-rgb)) 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
@@ -326,16 +364,24 @@
     animation: glyphAssemble 700ms var(--ease-out) backwards;
     animation-delay: calc(var(--i) * 26ms);
   }
+  .glyph-assemble > span[data-fault-side='0'] {
+    --fault-x: -0.11em;
+  }
+  .glyph-assemble > span[data-fault-side='1'] {
+    --fault-x: 0.11em;
+  }
   @keyframes glyphAssemble {
     from {
       opacity: 0;
-      transform: translate3d(0, 0.5em, 0) rotate(4deg);
+      transform: translate3d(var(--fault-x, 0), 0.5em, 0) rotate(3deg);
       filter: blur(6px);
+      clip-path: polygon(0 16%, 100% 0, 100% 82%, 0 100%);
     }
     to {
       opacity: 1;
       transform: translate3d(0, 0, 0) rotate(0);
       filter: blur(0);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
     }
   }
 
@@ -392,7 +438,7 @@
 
   /* Eyebrow / telemetry label */
   .eyebrow {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: var(--font-mono);
     font-size: 0.72rem;
     letter-spacing: 0.28em;
     text-transform: uppercase;
@@ -405,6 +451,11 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  .section-gutter {
+    padding-left: max(1.25rem, env(safe-area-inset-left));
+    padding-right: max(1.25rem, env(safe-area-inset-right));
   }
 
   /* Fade the left/right edges of a horizontal strip (marquee, rail). */
@@ -427,6 +478,46 @@
 
   .will-change-transform {
     will-change: transform;
+  }
+
+  /* Global pigment conductor. It lives above the page as a barely-there
+     mineral bloom, while its seam gives every chapter one shared pulse. */
+  .chromatic-conductor {
+    opacity: 1;
+    mix-blend-mode: screen;
+    transition: opacity var(--dur-slow) var(--ease-out);
+  }
+  .chromatic-conductor__field {
+    opacity: var(--chroma-strength);
+    background:
+      radial-gradient(
+        circle at 14% 46%,
+        rgb(var(--chroma-rgb) / 0.88),
+        transparent 28%
+      ),
+      radial-gradient(
+        circle at 86% 62%,
+        rgb(var(--chroma-rgb) / 0.42),
+        transparent 23%
+      );
+    transition:
+      opacity var(--dur-xslow) var(--ease-out),
+      background-color var(--dur-xslow) var(--ease-out);
+  }
+  .chromatic-conductor__seam {
+    opacity: calc(var(--chroma-strength) * 5);
+    background: linear-gradient(
+      180deg,
+      transparent,
+      rgb(var(--chroma-rgb) / 0.9) 46%,
+      transparent
+    );
+    box-shadow: 0 0 18px rgb(var(--chroma-rgb) / 0.35);
+    transition: opacity var(--dur-slow) var(--ease-out);
+  }
+
+  html[data-chroma='light'] .chromatic-conductor {
+    opacity: 0;
   }
 
   /* Archival warm-toned monochrome — the single photographic voice of the
@@ -682,6 +773,18 @@
   );
 }
 
+.hero-glow-disc {
+  contain: strict;
+  opacity: 0.9;
+  background: radial-gradient(
+    circle,
+    rgb(var(--lichen-rgb) / 0.19) 0%,
+    rgb(var(--lichen-rgb) / 0.09) 33%,
+    rgb(var(--bone-rgb) / 0.035) 52%,
+    transparent 72%
+  );
+}
+
 .hero-monolith-base,
 .hero-monolith-lit {
   transform: translateZ(0);
@@ -700,7 +803,9 @@
   filter:
     brightness(1.14)
     contrast(1.18)
-    drop-shadow(0 1.8rem 2.6rem rgb(var(--void-rgb) / 0.82));
+    saturate(0.92)
+    drop-shadow(0 1.8rem 2.6rem rgb(var(--void-rgb) / 0.82))
+    drop-shadow(0 0 0.65rem rgb(var(--lichen-rgb) / 0.12));
 }
 
 @media (pointer: coarse) {
@@ -709,6 +814,13 @@
       brightness(0.76)
       contrast(1.13)
       drop-shadow(0 1.8rem 2.2rem rgb(var(--void-rgb) / 0.84));
+  }
+
+  .hero-glow-disc {
+    width: 380px;
+    height: 380px;
+    opacity: 0.72;
+    mix-blend-mode: normal;
   }
 }
 
@@ -763,27 +875,36 @@
     gap: 0;
   }
 
-  .station-controls [role='group'] button {
-    min-width: 40px;
+  .hero-headline-stage {
+    top: max(6.3rem, calc(env(safe-area-inset-top) + 6.05rem));
+  }
+
+  .hero-stone-scene {
+    top: clamp(12.3rem, 29svh, 15.5rem);
+    height: clamp(13.2rem, 35svh, 19.5rem);
   }
 }
 
 @media (max-width: 639px) and (max-height: 720px) {
   .hero-headline-stage {
-    top: max(17%, calc(env(safe-area-inset-top) + 6rem)) !important;
+    top: max(5.8rem, calc(env(safe-area-inset-top) + 5.6rem)) !important;
   }
 
   .hero-title-main {
-    font-size: clamp(3.25rem, 17vw, 4.15rem) !important;
+    font-size: clamp(2.9rem, 13.8vw, 3.7rem) !important;
   }
 
   .hero-title-subline {
-    font-size: clamp(1rem, 5vw, 1.35rem) !important;
+    font-size: clamp(0.95rem, 4.5vw, 1.2rem) !important;
   }
 
   .hero-stone-scene {
-    top: 38%;
-    height: 29%;
+    top: clamp(10.3rem, 29svh, 12.5rem);
+    height: clamp(9.6rem, 29svh, 12.5rem);
+  }
+
+  .hero-copy {
+    bottom: max(1.8rem, calc(env(safe-area-inset-bottom) + 1.15rem));
   }
 }
 
@@ -852,13 +973,14 @@ a {
 
   .hero-eyebrow,
   .hero-scroll-hint,
-  .hero-specimen-label {
-    display: none;
+  .hero-specimen-label,
+  .hero-reticle-code {
+    display: none !important;
   }
 
   .hero-headline-stage {
     inset: auto !important;
-    top: 22% !important;
+    top: max(5.2rem, calc(env(safe-area-inset-top) + 4.8rem)) !important;
     left: max(3%, env(safe-area-inset-left)) !important;
     width: 42% !important;
     padding: 0 !important;
@@ -866,7 +988,7 @@ a {
   }
 
   .hero-title-main {
-    font-size: clamp(3.3rem, 8.5vw, 4.55rem) !important;
+    font-size: clamp(2.6rem, 7.2vw, 4rem) !important;
     line-height: 0.82 !important;
   }
 
@@ -879,15 +1001,15 @@ a {
 
   .hero-stone-scene {
     inset: auto !important;
-    top: 23% !important;
+    top: max(4.9rem, calc(env(safe-area-inset-top) + 4.5rem)) !important;
     left: 29% !important;
     width: 40% !important;
-    height: 69% !important;
+    height: calc(100% - max(5.4rem, calc(env(safe-area-inset-top) + 5rem))) !important;
   }
 
   .hero-copy {
     inset: auto max(3%, env(safe-area-inset-right)) auto auto !important;
-    top: 29% !important;
+    top: max(5.65rem, calc(env(safe-area-inset-top) + 5.3rem)) !important;
     width: 31% !important;
     max-width: none !important;
     gap: 0.5rem !important;
@@ -970,6 +1092,20 @@ a {
 
   .shaft-menu-footer-row {
     width: 100%;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) and (orientation: portrait) {
+  .hero-stone-scene {
+    top: 18% !important;
+    height: 72% !important;
+  }
+}
+
+@media (max-width: 639px) and (min-height: 860px) {
+  .hero-stone-scene {
+    top: clamp(13.5rem, 27svh, 15.5rem);
+    height: clamp(18rem, 38svh, 21rem);
   }
 }
 
@@ -1071,6 +1207,74 @@ html.pre-boot .anim {
   animation: grainShift 0.9s steps(2) infinite;
 }
 
+.sound-meter i {
+  transform-origin: bottom;
+  animation: soundLevel 1.3s var(--ease-in-out) infinite;
+}
+.sound-meter i:nth-child(2) {
+  animation-delay: -0.45s;
+}
+.sound-meter i:nth-child(3) {
+  animation-delay: -0.8s;
+}
+@keyframes soundLevel {
+  0%,
+  100% {
+    transform: scaleY(0.34);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.sound-range {
+  height: 2px;
+}
+
+.topographic-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: topographicPulse 2.8s var(--ease-in-out) infinite;
+}
+
+.mineral-vein {
+  filter: drop-shadow(0 0 7px rgb(var(--lichen-rgb) / 0.34));
+}
+.manifesto-pigment::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 18%;
+  width: 3px;
+  height: 34%;
+  background: rgb(var(--lichen-rgb));
+  box-shadow: 0 0 16px rgb(var(--lichen-rgb) / 0.42);
+}
+.manifesto-pigment p {
+  background: linear-gradient(
+    94deg,
+    rgb(var(--bone-rgb)) 0 58%,
+    rgb(var(--lichen-rgb)) 74%,
+    rgb(var(--bone-rgb)) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+@keyframes topographicPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.72);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.55);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .grain-layer {
     animation: none !important;
@@ -1143,7 +1347,7 @@ html.pre-boot .anim {
   opacity: 0;
 }
 .cursor-label {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1192,7 +1396,7 @@ html.pre-boot .anim {
 .cursor-arrows {
   display: flex;
   gap: 14px;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   color: rgb(var(--bone-rgb) / 0.9);
 }

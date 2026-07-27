@@ -75,3 +75,25 @@ scroll-jacking. Полное уважение `prefers-reduced-motion`. Подр
 - Каталог пород (Samples) и маршруты (Expeditions) — **процедурные** (градиенты +
   типографика), чтобы контент не зависел от внешних ассетов.
 - Продакшен: заменить на self-hosted WebP/AVIF, desktop 16:9 / mobile 9:16.
+# 2026 addendum — Chromatic Geology
+
+This addendum supersedes the earlier “single colour” limitation after the
+approved art-direction update. Stones remains overwhelmingly monochrome, but
+two mineral pigments now act as rare narrative events rather than decorative
+UI colour:
+
+- `--lichen` (`#B8C66A`) marks living mineral surfaces, active readings and
+  return-to-light moments.
+- `--oxide` (`#C45A3F`) marks pressure, heat, fracture and the deepest layers.
+- `--bone` remains the only conventional interface accent. The working ratio is
+  approximately 92% graphite/bone, 6% lichen and 2% oxide.
+
+`ChromaticConductor` observes the active section and interpolates the ambient
+pigment between surface, field, light and deep scenes. Voice remains the single
+full bone-white room. Colour never replaces labels, focus states or contrast,
+so the information hierarchy remains readable without it.
+
+The type system keeps Bebas Neue for monumental display and Manrope for body
+copy. Telemetry and metadata now use IBM Plex Mono: its engineered shapes read
+more like field instrumentation, while its broader apertures remain legible at
+the deliberately small sizes used in the station chrome.

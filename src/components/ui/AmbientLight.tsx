@@ -37,6 +37,7 @@ export default function AmbientLight() {
     const target = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
     const smooth = { ...target }
     let held = false
+    let running = false
 
     const onMove = (event: PointerEvent) => {
       target.x = event.clientX
@@ -73,6 +74,7 @@ export default function AmbientLight() {
     window.addEventListener('blur', onBlur)
 
     const render = () => {
+      if (!running) return
       smooth.x += (target.x - smooth.x) * CURSOR_SMOOTHING
       smooth.y += (target.y - smooth.y) * CURSOR_SMOOTHING
       const x = smooth.x.toFixed(1)
@@ -95,14 +97,32 @@ export default function AmbientLight() {
       }
       rafRef.current = requestAnimationFrame(render)
     }
-    rafRef.current = requestAnimationFrame(render)
+    const start = () => {
+      if (running || document.hidden) return
+      running = true
+      rafRef.current = requestAnimationFrame(render)
+    }
+    const stop = () => {
+      if (!running) return
+      running = false
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = 0
+    }
+    const onVisibility = () => {
+      if (document.hidden) stop()
+      else start()
+    }
+
+    document.addEventListener('visibilitychange', onVisibility)
+    start()
 
     return () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('blur', onBlur)
-      cancelAnimationFrame(rafRef.current)
+      document.removeEventListener('visibilitychange', onVisibility)
+      stop()
     }
   }, [enabled])
 

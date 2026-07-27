@@ -1,5 +1,6 @@
 import { I18nProvider, useI18n } from './i18n'
 import { SmoothScrollProvider } from './lib/scroll'
+import { SoundProvider } from './lib/sound'
 import { useMediaQuery } from './lib/useMediaQuery'
 import { useReducedMotion } from './lib/useReducedMotion'
 import { usePerfTier } from './lib/usePerfTier'
@@ -9,6 +10,7 @@ import Preloader from './components/layout/Preloader'
 import GrainOverlay from './components/ui/GrainOverlay'
 import DustForeground from './components/ui/DustForeground'
 import AmbientLight from './components/ui/AmbientLight'
+import ChromaticConductor from './components/ui/ChromaticConductor'
 import EdgeRulers from './components/ui/EdgeRulers'
 import Navbar from './components/layout/Navbar'
 import DepthRail from './components/layout/DepthRail'
@@ -52,6 +54,7 @@ function Shell() {
       <GrainOverlay />
       {rich && <DustForeground />}
       {rich && <AmbientLight />}
+      <ChromaticConductor />
       <EdgeRulers />
       <SkipLink />
       <Navbar />
@@ -92,9 +95,11 @@ function Shell() {
 export default function App() {
   return (
     <I18nProvider>
-      <SmoothScrollProvider>
-        <Shell />
-      </SmoothScrollProvider>
+      <SoundProvider>
+        <SmoothScrollProvider>
+          <Shell />
+        </SmoothScrollProvider>
+      </SoundProvider>
     </I18nProvider>
   )
 }

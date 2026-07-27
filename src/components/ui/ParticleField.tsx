@@ -54,6 +54,7 @@ export default function ParticleField({ density = 1, className = '' }: ParticleF
     let particles: Particle[] = []
     let rafId = 0
     let running = false
+    let intersecting = false
 
     const spawn = (): Particle => ({
       x: Math.random() * width,
@@ -94,7 +95,7 @@ export default function ParticleField({ density = 1, className = '' }: ParticleF
     }
 
     const start = () => {
-      if (running || document.hidden) return
+      if (running || document.hidden || !intersecting) return
       running = true
       rafId = requestAnimationFrame(draw)
     }
@@ -107,12 +108,19 @@ export default function ParticleField({ density = 1, className = '' }: ParticleF
 
     // Only animate while visible, in the viewport, and the tab is focused.
     const io = new IntersectionObserver(
-      ([entry]) => (entry.isIntersecting ? start() : stop()),
+      ([entry]) => {
+        intersecting = entry.isIntersecting
+        if (intersecting) start()
+        else stop()
+      },
       { threshold: 0 },
     )
     io.observe(canvas)
 
-    const onVisibility = () => (document.hidden ? stop() : start())
+    const onVisibility = () => {
+      if (document.hidden) stop()
+      else start()
+    }
     const onResize = () => resize()
 
     document.addEventListener('visibilitychange', onVisibility)

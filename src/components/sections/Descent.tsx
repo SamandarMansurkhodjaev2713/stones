@@ -36,24 +36,22 @@ export default function Descent() {
       const layers = gsap.utils.toArray<HTMLElement>(
         tunnel.querySelectorAll('[data-tunnel-layer]'),
       )
-      layers.forEach((layer, i) => {
-        // Outer frames drift more than inner ones — a slow dolly-in feel.
-        const drift = 1 + (layers.length - i) * 0.035
-        gsap.fromTo(
-          layer,
-          { scale: 1 },
-          {
-            scale: drift,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: tunnel,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true,
-            },
+      // One scrub controls the whole tunnel. The former per-layer triggers
+      // performed identical scroll math six times on every frame.
+      gsap.fromTo(
+        layers,
+        { scale: 1 },
+        {
+          scale: (i) => 1 + (layers.length - i) * 0.035,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: tunnel,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true,
           },
-        )
-      })
+        },
+      )
 
       // The lamp returns for the finale: as the shaft enters the viewport the
       // beam dives toward its center, frames light up one by one and the

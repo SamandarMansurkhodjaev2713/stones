@@ -42,7 +42,10 @@ function Shell() {
   const reduced = useReducedMotion()
   const tier = usePerfTier()
   const rich = tier === 'rich'
-  const showCustomCursor = finePointer && !reduced && rich
+  // The cursor is part of the interaction language, not expensive garnish.
+  // Its particle pools already disappear in the plain tier, so a capable
+  // pointer must never lose the core ring because the intro sample was busy.
+  const showCustomCursor = finePointer && !reduced
   // Garnish, not structure: on a device that cannot hold frame rate these
   // simply do not mount, and the story reads exactly the same without them.
   return (

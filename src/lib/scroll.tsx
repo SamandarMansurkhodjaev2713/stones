@@ -58,7 +58,9 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
         lenis?.raf(time * MS_PER_SECOND)
       }
       gsap.ticker.add(tick)
-      gsap.ticker.lagSmoothing(0)
+      // Keep one long frame from making every scrubbed scene catch up in a
+      // violent paint. This preserves sync while steadying wheel/trackpad use.
+      gsap.ticker.lagSmoothing(500, 33)
     }
 
     // Expensive photographic garnish pauses while the page is moving. This

@@ -40,9 +40,9 @@ const CROSSES = [
  * The structural wrapper every content section shares. Entrance: a
  * stratigraphic seam draws across the top (flashing briefly as the fault is
  * crossed) and `[data-reveal]` / `[data-reveal-mask]` descendants rise in.
- * Exit: the whole section slightly scales down and sinks into darkness while
- * the next chapter rides over it — the depth-stack transition. All GSAP work
- * lives in one scoped context; reduced motion renders everything static.
+ * Exit: a small composited depth veil darkens while the next chapter rides
+ * over it. The section itself stays untransformed so large type and media do
+ * not re-rasterize. Reduced motion renders everything static.
  */
 export default function SectionShell({
   id,
@@ -57,6 +57,8 @@ export default function SectionShell({
 }: SectionShellProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const seamRef = useRef<HTMLDivElement>(null)
+  const gateRef = useRef<HTMLDivElement>(null)
+  const exitVeilRef = useRef<HTMLDivElement>(null)
   const reduced = useReducedMotion()
   const compactMotion = useMediaQuery(MQ_COMPACT_MOTION)
 
@@ -75,9 +77,14 @@ export default function SectionShell({
         ]),
       )
       let seamAnimation: Animation | null = null
+      let gateAnimation: Animation | null = null
       const animations = new Map<HTMLElement, Animation>()
 
       if (seam) seam.style.transform = 'scaleX(0)'
+      if (gateRef.current) {
+        gateRef.current.style.opacity = '0'
+        gateRef.current.style.transform = 'translate3d(0, 1rem, 0) scaleX(0.18)'
+      }
       targets.forEach((target) => {
         const media = target.matches('[data-reveal-media]')
         target.style.opacity = '0'
@@ -94,6 +101,15 @@ export default function SectionShell({
             seamAnimation = seam.animate(
               [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
               { duration: 720, easing: EASE_OUT, fill: 'forwards' },
+            )
+          }
+          if (gateRef.current) {
+            gateAnimation = gateRef.current.animate(
+              [
+                { opacity: 0, transform: 'translate3d(0, 1rem, 0) scaleX(0.18)' },
+                { opacity: 1, transform: 'translate3d(0, 0, 0) scaleX(1)' },
+              ],
+              { duration: 980, easing: EASE_OUT, fill: 'forwards' },
             )
           }
         },
@@ -134,7 +150,12 @@ export default function SectionShell({
         sectionObserver.disconnect()
         contentObserver.disconnect()
         seamAnimation?.cancel()
+        gateAnimation?.cancel()
         if (seam) seam.style.removeProperty('transform')
+        if (gateRef.current) {
+          gateRef.current.style.removeProperty('opacity')
+          gateRef.current.style.removeProperty('transform')
+        }
         animations.forEach((animation) => animation.cancel())
         targets.forEach((target) => {
           target.style.removeProperty('opacity')
@@ -145,6 +166,21 @@ export default function SectionShell({
 
     const ctx = gsap.context(() => {
       const seam = seamRef.current
+      const gate = gateRef.current
+      if (gate) {
+        gsap.fromTo(
+          gate,
+          { opacity: 0, scaleX: 0.16, y: 24 },
+          {
+            opacity: 1,
+            scaleX: 1,
+            y: 0,
+            duration: DURATION.xslow,
+            ease: EASE_OUT,
+            scrollTrigger: { trigger: section, start: 'top 91%', once: true },
+          },
+        )
+      }
       if (seam) {
         gsap.fromTo(
           seam,
@@ -263,20 +299,24 @@ export default function SectionShell({
         })
       }
 
-      // Departure: the chapter sinks a layer deeper as the next rides over.
-      if (depart) {
-        gsap.to(section, {
-          scale: 0.965,
-          opacity: 0.72,
-          transformOrigin: 'center 12%',
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'bottom 70%',
-            end: 'bottom 12%',
-            scrub: true,
+      // Departure is painted on one small composited veil. Transforming the
+      // entire section rasterized enormous text/media layers and caused jank.
+      if (depart && exitVeilRef.current) {
+        gsap.fromTo(
+          exitVeilRef.current,
+          { opacity: 0, yPercent: 26 },
+          {
+            opacity: 0.34,
+            yPercent: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: section,
+              start: 'bottom 70%',
+              end: 'bottom 12%',
+              scrub: true,
+            },
           },
-        })
+        )
       }
     }, section)
 
@@ -293,6 +333,15 @@ export default function SectionShell({
         clip ? 'overflow-hidden' : ''
       } ${className}`}
     >
+      <div
+        ref={gateRef}
+        aria-hidden="true"
+        className="section-entry-gate pointer-events-none absolute inset-x-0 top-0 z-[12]"
+      >
+        <span className="section-entry-gate__line" />
+        <span className="section-entry-gate__core" />
+        <span className="section-entry-gate__line" />
+      </div>
       {(index || eyebrow) && (
         <div className="section-gutter pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-5 px-5 pt-6 sm:px-8">
           <div
@@ -333,6 +382,14 @@ export default function SectionShell({
       )}
 
       {children}
+
+      {depart && (
+        <div
+          ref={exitVeilRef}
+          aria-hidden="true"
+          className="section-exit-veil pointer-events-none absolute inset-x-0 bottom-0 z-[8] h-[34svh] opacity-0"
+        />
+      )}
     </section>
   )
 }

@@ -168,6 +168,8 @@ export interface Dictionary {
     legal: string
     credit: string
     wordmark: string
+    /** Unambiguous terminal message below the final wordmark. */
+    terminal: string
   }
   author: {
     eyebrow: string
@@ -447,6 +449,7 @@ const en: Dictionary = {
     legal: '© 2026 Stones. All strata preserved.',
     credit: 'Assembled on bedrock. Rendered in the browser.',
     wordmark: 'Stones',
+    terminal: 'CORE COMPLETE · NO FURTHER DEPTH',
   },
   author: {
     eyebrow: 'PROJECT NOTE · 2026',
@@ -725,6 +728,7 @@ const ru: Dictionary = {
     legal: '© 2026 Stones. Все страты сохранены.',
     credit: 'Собрано на коренной породе, отрендерено в браузере.',
     wordmark: 'Stones',
+    terminal: 'КЕРН ЗАВЕРШЁН · ДАЛЬШЕ ТОЛЬКО ПОРОДА',
   },
   author: {
     eyebrow: 'О ПРОЕКТЕ · 2026',
@@ -1003,6 +1007,7 @@ const uz: Dictionary = {
     legal: '© 2026 Stones. Barcha stratalar saqlangan.',
     credit: 'Tub jinsda yig‘ilgan, brauzerda render qilingan.',
     wordmark: 'Stones',
+    terminal: 'KERN TUGADI · UNDAN KEYIN FAQAT JINS',
   },
   author: {
     eyebrow: 'LOYIHA HAQIDA · 2026',

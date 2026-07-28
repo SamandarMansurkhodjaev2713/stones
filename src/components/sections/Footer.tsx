@@ -12,9 +12,8 @@ import { MENU_PREVIEW } from '../../lib/media'
 /**
  * The floor of the shaft. The core ends here: a final depth reading, the
  * sections set at poster scale (each one showing its own photograph beside the
- * pointer), the single real contact channel, and the stamp pressed into the
- * last box. The wordmark is cut off by the bottom edge on purpose — the core
- * continues past what was brought up.
+ * pointer), the single real contact channel, and a terminal bedrock seal. The
+ * final frame closes completely instead of implying another chapter.
  */
 export default function Footer() {
   const { t } = useI18n()
@@ -167,15 +166,35 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Cut off by the bottom edge: the core goes on past what was raised. */}
-      <div ref={giant.ref} className="relative h-[15vw] sm:h-[12vw]" aria-hidden="true">
-        <span
-          className={`display-title outline-title anim ${
-            giant.inView ? 'anim-fade' : ''
-          } absolute left-1/2 top-0 -translate-x-1/2 select-none whitespace-nowrap text-[23vw] leading-[0.9] sm:text-[17vw]`}
-        >
-          {t.footer.wordmark}
-        </span>
+      {/* A hard geological endpoint: fully visible wordmark, sealed core and
+          a dense bedrock cap. There is no cropped type suggesting more scroll. */}
+      <div
+        ref={giant.ref}
+        className={`footer-terminal relative overflow-hidden border-t border-bone/10 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-10 transition-[opacity,transform] duration-1100 ease-out-expo sm:pt-14 ${
+          giant.inView ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+        }`}
+      >
+        <div
+          aria-hidden="true"
+          className="footer-terminal__rings absolute left-1/2 top-1/2 aspect-square w-[82vw] max-w-[54rem] -translate-x-1/2 -translate-y-1/2 rounded-full"
+        />
+        <div className="relative mx-auto max-w-7xl">
+          <div className="font-mono-t flex items-center gap-4 text-[9px] uppercase tracking-[0.22em] text-ash sm:text-[10px]">
+            <span>{t.footer.stamp}</span>
+            <span className="h-px flex-1 bg-bone/10" />
+            <span>−{formatNumber(MAX_DEPTH_M)} {t.telemetry.unit}</span>
+          </div>
+          <p
+            aria-hidden="true"
+            className="display-title footer-terminal__wordmark mt-6 select-none text-center text-[clamp(6rem,20vw,18rem)] leading-[0.72] text-bone"
+          >
+            {t.footer.wordmark}
+          </p>
+          <p className="font-mono-t mt-8 text-center text-[9px] uppercase tracking-[0.24em] text-bone/45 sm:text-[10px]">
+            {t.footer.terminal}
+          </p>
+        </div>
+        <span aria-hidden="true" className="footer-bedrock-cap absolute inset-x-0 bottom-0 h-1" />
       </div>
     </footer>
   )

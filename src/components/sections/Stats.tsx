@@ -3,9 +3,10 @@ import SectionShell from '../ui/SectionShell'
 import DisplayHeading from '../ui/DisplayHeading'
 import useReveal from '../../hooks/useReveal'
 import { useI18n, formatNumber } from '../../i18n'
-import type { StatItem } from '../../i18n/dictionary'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 import { STATION_COORDS } from '../../lib/constants'
+import { gsap } from '../../lib/gsap'
+import type { StatItem } from '../../i18n/dictionary'
 
 const COUNT_DURATION_MS = 1800
 /** Needle settle: overshoot past the target, then fall back onto it. */
@@ -118,6 +119,26 @@ function ReportRow({ stat, index }: { stat: StatItem; index: number }) {
  */
 export default function Stats() {
   const { t } = useI18n()
+  const reduced = useReducedMotion()
+  const pathRef = useRef<SVGPathElement>(null)
+
+  useEffect(() => {
+    const path = pathRef.current
+    if (!path || reduced) return
+    const tween = gsap.fromTo(
+      path,
+      { strokeDashoffset: 1 },
+      {
+        strokeDashoffset: 0,
+        duration: 2.2,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: path, start: 'top 88%', once: true },
+      },
+    )
+    return () => {
+      tween.kill()
+    }
+  }, [reduced])
 
   return (
     <SectionShell
@@ -140,11 +161,13 @@ export default function Stats() {
         className="stats-seismograph pointer-events-none absolute inset-x-0 top-[42%] h-56 w-full"
       >
         <path
+          ref={pathRef}
           d="M0 190 L80 188 L130 191 L180 186 L230 190 L270 188 L292 132 L308 252 L325 78 L346 228 L365 151 L390 191 L470 188 L520 192 L570 188 L620 190 L670 187 L708 142 L724 238 L742 96 L760 225 L781 161 L805 190 L880 188 L930 191 L990 187 L1040 190 L1090 188 L1140 191 L1200 188"
           fill="none"
           stroke="rgb(var(--lichen-rgb) / 0.34)"
           strokeWidth="1.2"
           pathLength={1}
+          strokeDasharray={1}
           vectorEffect="non-scaling-stroke"
           className="stats-seismograph__path"
         />

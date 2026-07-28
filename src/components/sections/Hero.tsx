@@ -91,8 +91,10 @@ export default function Hero({ rich }: { rich: boolean }) {
     let restRadius = Math.min(SPOTLIGHT_RADIUS, stone.width * BEAM_RADIUS_RATIO)
     let radius = restRadius
     let focused = false
-    let lastMove = performance.now()
-    let autopilot = hasFinePointer ? 0 : 1
+    // The specimen is already alive when the preloader opens. The beam makes
+    // one restrained autonomous pass, then yields to the visitor.
+    let lastMove = performance.now() - IDLE_TAKEOVER_MS
+    let autopilot = hasFinePointer ? 0.44 : 1
     let intersectsViewport = true
     let sceneActive = window.scrollY < window.innerHeight * HERO_ACTIVE_SCROLL_RATIO
     let lastMaskPaint = -Infinity
@@ -431,69 +433,78 @@ export default function Hero({ rich }: { rich: boolean }) {
       </div>
 
       <div
-        ref={stoneSceneRef}
         aria-hidden="true"
         className="hero-stone-scene absolute inset-x-2 top-[29%] z-10 h-[38%] will-change-transform sm:inset-x-[8%] sm:top-[24%] sm:h-[69%]"
       >
-        <div
-          ref={stoneInteractionRef}
-          className="absolute inset-0"
-          style={{ touchAction: 'pan-y' }}
-        >
-          <div
-            aria-hidden="true"
-            className="hero-monolith-shadow absolute left-1/2 top-[88%] h-[12%] w-[74%] -translate-x-1/2 rounded-[100%] blur-2xl sm:top-[84%] sm:w-[62%]"
-          />
+        <div aria-hidden="true" className="hero-core-aperture pointer-events-none absolute inset-0">
+          <span />
+          <span />
+          <span />
+        </div>
+        <span aria-hidden="true" className="hero-entry-axis pointer-events-none absolute inset-y-[8%] left-1/2 z-[1] w-px" />
+        <span aria-hidden="true" className="hero-entry-scan pointer-events-none absolute inset-x-[13%] top-0 z-[25] h-px" />
 
-          <div ref={tiltWrapRef} className="absolute inset-0 will-change-transform">
-            <div className="hero-monolith-surface absolute inset-0">
-              <img
-                src={baseImage}
-                alt=""
-                width={1920}
-                height={1080}
-                loading="eager"
-                decoding="async"
-                draggable={false}
-                className="hero-monolith-base absolute inset-0 h-full w-full select-none object-contain"
-              />
+        <div ref={stoneSceneRef} className="hero-stone-motion absolute inset-0 will-change-transform">
+          <div
+            ref={stoneInteractionRef}
+            className="absolute inset-0"
+            style={{ touchAction: 'pan-y' }}
+          >
+            <div
+              aria-hidden="true"
+              className="hero-monolith-shadow absolute left-1/2 top-[88%] h-[12%] w-[74%] -translate-x-1/2 rounded-[100%] blur-2xl sm:top-[84%] sm:w-[62%]"
+            />
+
+            <div ref={tiltWrapRef} className="absolute inset-0 will-change-transform">
+              <div className="hero-monolith-surface absolute inset-0">
+                <img
+                  src={baseImage}
+                  alt=""
+                  width={1920}
+                  height={1080}
+                  loading="eager"
+                  decoding="async"
+                  draggable={false}
+                  className="hero-monolith-base absolute inset-0 h-full w-full select-none object-contain"
+                />
+
+                {!reduced && (
+                  <video
+                    ref={videoRef}
+                    src={VIDEO.reveal}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload={rich && !isMobile ? 'auto' : 'metadata'}
+                    className="hero-monolith-lit absolute inset-0 h-full w-full select-none object-contain"
+                    style={{
+                      maskImage:
+                        'radial-gradient(circle 0px at -999px -999px, rgb(0 0 0), transparent)',
+                    }}
+                  />
+                )}
+              </div>
 
               {!reduced && (
-                <video
-                  ref={videoRef}
-                  src={VIDEO.reveal}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload={rich && !isMobile ? 'auto' : 'metadata'}
-                  className="hero-monolith-lit absolute inset-0 h-full w-full select-none object-contain"
-                  style={{
-                    maskImage:
-                      'radial-gradient(circle 0px at -999px -999px, rgb(0 0 0), transparent)',
-                  }}
-                />
+                <div
+                  ref={reticleRef}
+                  className="specimen-reticle pointer-events-none absolute left-0 top-0 z-20"
+                >
+                  <span className="specimen-reticle-ring block h-12 w-12 rounded-full border border-bone/30 sm:h-[4.5rem] sm:w-[4.5rem]" />
+                  <span className="absolute left-1/2 top-[-8px] h-[calc(100%+16px)] w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-bone/25 to-transparent" />
+                  <span className="absolute left-[-8px] top-1/2 h-px w-[calc(100%+16px)] -translate-y-1/2 bg-gradient-to-r from-transparent via-bone/25 to-transparent" />
+                  <span className="hero-reticle-code font-mono-t absolute left-[calc(100%+12px)] top-1/2 hidden -translate-y-1/2 whitespace-nowrap text-[10px] uppercase tracking-[0.16em] text-bone/65 sm:block">
+                    {t.hero.specimenCode}
+                  </span>
+                </div>
               )}
             </div>
 
-            {!reduced && (
-              <div
-                ref={reticleRef}
-                className="specimen-reticle pointer-events-none absolute left-0 top-0 z-20"
-              >
-                <span className="specimen-reticle-ring block h-12 w-12 rounded-full border border-bone/30 sm:h-[4.5rem] sm:w-[4.5rem]" />
-                <span className="absolute left-1/2 top-[-8px] h-[calc(100%+16px)] w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-bone/25 to-transparent" />
-                <span className="absolute left-[-8px] top-1/2 h-px w-[calc(100%+16px)] -translate-y-1/2 bg-gradient-to-r from-transparent via-bone/25 to-transparent" />
-                <span className="hero-reticle-code font-mono-t absolute left-[calc(100%+12px)] top-1/2 hidden -translate-y-1/2 whitespace-nowrap text-[10px] uppercase tracking-[0.16em] text-bone/65 sm:block">
-                  {t.hero.specimenCode}
-                </span>
-              </div>
-            )}
+            <span className="hero-specimen-label font-mono-t pointer-events-none absolute bottom-[2%] left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-[10px] uppercase tracking-[0.18em] text-bone/60 sm:bottom-[5%]">
+              {t.hero.specimenLabel}
+            </span>
           </div>
-
-          <span className="hero-specimen-label font-mono-t pointer-events-none absolute bottom-[2%] left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-[10px] uppercase tracking-[0.18em] text-bone/60 sm:bottom-[5%]">
-            {t.hero.specimenLabel}
-          </span>
         </div>
       </div>
 

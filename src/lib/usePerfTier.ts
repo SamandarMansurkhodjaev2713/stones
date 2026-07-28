@@ -11,8 +11,8 @@ export type PerfTier = 'rich' | 'plain'
 const SAMPLE_FRAMES = 48
 /** Below this average the device is told to stop paying for decoration. */
 const FPS_FLOOR = 54
-/** Start early while the intro is visible, but after the first layout settles. */
-const SETTLE_MS = 620
+/** Judge after the drilling/hero hand-off, never during its deliberate load. */
+const SETTLE_MS = 3400
 /** Class mirrored onto <html> so plain CSS can degrade without JS. */
 const PLAIN_CLASS = 'perf-plain'
 const MIN_LOGICAL_CORES = 6
@@ -67,23 +67,6 @@ export function usePerfTier(): PerfTier {
     let longTasks = 0
     let observer: PerformanceObserver | null = null
 
-    if ('PerformanceObserver' in window) {
-      try {
-        observer = new PerformanceObserver((list) => {
-          longTasks += list
-            .getEntries()
-            .filter((entry) => entry.duration >= LONG_TASK_LIMIT_MS).length
-          if (longTasks > MAX_LONG_TASKS) {
-            setTier('plain')
-            root.classList.add(PLAIN_CLASS)
-          }
-        })
-        observer.observe({ entryTypes: ['longtask'] })
-      } catch {
-        observer = null
-      }
-    }
-
     const sample = (now: number) => {
       if (cancelled) return
       if (!start) start = now
@@ -101,6 +84,24 @@ export function usePerfTier(): PerfTier {
     }
 
     timer = window.setTimeout(() => {
+      // Observe only the settled page. Intro decoding and font installation
+      // are one-off costs and used to condemn a fast laptop permanently.
+      if ('PerformanceObserver' in window) {
+        try {
+          observer = new PerformanceObserver((list) => {
+            longTasks += list
+              .getEntries()
+              .filter((entry) => entry.duration >= LONG_TASK_LIMIT_MS).length
+            if (longTasks > MAX_LONG_TASKS) {
+              setTier('plain')
+              root.classList.add(PLAIN_CLASS)
+            }
+          })
+          observer.observe({ entryTypes: ['longtask'] })
+        } catch {
+          observer = null
+        }
+      }
       raf = requestAnimationFrame(sample)
     }, SETTLE_MS)
 

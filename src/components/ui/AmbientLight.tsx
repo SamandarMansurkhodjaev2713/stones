@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { CURSOR_SMOOTHING, MQ_FINE_POINTER } from '../../lib/constants'
+import { MQ_FINE_POINTER } from '../../lib/constants'
 import { useMediaQuery } from '../../lib/useMediaQuery'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 
-/** Radius of the ambient wash that follows the pointer, px. */
-const WASH_RADIUS = 460
 /** Radius of the lantern hole when the easter egg is held, px. */
 const LANTERN_RADIUS = 190
 
@@ -28,20 +26,29 @@ export default function AmbientLight() {
 
   const washRef = useRef<HTMLDivElement>(null)
   const lanternRef = useRef<HTMLDivElement>(null)
-  const rafRef = useRef(0)
   const [lanternOn, setLanternOn] = useState(false)
 
   useEffect(() => {
     if (!enabled) return
 
-    const target = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-    const smooth = { ...target }
     let held = false
-    let running = false
 
     const onMove = (event: PointerEvent) => {
-      target.x = event.clientX
-      target.y = event.clientY
+      const wash = washRef.current
+      if (wash) {
+        wash.style.transform =
+          `translate3d(${event.clientX.toFixed(1)}px, ${event.clientY.toFixed(1)}px, 0) ` +
+          'translate(-50%, -50%)'
+      }
+      // The full-screen radial gradient repaints only while the visitor is
+      // deliberately holding the lantern, never during ordinary browsing.
+      const lantern = lanternRef.current
+      if (held && lantern) {
+        lantern.style.background =
+          `radial-gradient(circle ${LANTERN_RADIUS}px at ${event.clientX.toFixed(1)}px ` +
+          `${event.clientY.toFixed(1)}px, transparent 0%, transparent 42%, ` +
+          'rgb(var(--void-rgb) / 0.82) 68%, rgb(var(--void-rgb) / 0.97) 100%)'
+      }
     }
 
     const isTyping = (node: EventTarget | null) =>
@@ -73,56 +80,18 @@ export default function AmbientLight() {
     window.addEventListener('keyup', onKeyUp)
     window.addEventListener('blur', onBlur)
 
-    const render = () => {
-      if (!running) return
-      smooth.x += (target.x - smooth.x) * CURSOR_SMOOTHING
-      smooth.y += (target.y - smooth.y) * CURSOR_SMOOTHING
-      const x = smooth.x.toFixed(1)
-      const y = smooth.y.toFixed(1)
-
-      const wash = washRef.current
-      if (wash) {
-        wash.style.background =
-          `radial-gradient(circle ${WASH_RADIUS}px at ${x}px ${y}px, ` +
-          `rgb(var(--magma-rgb) / 0.05), rgb(var(--bone-rgb) / 0.02) 45%, transparent 72%)`
-      }
-      const lantern = lanternRef.current
-      if (lantern) {
-        // A hole punched in a black sheet: transparent at the cursor, opaque
-        // everywhere else.
-        lantern.style.background =
-          `radial-gradient(circle ${LANTERN_RADIUS}px at ${x}px ${y}px, ` +
-          `transparent 0%, transparent 42%, rgb(var(--void-rgb) / 0.82) 68%, ` +
-          `rgb(var(--void-rgb) / 0.97) 100%)`
-      }
-      rafRef.current = requestAnimationFrame(render)
+    const wash = washRef.current
+    if (wash) {
+      wash.style.transform =
+        `translate3d(${(window.innerWidth / 2).toFixed(1)}px, ` +
+        `${(window.innerHeight / 2).toFixed(1)}px, 0) translate(-50%, -50%)`
     }
-    const start = () => {
-      if (running || document.hidden) return
-      running = true
-      rafRef.current = requestAnimationFrame(render)
-    }
-    const stop = () => {
-      if (!running) return
-      running = false
-      cancelAnimationFrame(rafRef.current)
-      rafRef.current = 0
-    }
-    const onVisibility = () => {
-      if (document.hidden) stop()
-      else start()
-    }
-
-    document.addEventListener('visibilitychange', onVisibility)
-    start()
 
     return () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('blur', onBlur)
-      document.removeEventListener('visibilitychange', onVisibility)
-      stop()
     }
   }, [enabled])
 
@@ -133,7 +102,7 @@ export default function AmbientLight() {
       <div
         ref={washRef}
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-[65] mix-blend-screen"
+        className="ambient-wash pointer-events-none fixed left-0 top-0 z-[65] h-[46rem] w-[46rem] rounded-full"
       />
       <div
         ref={lanternRef}

@@ -126,6 +126,20 @@ console.table({
 - [ ] Вкладка Network: `base.webp` и `reveal.mp4` не блокируют первый рендер текста.
 - [ ] Canvas-эффекты (частицы, спотлайт) не крутятся, когда их секция вне вьюпорта (проверить через Performance/Task Manager — CPU падает при скролле мимо).
 
+## Mobile cinematic regression gates
+
+- [ ] At 390px the two act breaks show concentric apertures, never the legacy
+      split rectangular core; titles and telemetry remain fully readable.
+- [ ] The Eras stage stays pinned through native CSS sticky, changes all eight
+      photographs and copies, and never creates horizontal overflow.
+- [ ] At most the active and adjacent era photographs are mounted on mobile.
+- [ ] The Voice room rises from graphite to bone over the first viewport of
+      travel; the quote assembles after entering the light.
+- [ ] Compact section reveals animate only transform/opacity, run once, and
+      leave no IntersectionObserver or Animation objects after unmount.
+- [ ] Opening the menu never transforms `main`; navigation anchors land below
+      the field-station header at both 390px and 1440px.
+
 ## Кросс-браузерность
 
 - [ ] Chrome/Edge (Chromium) — десктоп и мобильная эмуляция.

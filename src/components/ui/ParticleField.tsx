@@ -22,7 +22,8 @@ interface Particle {
   alpha: number
 }
 
-const MAX_DPR = 2
+const MAX_DPR = 1.5
+const FRAME_MS = 1000 / 30
 const DUST_RGB = '232, 230, 225' // --bone: neutral mineral dust
 
 /**
@@ -55,6 +56,7 @@ export default function ParticleField({ density = 1, className = '' }: ParticleF
     let rafId = 0
     let running = false
     let intersecting = false
+    let lastDraw = -Infinity
 
     const spawn = (): Particle => ({
       x: Math.random() * width,
@@ -75,7 +77,12 @@ export default function ParticleField({ density = 1, className = '' }: ParticleF
       particles = Array.from({ length: count }, spawn)
     }
 
-    const draw = () => {
+    const draw = (now: number) => {
+      if (now - lastDraw < FRAME_MS) {
+        rafId = requestAnimationFrame(draw)
+        return
+      }
+      lastDraw = now
       ctx.clearRect(0, 0, width, height)
       for (const p of particles) {
         p.x += p.vx

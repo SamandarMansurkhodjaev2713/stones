@@ -7,14 +7,23 @@ import { useEffect, useState } from 'react'
  */
 export type PerfTier = 'rich' | 'plain'
 
-/** Frames sampled before judging. Roughly one second at 60fps. */
-const SAMPLE_FRAMES = 60
+/** Frames sampled before judging. Long enough to catch intro/layout pressure. */
+const SAMPLE_FRAMES = 48
 /** Below this average the device is told to stop paying for decoration. */
-const FPS_FLOOR = 42
-/** Wait for the entrance choreography to finish before measuring. */
-const SETTLE_MS = 1800
+const FPS_FLOOR = 54
+/** Start early while the intro is visible, but after the first layout settles. */
+const SETTLE_MS = 620
 /** Class mirrored onto <html> so plain CSS can degrade without JS. */
 const PLAIN_CLASS = 'perf-plain'
+const MIN_LOGICAL_CORES = 6
+const MIN_MEMORY_GB = 6
+const LONG_TASK_LIMIT_MS = 80
+const MAX_LONG_TASKS = 2
+
+interface NavigatorHints extends Navigator {
+  deviceMemory?: number
+  connection?: { saveData?: boolean }
+}
 
 /**
  * Measures real frame rate once, shortly after the page settles, and reports
@@ -27,22 +36,53 @@ const PLAIN_CLASS = 'perf-plain'
  * component subscribing.
  */
 export function usePerfTier(): PerfTier {
-  const [tier, setTier] = useState<PerfTier>('rich')
+  // Progressive enhancement: the page starts light and earns decoration.
+  const [tier, setTier] = useState<PerfTier>('plain')
 
   useEffect(() => {
+    const root = document.documentElement
+    root.classList.add(PLAIN_CLASS)
+
     // A device that has already told us it wants less motion gets the plain
     // tier immediately — no need to spin a measuring loop to confirm it.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setTier('plain')
-      document.documentElement.classList.add(PLAIN_CLASS)
-      return
+      return () => root.classList.remove(PLAIN_CLASS)
     }
+
+    const hints = navigator as NavigatorHints
+    const coarse = window.matchMedia('(pointer: coarse)').matches
+    const constrained =
+      coarse ||
+      hints.connection?.saveData === true ||
+      (typeof hints.hardwareConcurrency === 'number' &&
+        hints.hardwareConcurrency < MIN_LOGICAL_CORES) ||
+      (typeof hints.deviceMemory === 'number' && hints.deviceMemory < MIN_MEMORY_GB)
+    if (constrained) return () => root.classList.remove(PLAIN_CLASS)
 
     let raf = 0
     let timer = 0
     let frames = 0
     let start = 0
     let cancelled = false
+    let longTasks = 0
+    let observer: PerformanceObserver | null = null
+
+    if ('PerformanceObserver' in window) {
+      try {
+        observer = new PerformanceObserver((list) => {
+          longTasks += list
+            .getEntries()
+            .filter((entry) => entry.duration >= LONG_TASK_LIMIT_MS).length
+          if (longTasks > MAX_LONG_TASKS) {
+            setTier('plain')
+            root.classList.add(PLAIN_CLASS)
+          }
+        })
+        observer.observe({ entryTypes: ['longtask'] })
+      } catch {
+        observer = null
+      }
+    }
 
     const sample = (now: number) => {
       if (cancelled) return
@@ -54,9 +94,9 @@ export function usePerfTier(): PerfTier {
       }
       const elapsed = now - start
       const fps = elapsed > 0 ? (frames / elapsed) * 1000 : FPS_FLOOR
-      if (fps < FPS_FLOOR) {
-        setTier('plain')
-        document.documentElement.classList.add(PLAIN_CLASS)
+      if (fps >= FPS_FLOOR && longTasks <= MAX_LONG_TASKS) {
+        setTier('rich')
+        root.classList.remove(PLAIN_CLASS)
       }
     }
 
@@ -68,7 +108,8 @@ export function usePerfTier(): PerfTier {
       cancelled = true
       window.clearTimeout(timer)
       cancelAnimationFrame(raf)
-      document.documentElement.classList.remove(PLAIN_CLASS)
+      observer?.disconnect()
+      root.classList.remove(PLAIN_CLASS)
     }
   }, [])
 

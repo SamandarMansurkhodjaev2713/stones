@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { gsap } from '../../lib/gsap'
+import { MQ_COMPACT_MOTION } from '../../lib/constants'
+import { useMediaQuery } from '../../lib/useMediaQuery'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 
 interface SectionStrataProps {
@@ -9,6 +11,7 @@ interface SectionStrataProps {
    */
   depth?: number
   className?: string
+  animate?: boolean
 }
 
 const W = 1200
@@ -36,13 +39,18 @@ function line(index: number, depth: number): string {
  * the background itself carries the descent. Decorative and cheap — one SVG,
  * transforms only, disabled under reduced motion.
  */
-export default function SectionStrata({ depth = 0, className = '' }: SectionStrataProps) {
+export default function SectionStrata({
+  depth = 0,
+  className = '',
+  animate = true,
+}: SectionStrataProps) {
   const ref = useRef<SVGSVGElement>(null)
   const reduced = useReducedMotion()
+  const compact = useMediaQuery(MQ_COMPACT_MOTION)
 
   useEffect(() => {
     const svg = ref.current
-    if (!svg || reduced) return
+    if (!svg || reduced || compact || !animate) return
     const trigger = svg.closest('section') ?? svg
 
     const ctx = gsap.context(() => {
@@ -62,7 +70,7 @@ export default function SectionStrata({ depth = 0, className = '' }: SectionStra
     }, svg)
 
     return () => ctx.revert()
-  }, [reduced, depth])
+  }, [animate, compact, reduced, depth])
 
   return (
     <svg

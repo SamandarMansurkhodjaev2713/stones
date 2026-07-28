@@ -92,6 +92,12 @@
     );
   }
 
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
   body {
     background-color: var(--void);
     color: var(--bone);
@@ -99,7 +105,6 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    overflow-x: hidden;
   }
 
   ::selection {
@@ -406,16 +411,11 @@
 
   /* The page receding while the shaft menu covers it. */
   .page-sunk {
-    transform: scale(0.97);
-    filter: brightness(0.55);
-    transition:
-      transform 700ms var(--ease-out),
-      filter 700ms var(--ease-out);
+    opacity: 0.38;
+    transition: opacity 520ms var(--ease-out);
   }
   main {
-    transition:
-      transform 700ms var(--ease-out),
-      filter 700ms var(--ease-out);
+    transition: opacity 520ms var(--ease-out);
   }
 
   /* A list row whose ruled line is drawn by GSAP via the --row-line variable
@@ -758,17 +758,17 @@
 
 .hero-monolith-surface {
   mask-image: radial-gradient(
-    ellipse 49% 45% at 50% 50%,
-    rgb(0 0 0) 42%,
-    rgb(0 0 0 / 0.92) 60%,
-    rgb(0 0 0 / 0.35) 82%,
+    ellipse 55% 48% at 50% 50%,
+    rgb(0 0 0) 46%,
+    rgb(0 0 0 / 0.94) 64%,
+    rgb(0 0 0 / 0.42) 84%,
     transparent 100%
   );
   -webkit-mask-image: radial-gradient(
-    ellipse 49% 45% at 50% 50%,
-    rgb(0 0 0) 42%,
-    rgb(0 0 0 / 0.92) 60%,
-    rgb(0 0 0 / 0.35) 82%,
+    ellipse 55% 48% at 50% 50%,
+    rgb(0 0 0) 46%,
+    rgb(0 0 0 / 0.94) 64%,
+    rgb(0 0 0 / 0.42) 84%,
     transparent 100%
   );
 }
@@ -809,11 +809,44 @@
 }
 
 @media (pointer: coarse) {
+  .hero-monolith-surface {
+    mask-image: radial-gradient(
+      ellipse 64% 52% at 50% 49%,
+      rgb(0 0 0) 48%,
+      rgb(0 0 0 / 0.96) 67%,
+      rgb(0 0 0 / 0.48) 86%,
+      transparent 100%
+    );
+    -webkit-mask-image: radial-gradient(
+      ellipse 64% 52% at 50% 49%,
+      rgb(0 0 0) 48%,
+      rgb(0 0 0 / 0.96) 67%,
+      rgb(0 0 0 / 0.48) 86%,
+      transparent 100%
+    );
+  }
+
   .hero-monolith-base {
     filter:
-      brightness(0.76)
-      contrast(1.13)
+      brightness(0.92)
+      contrast(1.16)
       drop-shadow(0 1.8rem 2.2rem rgb(var(--void-rgb) / 0.84));
+  }
+
+  .hero-monolith-lit {
+    filter:
+      brightness(1.18)
+      contrast(1.2)
+      saturate(0.96)
+      drop-shadow(0 1.6rem 2.2rem rgb(var(--void-rgb) / 0.8))
+      drop-shadow(0 0 0.8rem rgb(var(--lichen-rgb) / 0.18));
+  }
+
+  .specimen-reticle-ring {
+    border-color: rgb(var(--lichen-rgb) / 0.56);
+    box-shadow:
+      inset 0 0 0 5px rgb(var(--void-rgb) / 0.12),
+      0 0 22px rgb(var(--lichen-rgb) / 0.16);
   }
 
   .hero-glow-disc {
@@ -838,7 +871,39 @@
 }
 
 .voice-stage {
-  padding-top: 6.25rem;
+  padding-top: 0;
+}
+
+.voice-sunline {
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgb(var(--bone-rgb) / 0.16) 46%,
+    rgb(var(--bone-rgb) / 0.68) 51%,
+    rgb(var(--bone-rgb) / 0.12) 58%,
+    transparent
+  );
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  .voice-stage {
+    min-height: 155svh;
+    padding-top: 0;
+    overflow: clip;
+  }
+
+  .voice-room {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    min-height: 100svh;
+  }
+}
+
+@media (min-width: 768px) and (pointer: fine) {
+  .voice-room {
+    padding-top: 6.25rem;
+  }
 }
 
 @media (max-width: 639px) {
@@ -880,8 +945,15 @@
   }
 
   .hero-stone-scene {
+    inset-inline: -3%;
     top: clamp(12.3rem, 29svh, 15.5rem);
-    height: clamp(13.2rem, 35svh, 19.5rem);
+    height: clamp(14.25rem, 37svh, 20.5rem);
+  }
+
+  .hero-specimen-label {
+    padding: 0.38rem 0.62rem;
+    border: 1px solid rgb(var(--bone-rgb) / 0.09);
+    background: rgb(var(--void-rgb) / 0.72);
   }
 }
 
@@ -1552,51 +1624,138 @@ blockquote {
 
 /* Act breaks are no longer empty title cards. A core sample is split along
    the fault while the giant act word slides behind it. */
-.act-core {
+/* Act breaks are apertures, not unexplained decorative monoliths. The
+   first opens eight geological rings; the final one collapses them toward a
+   single origin point. JS only writes transforms while each scene is visible. */
+.act-mobile-ring {
+  border: 1px solid rgb(var(--bone-rgb) / 0.18);
+  transform: translate(-50%, -50%) scale(0.7);
   transform-origin: center;
-  filter: drop-shadow(0 28px 52px rgb(var(--void-rgb) / 0.76));
+  opacity: 0.2;
 }
 
-.act-core__half {
-  overflow: hidden;
-  border-block: 1px solid rgb(var(--bone-rgb) / 0.16);
-  background:
-    linear-gradient(90deg, rgb(var(--bone-rgb) / 0.08), transparent 22% 78%, rgb(var(--bone-rgb) / 0.06)),
-    repeating-linear-gradient(
-      177deg,
-      rgb(var(--bone-rgb) / 0.12) 0 1px,
-      transparent 1px 9px,
-      rgb(var(--bone-rgb) / 0.045) 9px 12px,
-      transparent 12px 19px
-    ),
-    radial-gradient(circle at 48% 32%, rgb(var(--chroma-rgb) / 0.13), transparent 54%),
-    rgb(var(--surface-rgb));
+.act-title [data-act-word] {
+  color: rgb(var(--bone-rgb) / 0.94);
+  -webkit-text-stroke: 0;
+  text-shadow: 0 0.75rem 3rem rgb(var(--void-rgb) / 0.96);
 }
 
-.act-core__half--left {
-  border-left: 1px solid rgb(var(--bone-rgb) / 0.18);
-  clip-path: polygon(0 2%, 100% 0, 94% 18%, 100% 34%, 91% 52%, 100% 71%, 93% 86%, 100% 100%, 0 98%);
-}
-
-.act-core__half--right {
-  border-right: 1px solid rgb(var(--bone-rgb) / 0.18);
-  clip-path: polygon(0 0, 100% 2%, 100% 98%, 0 100%, 7% 86%, 0 71%, 9% 52%, 0 34%, 6% 18%);
-}
-
-.act-core__seam {
+.act-mobile-axis {
   background: linear-gradient(
     180deg,
     transparent,
-    rgb(var(--chroma-rgb) / 0.12) 12%,
-    rgb(var(--chroma-rgb) / 0.82) 48%,
-    rgb(var(--chroma-rgb) / 0.18) 86%,
+    rgb(var(--bone-rgb) / 0.12) 18%,
+    rgb(var(--bone-rgb) / 0.42) 50%,
+    rgb(var(--bone-rgb) / 0.12) 82%,
     transparent
   );
-  box-shadow: 0 0 22px rgb(var(--chroma-rgb) / 0.42);
+}
+
+.act-title--layers .act-mobile-ring {
+  border-color: rgb(var(--lichen-rgb) / 0.34);
+}
+
+.act-title--layers .act-mobile-bit {
+  border: 1px solid rgb(var(--lichen-rgb) / 0.78);
+  background: rgb(var(--void-rgb));
+  box-shadow: 0 0 0 0.45rem rgb(var(--lichen-rgb) / 0.07);
+}
+
+.act-title--origin .act-mobile-ring {
+  border-color: rgb(var(--oxide-rgb) / 0.28);
+}
+
+.act-title--origin .act-mobile-bit {
+  border: 1px solid rgb(var(--oxide-rgb) / 0.84);
+  background: rgb(var(--bone-rgb) / 0.82);
+  box-shadow:
+    0 0 0 0.45rem rgb(var(--oxide-rgb) / 0.08),
+    0 0 2rem rgb(var(--oxide-rgb) / 0.16);
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  .act-title .act-core {
+    display: none;
+  }
+
+  .act-title [data-act-word] {
+    color: rgb(var(--bone-rgb) / 0.94);
+    -webkit-text-stroke: 0;
+    text-shadow: 0 0.75rem 2.5rem rgb(var(--void-rgb) / 0.96);
+  }
+
+  .act-title [data-act-body] {
+    margin-top: 1.75rem;
+    max-width: 20rem;
+  }
+
+  .act-title [data-plane] {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--chroma-rgb) / 0.22) 20%,
+      rgb(var(--bone-rgb) / 0.16) 50%,
+      rgb(var(--chroma-rgb) / 0.22) 80%,
+      transparent
+    );
+    will-change: transform;
+  }
+
+  .act-mobile-portal,
+  .act-mobile-ring,
+  .act-title [data-act-word] {
+    will-change: transform;
+  }
 }
 
 /* Mobile/tablet chronology: every era is now a landscape layer rather than a
    typographic table row. The copy remains normal document flow. */
+.era-mobile-stage {
+  isolation: isolate;
+}
+
+.era-mobile-stage__image {
+  opacity: 0;
+  transform: scale(1.035);
+  transform-origin: center;
+  transition:
+    opacity 880ms var(--ease-out),
+    transform 1400ms var(--ease-out);
+}
+
+.era-mobile-stage__image.is-active {
+  opacity: 0.48;
+  transform: scale(1.09);
+}
+
+.era-mobile-stage__shade {
+  background:
+    linear-gradient(
+      180deg,
+      rgb(var(--surface-rgb) / 0.92) 0%,
+      rgb(var(--surface-rgb) / 0.42) 26%,
+      rgb(var(--void-rgb) / 0.36) 50%,
+      rgb(var(--void-rgb) / 0.92) 84%,
+      rgb(var(--void-rgb)) 100%
+    ),
+    radial-gradient(circle at 78% 44%, transparent, rgb(var(--void-rgb) / 0.58) 72%);
+}
+
+.era-mobile-stage__copy {
+  animation: eraMobileCopyIn 720ms var(--ease-out) both;
+}
+
+@keyframes eraMobileCopyIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .era-mobile-card__image {
   transform: scale(1.08);
   transform-origin: center;
@@ -1733,5 +1892,530 @@ blockquote {
 
   .era-mobile-card__image {
     transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   PERFORMANCE COMPOSITOR
+   Decorative atmosphere yields while the reader moves; the narrative layer
+   stays untouched. Fixed full-screen paint effects never run on the lean tier.
+   ========================================================================== */
+.is-scrolling .grain-layer,
+.is-scrolling .sound-meter i,
+.is-scrolling .marquee-track {
+  animation-play-state: paused !important;
+}
+
+.perf-plain .chromatic-conductor__field,
+.perf-plain .ambient-wash,
+.perf-plain .hero-glow-disc {
+  display: none !important;
+}
+
+.ambient-wash {
+  background: radial-gradient(
+    circle,
+    rgb(var(--chroma-rgb) / 0.075),
+    rgb(var(--bone-rgb) / 0.018) 42%,
+    transparent 70%
+  );
+  opacity: 0.72;
+  transition: transform 180ms var(--ease-out), opacity 300ms var(--ease-out);
+}
+
+.page-sunk {
+  opacity: 0.38;
+  filter: none !important;
+  transform: none !important;
+}
+
+/* ==========================================================================
+   DRILLING INTRO — a fast first act, not a waiting screen.
+   ========================================================================== */
+.preloader {
+  --intro-accent-rgb: var(--lichen-rgb);
+  isolation: isolate;
+}
+
+.preloader[data-era='hadean'] {
+  --intro-accent-rgb: var(--oxide-rgb);
+}
+
+.preloader-slab {
+  background:
+    radial-gradient(circle at 50% 50%, rgb(var(--intro-accent-rgb) / 0.06), transparent 38%),
+    repeating-linear-gradient(
+      176deg,
+      rgb(var(--bone-rgb) / 0.045) 0 1px,
+      transparent 1px 14px,
+      rgb(var(--bone-rgb) / 0.018) 14px 16px,
+      transparent 16px 28px
+    ),
+    var(--void);
+  transition: transform 820ms var(--ease-out);
+  will-change: transform;
+}
+
+.preloader-slab--left {
+  border-right: 1px solid rgb(var(--bone-rgb) / 0.12);
+  transform-origin: left center;
+}
+
+.preloader-slab--right {
+  border-left: 1px solid rgb(var(--bone-rgb) / 0.12);
+  transform-origin: right center;
+}
+
+.preloader-wordmark {
+  color: transparent;
+  opacity: 0.1;
+  -webkit-text-stroke: 1px rgb(var(--bone-rgb) / 0.42);
+  transition: letter-spacing 820ms var(--ease-out), opacity 500ms var(--ease-out);
+}
+
+.preloader-station {
+  transition: opacity 340ms var(--ease-out), transform 620ms var(--ease-out);
+}
+
+.preloader-bore {
+  border: 1px solid rgb(var(--bone-rgb) / 0.13);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent 49.7%, rgb(var(--bone-rgb) / 0.09) 50%, transparent 50.3%),
+    linear-gradient(0deg, transparent 49.7%, rgb(var(--bone-rgb) / 0.09) 50%, transparent 50.3%),
+    radial-gradient(circle, rgb(var(--bone-rgb) / 0.04), transparent 62%);
+  box-shadow:
+    inset 0 0 0 18px rgb(var(--bone-rgb) / 0.012),
+    0 0 0 1px rgb(var(--bone-rgb) / 0.025);
+}
+
+.preloader-bore::before,
+.preloader-bore::after {
+  content: '';
+  position: absolute;
+  border: 1px solid rgb(var(--bone-rgb) / 0.11);
+  border-radius: 999px;
+}
+
+.preloader-bore::before {
+  inset: 1.15rem;
+}
+
+.preloader-bore::after {
+  inset: 2.25rem;
+  border-style: dashed;
+  opacity: 0.52;
+}
+
+.preloader-orbit {
+  stroke: rgb(var(--intro-accent-rgb) / 0.92);
+  filter: drop-shadow(0 0 7px rgb(var(--intro-accent-rgb) / 0.42));
+}
+
+.preloader-scan {
+  z-index: 3;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--intro-accent-rgb) / 0.9) 50%,
+    transparent
+  );
+  box-shadow: 0 0 14px rgb(var(--intro-accent-rgb) / 0.36);
+  will-change: transform;
+}
+
+@keyframes introTypeIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.24em);
+  }
+  to {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+}
+
+.preloader-era-name {
+  animation: introTypeIn 260ms var(--ease-out) both;
+}
+
+.preloader-skip {
+  position: relative;
+}
+
+.preloader-skip::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: rgb(var(--intro-accent-rgb) / 0.85);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 260ms var(--ease-out);
+}
+
+.preloader-skip:hover::before,
+.preloader-skip:focus-visible::before {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.preloader[data-phase='lift'] {
+  pointer-events: none;
+}
+
+.preloader[data-phase='lift'] .preloader-slab--left {
+  transform: translate3d(-102%, 0, 0) rotate(-1.2deg);
+}
+
+.preloader[data-phase='lift'] .preloader-slab--right {
+  transform: translate3d(102%, 0, 0) rotate(1.2deg);
+}
+
+.preloader[data-phase='lift'] .preloader-station {
+  opacity: 0;
+  transform: scale(0.975);
+}
+
+.preloader[data-phase='lift'] .preloader-wordmark {
+  letter-spacing: 0.08em;
+  opacity: 0;
+}
+
+@media (max-width: 639px) {
+  .preloader-assembly {
+    grid-template-columns: 8.75rem minmax(0, 1fr);
+    gap: 0.75rem 1rem;
+  }
+
+  .preloader-depth {
+    grid-column: 1 / -1;
+  }
+
+  .preloader-bore {
+    width: 8.75rem;
+    height: 8.75rem;
+  }
+
+  .preloader-era {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .preloader-wordmark {
+    font-size: 46vw;
+    writing-mode: vertical-rl;
+  }
+}
+
+/* ==========================================================================
+   LANGUAGE CUT — translation arrives through a single tectonic shutter.
+   ========================================================================== */
+body::before,
+body::after {
+  position: fixed;
+  pointer-events: none;
+  z-index: 340;
+}
+
+body::before {
+  content: '';
+  inset: -12% -32%;
+  background:
+    linear-gradient(90deg, transparent, rgb(var(--lichen-rgb) / 0.1) 48%, transparent 52%),
+    repeating-linear-gradient(
+      176deg,
+      rgb(var(--bone-rgb) / 0.06) 0 1px,
+      transparent 1px 15px
+    ),
+    var(--void);
+  transform: translate3d(-120%, 0, 0) skewX(-7deg);
+}
+
+body::after {
+  content: attr(data-locale-next);
+  left: 50%;
+  top: 50%;
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+  letter-spacing: 0.42em;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes localeFaultCut {
+  0% {
+    transform: translate3d(-120%, 0, 0) skewX(-7deg);
+  }
+  42%,
+  58% {
+    transform: translate3d(0, 0, 0) skewX(-7deg);
+  }
+  100% {
+    transform: translate3d(120%, 0, 0) skewX(-7deg);
+  }
+}
+
+@keyframes localeCode {
+  0%,
+  30%,
+  78%,
+  100% {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 0.8rem));
+  }
+  45%,
+  65% {
+    opacity: 0.86;
+    transform: translate(-50%, -50%);
+  }
+}
+
+html.locale-transitioning body::before {
+  animation: localeFaultCut 720ms var(--ease-out) both;
+}
+
+html.locale-transitioning body::after {
+  animation: localeCode 720ms var(--ease-out) both;
+}
+
+.locale-option::after,
+.locale-trigger::after {
+  content: '';
+  position: absolute;
+  inset: auto 20% 0.35rem;
+  height: 1px;
+  background: rgb(var(--lichen-rgb) / 0.9);
+  transform: scaleX(0);
+  transition: transform 260ms var(--ease-out);
+}
+
+.locale-option[aria-pressed='true']::after,
+.locale-trigger[aria-expanded='true']::after {
+  transform: scaleX(1);
+}
+
+.locale-popover::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+  background: linear-gradient(transparent, rgb(var(--lichen-rgb) / 0.8), transparent);
+}
+
+.locale-choice {
+  position: relative;
+  isolation: isolate;
+}
+
+.locale-choice::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(var(--lichen-rgb) / 0.12), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 280ms var(--ease-out);
+}
+
+.locale-choice:hover::before,
+.locale-choice:focus-visible::before,
+.locale-choice[aria-pressed='true']::before {
+  transform: scaleX(1);
+}
+
+/* ==========================================================================
+   SHAFT CONTROLS — every action belongs to the geology, not a UI kit.
+   ========================================================================== */
+.station-menu-core::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 180deg,
+    transparent,
+    rgb(var(--lichen-rgb) / 0.55),
+    transparent 32%
+  );
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out), transform 620ms var(--ease-out);
+}
+
+.station-menu-button:hover .station-menu-core::before,
+.station-menu-button:focus-visible .station-menu-core::before {
+  opacity: 1;
+  transform: rotate(100deg);
+}
+
+.station-menu-band {
+  position: relative;
+  transition: transform 420ms var(--ease-out), width 420ms var(--ease-out);
+}
+
+.station-menu-button:hover .station-menu-band:first-of-type {
+  width: 1.15rem;
+  transform: translateX(0.18rem);
+}
+
+.station-menu-button:hover .station-menu-band:nth-of-type(2) {
+  width: 0.75rem;
+  transform: translateX(-0.18rem);
+}
+
+.station-menu-button:hover .station-menu-band:last-of-type {
+  width: 1.05rem;
+  transform: translateX(0.1rem);
+}
+
+.shaft-menu-axis {
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgb(var(--lichen-rgb) / 0.62) 50%,
+    transparent
+  );
+  box-shadow: 0 0 16px rgb(var(--lichen-rgb) / 0.24);
+}
+
+.shaft-menu-index {
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(var(--bone-rgb) / 0.2);
+}
+
+@keyframes menuPreviewIn {
+  from {
+    opacity: 0;
+    transform: scale(1.055);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 0.55;
+    transform: scale(1);
+    clip-path: inset(0);
+  }
+}
+
+.menu-preview-in {
+  animation: menuPreviewIn 620ms var(--ease-out) both;
+}
+
+.shaft-menu-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(var(--lichen-rgb) / 0.1), transparent 72%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 420ms var(--ease-out);
+}
+
+.shaft-menu-link[data-active='true']::before,
+.shaft-menu-link:hover::before,
+.shaft-menu-link:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.shaft-menu-link[data-active='true'] {
+  border-color: rgb(var(--lichen-rgb) / 0.3);
+}
+
+.geology-button::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  border: 1px solid rgb(var(--void-rgb) / 0.14);
+  border-radius: inherit;
+}
+
+.button-fault {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--lichen-rgb) / 0.72),
+    transparent
+  );
+  filter: blur(0.2px);
+  opacity: 0;
+  transform: translate3d(-180%, 0, 0) skewX(-16deg);
+  transition: transform 620ms var(--ease-out), opacity 180ms var(--ease-out);
+}
+
+.geology-button:hover .button-fault,
+.geology-button:focus-visible .button-fault {
+  opacity: 0.58;
+  transform: translate3d(520%, 0, 0) skewX(-16deg);
+}
+
+.geology-button:active,
+.geology-pill:active {
+  scale: 0.975;
+}
+
+.geology-pill::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(var(--lichen-rgb) / 0.12), transparent);
+  transform: translateX(-110%);
+  transition: transform 520ms var(--ease-out);
+}
+
+.geology-pill:hover::before,
+.geology-pill:focus-visible::before {
+  transform: translateX(110%);
+}
+
+/* Poster-scale chapter accession numbers: a zero-runtime accent shared by
+   every dark report while individual content remains fully readable. */
+.section-shell[data-section-index]::after {
+  content: attr(data-section-index);
+  position: absolute;
+  right: -0.025em;
+  top: 10%;
+  z-index: 0;
+  pointer-events: none;
+  color: transparent;
+  font-family: var(--font-display);
+  font-size: clamp(10rem, 25vw, 30rem);
+  line-height: 0.8;
+  opacity: 0.11;
+  -webkit-text-stroke: 1px rgb(var(--bone-rgb) / 0.28);
+}
+
+.stats-section::after {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .shaft-menu-index,
+  .shaft-menu-axis {
+    display: none;
+  }
+
+  .section-shell[data-section-index]::after {
+    right: -0.08em;
+    top: 8rem;
+    font-size: 48vw;
+    opacity: 0.07;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.locale-transitioning body::before,
+  html.locale-transitioning body::after,
+  .preloader-era-name,
+  .menu-preview-in {
+    animation: none !important;
+  }
+
+  .preloader-slab,
+  .preloader-station,
+  .preloader-wordmark {
+    transition: none !important;
   }
 }

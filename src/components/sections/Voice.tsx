@@ -3,6 +3,8 @@ import ScrubText from '../ui/ScrubText'
 import useReveal from '../../hooks/useReveal'
 import { useI18n } from '../../i18n'
 import { gsap } from '../../lib/gsap'
+import { MQ_COMPACT_MOTION } from '../../lib/constants'
+import { useMediaQuery } from '../../lib/useMediaQuery'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 
 /** How far past the section the light has fully risen (fraction of its height). */
@@ -76,6 +78,7 @@ function MarqueeRow({ words }: { words: string[] }) {
 export default function Voice() {
   const { t } = useI18n()
   const reduced = useReducedMotion()
+  const compact = useMediaQuery(MQ_COMPACT_MOTION)
   const sectionRef = useRef<HTMLElement>(null)
   const duskRef = useRef<HTMLDivElement>(null)
   const ghostRef = useRef<HTMLSpanElement>(null)
@@ -86,6 +89,53 @@ export default function Voice() {
     const section = sectionRef.current
     const dusk = duskRef.current
     if (!section || !dusk || reduced) return
+
+    if (compact) {
+      let active = false
+      let frame = 0
+      const update = () => {
+        frame = 0
+        if (!active) return
+        const rect = section.getBoundingClientRect()
+        const start = window.innerHeight
+        const end = window.innerHeight * 0.08
+        const progress = Math.min(1, Math.max(0, (start - rect.top) / (start - end)))
+        dusk.style.transform = `translate3d(0, ${(-progress * 100).toFixed(2)}%, 0)`
+        if (ghostRef.current) {
+          ghostRef.current.style.transform =
+            `translate(-50%, -50%) translate3d(${(-7 + progress * 14).toFixed(2)}%, 0, 0)`
+        }
+        if (registrationRef.current) {
+          registrationRef.current.style.transform =
+            `translate3d(0, ${(-24 + progress * 48).toFixed(2)}%, 0) rotate(${(-18 + progress * 36).toFixed(2)}deg)`
+        }
+      }
+      const schedule = () => {
+        if (!active || frame) return
+        frame = window.requestAnimationFrame(update)
+      }
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          active = entry.isIntersecting
+          if (active) schedule()
+        },
+        { rootMargin: '20% 0px' },
+      )
+      observer.observe(section)
+      window.addEventListener('scroll', schedule, { passive: true })
+      window.addEventListener('resize', schedule)
+      schedule()
+
+      return () => {
+        observer.disconnect()
+        window.removeEventListener('scroll', schedule)
+        window.removeEventListener('resize', schedule)
+        window.cancelAnimationFrame(frame)
+        dusk.style.removeProperty('transform')
+        ghostRef.current?.style.removeProperty('transform')
+        registrationRef.current?.style.removeProperty('transform')
+      }
+    }
 
     const ctx = gsap.context(() => {
       // A graphite sheet covering the light room, retreating upward as the
@@ -99,7 +149,7 @@ export default function Voice() {
           scrollTrigger: {
             trigger: section,
             start: 'top bottom',
-            end: `top ${(1 - SUNRISE_END) * 100}%`,
+            end: compact ? 'top 8%' : `top ${(1 - SUNRISE_END) * 100}%`,
             scrub: 0.5,
           },
         },
@@ -143,7 +193,7 @@ export default function Voice() {
     }, section)
 
     return () => ctx.revert()
-  }, [reduced])
+  }, [compact, reduced])
 
   return (
     <section
@@ -151,19 +201,22 @@ export default function Voice() {
       id="voice"
       data-tone="light"
       data-chroma="light"
-      className="voice-stage relative flex min-h-[100svh] flex-col overflow-hidden bg-bone text-void"
+      className="voice-stage relative overflow-hidden bg-void"
     >
+      <div className="voice-room relative flex min-h-[100svh] flex-col overflow-hidden bg-bone text-void">
       {/* The retreating night. Sits above the content but below nothing else,
           so the room is genuinely revealed rather than cross-faded. */}
       <div
         ref={duskRef}
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-20 hidden motion-safe:block"
+        className="pointer-events-none absolute inset-0 z-20 motion-reduce:hidden"
         style={{
           background:
             'linear-gradient(180deg, rgb(var(--void-rgb)) 0%, rgb(var(--void-rgb)) 78%, rgb(var(--void-rgb) / 0.86) 92%, transparent 100%)',
         }}
-      />
+      >
+        <span className="voice-sunline absolute inset-x-0 bottom-0 h-24 translate-y-1/2" />
+      </div>
 
       {/* Sun through the shaft mouth: the light has a source, not a switch. */}
       <div
@@ -218,6 +271,7 @@ export default function Voice() {
           <span className="h-px flex-1 bg-void/15" aria-hidden="true" />
           <span aria-hidden="true">07 / 08</span>
         </div>
+      </div>
       </div>
     </section>
   )

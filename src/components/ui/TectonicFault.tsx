@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { gsap } from '../../lib/gsap'
+import { MQ_COMPACT_MOTION } from '../../lib/constants'
+import { useMediaQuery } from '../../lib/useMediaQuery'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 
 const FAULT_PATHS = [
@@ -23,49 +25,39 @@ export default function TectonicFault({ variant = 0 }: TectonicFaultProps) {
   const pathRef = useRef<SVGPathElement>(null)
   const probeRef = useRef<HTMLSpanElement>(null)
   const reduced = useReducedMotion()
+  const compact = useMediaQuery(MQ_COMPACT_MOTION)
+  const staticMotion = reduced || compact
   const path = FAULT_PATHS[Math.abs(variant) % FAULT_PATHS.length]
 
   useEffect(() => {
     const root = rootRef.current
     const fault = pathRef.current
     const probe = probeRef.current
-    if (!root || !fault || !probe || reduced) return
+    if (!root || !fault || !probe || staticMotion) return
     const section = root.closest('section') ?? root
 
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        fault,
-        { strokeDashoffset: 1 },
-        {
-          strokeDashoffset: 0,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 92%',
-            end: 'bottom 18%',
-            scrub: 0.65,
-          },
+      const timeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 92%',
+          end: 'bottom 18%',
+          scrub: 0.65,
+          invalidateOnRefresh: true,
         },
-      )
-      gsap.fromTo(
-        probe,
-        { top: '9%', opacity: 0 },
-        {
-          top: '91%',
-          opacity: 1,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: 0.55,
-          },
-        },
-      )
+      })
+      timeline
+        .fromTo(fault, { strokeDashoffset: 1 }, { strokeDashoffset: 0, ease: 'none' }, 0)
+        .fromTo(
+          probe,
+          { y: 0, opacity: 0 },
+          { y: () => root.clientHeight * 0.82, opacity: 1, ease: 'none' },
+          0,
+        )
     }, root)
 
     return () => ctx.revert()
-  }, [reduced, path])
+  }, [path, staticMotion])
 
   return (
     <div
@@ -93,7 +85,7 @@ export default function TectonicFault({ variant = 0 }: TectonicFaultProps) {
           strokeWidth="0.65"
           pathLength={1}
           strokeDasharray={1}
-          strokeDashoffset={reduced ? 0 : 1}
+          strokeDashoffset={staticMotion ? 0 : 1}
           vectorEffect="non-scaling-stroke"
           className="tectonic-fault__live"
         />

@@ -57,10 +57,11 @@ export default function MagneticButton({
         aria-hidden="true"
         className={`pointer-events-none absolute inset-0 origin-bottom scale-y-0 transition-transform duration-500 ease-out-expo group-hover:scale-y-100 ${
           variant === 'primary'
-            ? 'bg-gradient-to-t from-magma/70 via-magma/25 to-transparent'
-            : 'bg-gradient-to-t from-magma/30 via-magma/10 to-transparent'
+            ? 'bg-gradient-to-t from-lichen/45 via-lichen/15 to-transparent'
+            : 'bg-gradient-to-t from-lichen/20 via-lichen/5 to-transparent'
         }`}
       />
+      <span aria-hidden="true" className="button-fault pointer-events-none absolute inset-y-0 -left-1/3 w-1/3" />
 
       <span className="pointer-events-none relative flex items-center gap-2.5 transition-transform duration-300 ease-out-expo group-active:scale-[0.97]">
         <span className="grid h-5 w-5 place-items-center">
@@ -84,9 +85,9 @@ export default function MagneticButton({
   )
 
   const shared =
-    `group relative inline-flex items-center justify-center overflow-hidden rounded-full px-7 py-3.5 ` +
+    `geology-button group relative inline-flex items-center justify-center overflow-hidden rounded-full px-7 py-3.5 ` +
     `text-sm font-semibold transition-[background-color,border-color] duration-500 ease-out-expo ` +
-    `will-change-transform ${VARIANT_CLASS[variant]} ${className}`
+    `${VARIANT_CLASS[variant]} ${className}`
 
   const cursorProps = {
     'data-cursor': 'label',

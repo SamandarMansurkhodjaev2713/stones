@@ -63,7 +63,7 @@ export interface Dictionary {
     ogDescription: string
   }
   nav: { links: NavLink[]; cta: string; menu: string }
-  preloader: { label: string }
+  preloader: { label: string; skip: string }
   /** `tilt` labels the phone's own attitude readout in the station strip. */
   telemetry: { unit: string; tilt: string }
   /** Full-screen act titles punctuating the descent. */
@@ -221,13 +221,13 @@ const en: Dictionary = {
     cta: 'Begin the descent',
     menu: 'Menu',
   },
-  preloader: { label: 'Descending' },
+  preloader: { label: 'Descending', skip: 'Skip intro' },
   telemetry: { unit: 'M', tilt: 'TILT' },
   acts: {
-    deep: 'Below',
-    deepNote: 'Eight eras lie beneath. Each one heavier than the last.',
-    bottom: 'Bedrock',
-    bottomNote: 'Beyond this point lies only what everything began with.',
+    deep: 'Eight eras',
+    deepNote: 'Every layer below is older — a native scroll through deep time.',
+    bottom: 'Zero layer',
+    bottomNote: 'Beyond this mark lies the molten beginning of the planet.',
   },
   hero: {
     eyebrow: 'FIELD 01 · DEPTH 0 M',
@@ -240,7 +240,7 @@ const en: Dictionary = {
       'Beneath every ridge lies a record of fire and flood: pages pressed into stone, legible only to those patient enough to learn.',
     scrollHint: 'Scroll deeper',
     specimenCode: 'STN-000 · SURFACE',
-    specimenLabel: 'Live rock section',
+    specimenLabel: 'LIVE SECTION · MOVE THE LIGHT',
   },
   manifesto: {
     eyebrow: 'MANIFESTO',
@@ -499,13 +499,13 @@ const ru: Dictionary = {
     cta: 'Начать спуск',
     menu: 'Меню',
   },
-  preloader: { label: 'Погружение' },
+  preloader: { label: 'Погружение', skip: 'Пропустить интро' },
   telemetry: { unit: 'М', tilt: 'КРЕН' },
   acts: {
-    deep: 'Вглубь',
-    deepNote: 'Ниже — восемь эпох. Каждая тяжелее предыдущей.',
-    bottom: 'Дно',
-    bottomNote: 'Дальше только то, из чего всё началось.',
+    deep: 'Восемь эпох',
+    deepNote: 'Каждый слой ниже старше — впереди живая шкала глубокого времени.',
+    bottom: 'Нулевой слой',
+    bottomNote: 'За этой отметкой — расплавленное начало планеты.',
   },
   hero: {
     eyebrow: 'ПОЛЕ 01 · ГЛУБИНА 0 М',
@@ -518,7 +518,7 @@ const ru: Dictionary = {
       'Под каждым хребтом — летопись огня и потопов: страницы, спрессованные в камень, которые учатся читать лишь терпеливые.',
     scrollHint: 'Листайте вглубь',
     specimenCode: 'STN-000 · ПОВЕРХНОСТЬ',
-    specimenLabel: 'Живой срез породы',
+    specimenLabel: 'ЖИВОЙ СРЕЗ · ДВИГАЙТЕ СВЕТ',
   },
   manifesto: {
     eyebrow: 'МАНИФЕСТ',
@@ -777,13 +777,13 @@ const uz: Dictionary = {
     cta: 'Tushishni boshlash',
     menu: 'Menyu',
   },
-  preloader: { label: 'Tushish' },
+  preloader: { label: 'Tushish', skip: 'Introni o‘tkazish' },
   telemetry: { unit: 'M', tilt: 'QIYALIK' },
   acts: {
-    deep: 'Qa’riga',
-    deepNote: 'Quyida — sakkiz davr. Har biri oldingisidan og‘irroq.',
-    bottom: 'Tub',
-    bottomNote: 'Undan narida — hammasi boshlangan narsa.',
+    deep: 'Sakkiz davr',
+    deepNote: 'Pastdagi har bir qatlam qadimiyroq — oldinda chuqur vaqtning jonli shkalasi.',
+    bottom: 'Nol qatlam',
+    bottomNote: 'Bu belgidan narida — sayyoraning erigan boshlanishi.',
   },
   hero: {
     eyebrow: 'DALA 01 · CHUQURLIK 0 M',
@@ -796,7 +796,7 @@ const uz: Dictionary = {
       'Har bir tizma ostida — olov va to‘fonlar yilnomasi: toshga siqilgan sahifalar, ularni faqat sabrlilar o‘qishni o‘rganadi.',
     scrollHint: 'Chuqurroq varaqlang',
     specimenCode: 'STN-000 · SIRT',
-    specimenLabel: 'Jinsning jonli kesimi',
+    specimenLabel: 'JONLI KESIM · NURNI SILJITING',
   },
   manifesto: {
     eyebrow: 'MANIFEST',

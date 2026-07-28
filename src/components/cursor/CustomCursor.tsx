@@ -10,11 +10,12 @@ const INTERACTIVE_SELECTOR = '[data-cursor], a, button, [role="button"], input, 
 const LIGHT_TONE = 'light'
 const OFFSCREEN = -100
 /** Pooled dust motes trailing the cursor; one is (re)armed every interval. */
-const DUST_POOL = 12
-const DUST_INTERVAL_MS = 55
+const DUST_POOL = 8
+const DUST_INTERVAL_MS = 72
 /** Shards per click burst. */
-const SHARD_POOL = 14
-const SHARDS_PER_CLICK = 7
+const SHARD_POOL = 10
+const SHARDS_PER_CLICK = 5
+const CURSOR_SETTLE_PX = 0.18
 
 /**
  * Context-aware custom cursor (the "smart combo"):
@@ -49,6 +50,7 @@ export default function CustomCursor() {
     const root = document.documentElement
     root.classList.add('has-custom-cursor')
     let running = false
+    let hasPosition = false
 
     const spawnDust = (x: number, y: number, now: number) => {
       if (now - dustLastTs.current < DUST_INTERVAL_MS) return
@@ -59,17 +61,26 @@ export default function CustomCursor() {
       dustIndex.current += 1
       mote.style.left = `${x + (Math.random() - 0.5) * 14}px`
       mote.style.top = `${y + (Math.random() - 0.5) * 14}px`
-      // Restart the CSS animation by re-adding the class on the next frame.
-      mote.classList.remove('is-live')
-      void mote.offsetWidth
-      mote.classList.add('is-live')
+      mote.getAnimations().forEach((animation) => animation.cancel())
+      mote.animate(
+        [
+          { opacity: 0.72, transform: 'translate(-50%, -50%) scale(1)' },
+          { opacity: 0, transform: 'translate(-50%, -20px) scale(0.22)' },
+        ],
+        { duration: 620, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' },
+      )
     }
 
     const onMove = (event: PointerEvent) => {
       target.current.x = event.clientX
       target.current.y = event.clientY
+      if (!hasPosition) {
+        hasPosition = true
+        ringPos.current = { x: event.clientX, y: event.clientY }
+      }
       setVisible(true)
       spawnDust(event.clientX, event.clientY, event.timeStamp)
+      start()
     }
 
     // Click chip: a small radial burst of stone shards.
@@ -86,9 +97,22 @@ export default function CustomCursor() {
         shard.style.setProperty('--dx', `${(Math.cos(angle) * dist).toFixed(1)}px`)
         shard.style.setProperty('--dy', `${(Math.sin(angle) * dist).toFixed(1)}px`)
         shard.style.rotate = `${(angle * 180) / Math.PI}deg`
-        shard.classList.remove('is-live')
-        void shard.offsetWidth
-        shard.classList.add('is-live')
+        shard.getAnimations().forEach((animation) => animation.cancel())
+        shard.animate(
+          [
+            {
+              opacity: 0.9,
+              transform: 'translate(-50%, -50%) translate(0, 0) scale(1)',
+            },
+            {
+              opacity: 0,
+              transform:
+                `translate(-50%, -50%) translate(${(Math.cos(angle) * dist).toFixed(1)}px, ` +
+                `${(Math.sin(angle) * dist).toFixed(1)}px) scale(0.3)`,
+            },
+          ],
+          { duration: 500, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' },
+        )
       }
     }
 
@@ -143,10 +167,19 @@ export default function CustomCursor() {
       if (dot) {
         dot.style.transform = `translate3d(${target.current.x}px, ${target.current.y}px, 0) translate(-50%, -50%)`
       }
+      const settled =
+        Math.abs(target.current.x - ringPos.current.x) < CURSOR_SETTLE_PX &&
+        Math.abs(target.current.y - ringPos.current.y) < CURSOR_SETTLE_PX
+      if (settled) {
+        ringPos.current = { ...target.current }
+        running = false
+        rafRef.current = 0
+        return
+      }
       rafRef.current = requestAnimationFrame(render)
     }
     const start = () => {
-      if (running || document.hidden) return
+      if (running || document.hidden || !hasPosition) return
       running = true
       rafRef.current = requestAnimationFrame(render)
     }
@@ -160,13 +193,10 @@ export default function CustomCursor() {
       if (document.hidden) {
         setVisible(false)
         stop()
-      } else {
-        start()
       }
     }
 
     document.addEventListener('visibilitychange', onVisibility)
-    start()
 
     return () => {
       root.classList.remove('has-custom-cursor')

@@ -14,6 +14,7 @@ export const MQ_MOBILE =
   '(max-width: 639px), (orientation: landscape) and (max-height: 520px)'
 export const MQ_DESKTOP = '(min-width: 1024px)'
 export const MQ_FINE_POINTER = '(pointer: fine)'
+export const MQ_COMPACT_MOTION = '(max-width: 767px), (pointer: coarse)'
 export const MQ_REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
 /**
  * Pinned scenes are reserved for a genuinely desktop-shaped, pointer-driven
@@ -55,7 +56,7 @@ export const STATION_COORDS = { lat: 41.31, lon: 69.24 } as const
 export const MAX_DEPTH_M = 4600
 
 /* ── Preloader (skippable; skipped entirely under reduced motion) ─────────── */
-export const PRELOADER_COUNT_MS = 1300
+export const PRELOADER_COUNT_MS = 1700
 export const PRELOADER_LIFT_MS = 900
 
 /**
@@ -63,6 +64,7 @@ export const PRELOADER_LIFT_MS = 900
  * breathing room keeps each section seam readable under mobile safe areas.
  */
 export const HEADER_OFFSET = -120
+export const MOBILE_HEADER_OFFSET = -72
 
 /* ── Persistence ──────────────────────────────────────────────────────────── */
 /**

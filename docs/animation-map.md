@@ -111,3 +111,24 @@
 - The responsive QA gates are 320, 390, 768, phone landscape and 1440 pixels.
   Russian hero sizing uses a dedicated fluid scale so its longer title never
   clips between mobile and desktop breakpoints.
+
+## 2026 performance pass — native mobile cinema
+
+- `ui/ActTitle.tsx` no longer renders an unexplained split core. Both act
+  breaks use readable concentric apertures: eight rings open before the
+  chronology and collapse toward the zero layer before the finale. Compact
+  pointers update transforms through one viewport-gated RAF.
+- `sections/Eras.tsx` uses a native sticky mobile stage. Scrolling changes the
+  current era only eight times; the active and adjacent photographs crossfade
+  with transform/opacity, and only three photographs stay mounted.
+- Desktop Eras writes intra-era progress directly to one transform instead of
+  causing a React render on every ScrollTrigger update.
+- `sections/Voice.tsx` is a 155svh mobile light ritual with a sticky room. A
+  single passive scroll listener moves the graphite curtain while visible;
+  the quote assembles word by word with Web Animations.
+- Compact `SectionShell` reveals use one IntersectionObserver and short
+  transform/opacity Web Animations. They restore mobile choreography without
+  adding GSAP scrub timelines to every content block.
+- Touch keeps native momentum and never mounts Lenis. Fixed decorative layers
+  are reduced, canvas DPR is capped, and all long-running loops pause outside
+  their visible context.

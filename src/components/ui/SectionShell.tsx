@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { gsap } from '../../lib/gsap'
-import { DURATION, EASE_OUT } from '../../lib/constants'
+import { DURATION, EASE_OUT, MQ_COMPACT_MOTION } from '../../lib/constants'
 import { formatNumber } from '../../i18n'
+import { useMediaQuery } from '../../lib/useMediaQuery'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 import TectonicFault from './TectonicFault'
 
@@ -57,11 +58,90 @@ export default function SectionShell({
   const sectionRef = useRef<HTMLElement>(null)
   const seamRef = useRef<HTMLDivElement>(null)
   const reduced = useReducedMotion()
+  const compactMotion = useMediaQuery(MQ_COMPACT_MOTION)
 
   useEffect(() => {
     const section = sectionRef.current
     if (!section || reduced) return
-    const compactMotion = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches
+
+    if (compactMotion) {
+      const seam = seamRef.current
+      const targets = Array.from(
+        new Set([
+          ...section.querySelectorAll<HTMLElement>('[data-reveal]'),
+          ...section.querySelectorAll<HTMLElement>('[data-reveal-media]'),
+          ...section.querySelectorAll<HTMLElement>('[data-reveal-mask]'),
+          ...section.querySelectorAll<HTMLElement>('[data-row-body]'),
+        ]),
+      )
+      let seamAnimation: Animation | null = null
+      const animations = new Map<HTMLElement, Animation>()
+
+      if (seam) seam.style.transform = 'scaleX(0)'
+      targets.forEach((target) => {
+        const media = target.matches('[data-reveal-media]')
+        target.style.opacity = '0'
+        target.style.transform = media
+          ? 'translate3d(0, 1rem, 0) scale(1.025)'
+          : 'translate3d(0, 1.35rem, 0)'
+      })
+
+      const sectionObserver = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting) return
+          sectionObserver.disconnect()
+          if (seam) {
+            seamAnimation = seam.animate(
+              [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
+              { duration: 720, easing: EASE_OUT, fill: 'forwards' },
+            )
+          }
+        },
+        { rootMargin: '0px 0px -18% 0px' },
+      )
+      const contentObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return
+            const target = entry.target as HTMLElement
+            contentObserver.unobserve(target)
+            const media = target.matches('[data-reveal-media]')
+            const animation = target.animate(
+              [
+                {
+                  opacity: 0,
+                  transform: media
+                    ? 'translate3d(0, 1rem, 0) scale(1.025)'
+                    : 'translate3d(0, 1.35rem, 0)',
+                },
+                { opacity: 1, transform: 'translate3d(0, 0, 0) scale(1)' },
+              ],
+              {
+                duration: media ? 860 : 680,
+                easing: EASE_OUT,
+                fill: 'forwards',
+              },
+            )
+            animations.set(target, animation)
+          })
+        },
+        { threshold: 0.08, rootMargin: '0px 0px -7% 0px' },
+      )
+      sectionObserver.observe(section)
+      targets.forEach((target) => contentObserver.observe(target))
+
+      return () => {
+        sectionObserver.disconnect()
+        contentObserver.disconnect()
+        seamAnimation?.cancel()
+        if (seam) seam.style.removeProperty('transform')
+        animations.forEach((animation) => animation.cancel())
+        targets.forEach((target) => {
+          target.style.removeProperty('opacity')
+          target.style.removeProperty('transform')
+        })
+      }
+    }
 
     const ctx = gsap.context(() => {
       const seam = seamRef.current
@@ -102,7 +182,7 @@ export default function SectionShell({
         section.querySelectorAll('[data-reveal]'),
       )
       if (targets.length) {
-        gsap.set(targets, { opacity: 0, y: compactMotion ? 16 : 44 })
+        gsap.set(targets, { opacity: 0, y: 44 })
         gsap.to(targets, {
           opacity: 1,
           y: 0,
@@ -150,7 +230,7 @@ export default function SectionShell({
           )
           const body = row.querySelector('[data-row-body]')
           if (body) {
-            gsap.set(body, { opacity: 0, y: compactMotion ? 12 : 26 })
+            gsap.set(body, { opacity: 0, y: 26 })
             gsap.to(body, {
               opacity: 1,
               y: 0,
@@ -170,7 +250,7 @@ export default function SectionShell({
       if (masked.length) {
         gsap.set(masked, {
           clipPath: 'inset(0% 0% 100% 0%)',
-          y: compactMotion ? 22 : 48,
+          y: 48,
         })
         gsap.to(masked, {
           clipPath: 'inset(-12% 0% -12% 0%)',
@@ -184,7 +264,7 @@ export default function SectionShell({
       }
 
       // Departure: the chapter sinks a layer deeper as the next rides over.
-      if (depart && !compactMotion) {
+      if (depart) {
         gsap.to(section, {
           scale: 0.965,
           opacity: 0.72,
@@ -201,14 +281,15 @@ export default function SectionShell({
     }, section)
 
     return () => ctx.revert()
-  }, [reduced, depart])
+  }, [compactMotion, reduced, depart])
 
   return (
     <section
       id={id}
       ref={sectionRef}
       data-chroma={chroma}
-      className={`relative shadow-[0_-32px_60px_-30px_rgba(0,0,0,0.65)] ${
+      data-section-index={index}
+      className={`section-shell relative shadow-[0_-32px_60px_-30px_rgba(0,0,0,0.65)] ${
         clip ? 'overflow-hidden' : ''
       } ${className}`}
     >

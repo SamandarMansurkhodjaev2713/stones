@@ -6,6 +6,8 @@ import { ambient } from '../../lib/ambient'
 import {
   CURSOR_SMOOTHING,
   HEADER_OFFSET,
+  MOBILE_HEADER_OFFSET,
+  MQ_COMPACT_MOTION,
   MQ_FINE_POINTER,
   MQ_MOBILE,
   SPOTLIGHT_RADIUS,
@@ -37,6 +39,8 @@ const FOCUS_BLEND = 0.065
 const DOUBLE_TAP_MS = 320
 const DOUBLE_TAP_SLOP_PX = 44
 const HERO_ACTIVE_SCROLL_RATIO = 1.08
+const MASK_FRAME_RICH_MS = 33
+const MASK_FRAME_LEAN_MS = 50
 
 const SWEEP = {
   x1: 0.00052,
@@ -49,12 +53,13 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
-export default function Hero() {
+export default function Hero({ rich }: { rich: boolean }) {
   const { t } = useI18n()
   const scrollTo = useScrollTo()
   const isMobile = useMediaQuery(MQ_MOBILE)
+  const compactMotion = useMediaQuery(MQ_COMPACT_MOTION)
   const reduced = useReducedMotion()
-  const tilt = useDeviceTilt(isMobile && !reduced)
+  const tilt = useDeviceTilt(isMobile && !reduced && rich)
 
   const heroRef = useRef<HTMLElement>(null)
   const headlineStageRef = useRef<HTMLDivElement>(null)
@@ -91,7 +96,7 @@ export default function Hero() {
     let intersectsViewport = true
     let sceneActive = window.scrollY < window.innerHeight * HERO_ACTIVE_SCROLL_RATIO
     let lastMaskPaint = -Infinity
-    const maskFrameMs = hasFinePointer ? 16 : 33
+    const maskFrameMs = rich && hasFinePointer ? MASK_FRAME_RICH_MS : MASK_FRAME_LEAN_MS
 
     const target = {
       x: stone.left + stone.width / 2,
@@ -182,7 +187,7 @@ export default function Hero() {
       smooth.y += (target.y - smooth.y) * CURSOR_SMOOTHING
       paint(smooth.x, smooth.y, time)
 
-      if (tiltWrapRef.current) {
+      if (rich && tiltWrapRef.current) {
         const localX = (smooth.x - stone.left) / stone.width - 0.5
         const localY = (smooth.y - stone.top) / stone.height - 0.5
         const rotationY = hasFinePointer ? localX * 4.6 : tiltRef.current.x * 3.4
@@ -191,7 +196,7 @@ export default function Hero() {
           `perspective(1200px) rotateX(${rotationX.toFixed(2)}deg) rotateY(${rotationY.toFixed(2)}deg)`
       }
 
-      if (hasFinePointer && headlineRef.current) {
+      if (rich && hasFinePointer && headlineRef.current) {
         const dx = -((smooth.x - stone.left) / stone.width - 0.5) * HEADLINE_PARALLAX_X
         const dy = -((smooth.y - stone.top) / stone.height - 0.5) * HEADLINE_PARALLAX_Y
         headlineRef.current.style.transform =
@@ -321,7 +326,7 @@ export default function Hero() {
       observer.disconnect()
       stopLoop()
     }
-  }, [reduced])
+  }, [reduced, rich])
 
   useEffect(() => {
     const hero = heroRef.current
@@ -340,24 +345,44 @@ export default function Hero() {
       if (headlineStageRef.current) {
         timeline.to(
           headlineStageRef.current,
-          { yPercent: -16, opacity: 0.22, filter: 'blur(4px)', ease: 'none' },
+          {
+            yPercent: compactMotion ? -28 : -16,
+            opacity: compactMotion ? 0 : 0.22,
+            duration: compactMotion ? 0.34 : 1,
+            ease: 'none',
+          },
           0,
         )
       }
       if (stoneSceneRef.current) {
         timeline.to(
           stoneSceneRef.current,
-          { yPercent: 13, scale: 1.055, opacity: 0.54, ease: 'none' },
+          {
+            yPercent: compactMotion ? 18 : 13,
+            scale: 1.055,
+            opacity: compactMotion ? 0.18 : 0.54,
+            duration: compactMotion ? 0.64 : 1,
+            ease: 'none',
+          },
           0,
         )
       }
       if (copyRef.current) {
-        timeline.to(copyRef.current, { y: 22, opacity: 0, ease: 'none' }, 0)
+        timeline.to(
+          copyRef.current,
+          {
+            y: 22,
+            opacity: 0,
+            duration: compactMotion ? 0.38 : 1,
+            ease: 'none',
+          },
+          0,
+        )
       }
     }, hero)
 
     return () => ctx.revert()
-  }, [reduced])
+  }, [compactMotion, reduced])
 
   return (
     <section
@@ -441,7 +466,7 @@ export default function Hero() {
                   muted
                   loop
                   playsInline
-                  preload="auto"
+                  preload={rich && !isMobile ? 'auto' : 'metadata'}
                   className="hero-monolith-lit absolute inset-0 h-full w-full select-none object-contain"
                   style={{
                     maskImage:
@@ -472,11 +497,11 @@ export default function Hero() {
         </div>
       </div>
 
-      {!reduced && (
+      {!reduced && rich && (
         <div
           ref={glowRef}
           aria-hidden="true"
-          className="hero-glow-disc pointer-events-none absolute left-0 top-0 z-[15] h-[520px] w-[520px] rounded-full mix-blend-screen will-change-transform"
+          className="hero-glow-disc pointer-events-none absolute left-0 top-0 z-[15] h-[520px] w-[520px] rounded-full will-change-transform"
         />
       )}
 
@@ -524,7 +549,11 @@ export default function Hero() {
             label={t.hero.ctaPrimary}
             cursorLabel={t.cursor.dig}
             className="w-full sm:w-auto"
-            onClick={() => scrollTo('#descent', { offset: HEADER_OFFSET })}
+            onClick={() =>
+              scrollTo('#descent', {
+                offset: isMobile ? MOBILE_HEADER_OFFSET : HEADER_OFFSET,
+              })
+            }
           />
           <MagneticButton
             label={t.hero.ctaSecondary}
@@ -532,7 +561,11 @@ export default function Hero() {
             cursorLabel={t.cursor.explore}
             icon={<ChevronDown size={16} strokeWidth={2.25} />}
             className="w-full sm:w-auto"
-            onClick={() => scrollTo('#expeditions', { offset: HEADER_OFFSET })}
+            onClick={() =>
+              scrollTo('#expeditions', {
+                offset: isMobile ? MOBILE_HEADER_OFFSET : HEADER_OFFSET,
+              })
+            }
           />
         </div>
       </div>

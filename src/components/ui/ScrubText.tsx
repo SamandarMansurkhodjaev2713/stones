@@ -30,7 +30,49 @@ export default function ScrubText({ text, className = '' }: ScrubTextProps) {
 
   useEffect(() => {
     const el = ref.current
-    if (!el || reduced || mobile) return
+    if (!el || reduced) return
+
+    if (mobile) {
+      const wordEls = Array.from(el.querySelectorAll<HTMLElement>('[data-word]'))
+      wordEls.forEach((word) => {
+        word.style.opacity = String(DIM)
+        word.style.transform = 'translate3d(0, 0.45em, 0)'
+        word.style.display = 'inline-block'
+      })
+      let animations: Animation[] = []
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting) return
+          observer.disconnect()
+          animations = wordEls.map((word, index) =>
+            word.animate(
+              [
+                { opacity: DIM, transform: 'translate3d(0, 0.45em, 0)' },
+                { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+              ],
+              {
+                duration: 620,
+                delay: index * 42,
+                easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                fill: 'forwards',
+              },
+            ),
+          )
+        },
+        { threshold: 0.32 },
+      )
+      observer.observe(el)
+
+      return () => {
+        observer.disconnect()
+        animations.forEach((animation) => animation.cancel())
+        wordEls.forEach((word) => {
+          word.style.removeProperty('opacity')
+          word.style.removeProperty('transform')
+          word.style.removeProperty('display')
+        })
+      }
+    }
 
     const ctx = gsap.context(() => {
       gsap.fromTo(

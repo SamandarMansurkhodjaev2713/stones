@@ -8,7 +8,6 @@ import { MQ_FINE_POINTER } from './lib/constants'
 import CustomCursor from './components/cursor/CustomCursor'
 import Preloader from './components/layout/Preloader'
 import GrainOverlay from './components/ui/GrainOverlay'
-import DustForeground from './components/ui/DustForeground'
 import AmbientLight from './components/ui/AmbientLight'
 import ChromaticConductor from './components/ui/ChromaticConductor'
 import EdgeRulers from './components/ui/EdgeRulers'
@@ -42,17 +41,15 @@ function Shell() {
   const finePointer = useMediaQuery(MQ_FINE_POINTER)
   const reduced = useReducedMotion()
   const tier = usePerfTier()
-  const showCustomCursor = finePointer && !reduced
+  const rich = tier === 'rich'
+  const showCustomCursor = finePointer && !reduced && rich
   // Garnish, not structure: on a device that cannot hold frame rate these
   // simply do not mount, and the story reads exactly the same without them.
-  const rich = tier === 'rich'
-
   return (
     <div className="min-h-screen bg-void tracking-[-0.01em] text-bone">
       <Preloader />
       {showCustomCursor && <CustomCursor />}
-      <GrainOverlay />
-      {rich && <DustForeground />}
+      {rich && <GrainOverlay />}
       {rich && <AmbientLight />}
       <ChromaticConductor />
       <EdgeRulers />
@@ -61,7 +58,7 @@ function Shell() {
       <DepthRail />
 
       <main>
-        <Hero />
+        <Hero rich={rich} />
         {/* Everything below rides OVER the pinned hero like a dark curtain. */}
         <div className="relative z-20 bg-void">
           <Manifesto />
@@ -71,6 +68,7 @@ function Shell() {
             depthM={1200}
             numeral="II"
             unit={t.telemetry.unit}
+            variant="layers"
           />
           <Eras />
           <Stats />
@@ -83,6 +81,7 @@ function Shell() {
             depthM={4600}
             numeral="V"
             unit={t.telemetry.unit}
+            variant="origin"
           />
           <Descent />
           <Footer />

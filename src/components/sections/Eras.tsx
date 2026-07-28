@@ -6,8 +6,14 @@ import DisplayHeading from '../ui/DisplayHeading'
 import { useI18n, formatNumber } from '../../i18n'
 import type { Dictionary } from '../../i18n/dictionary'
 import { gsap, ScrollTrigger } from '../../lib/gsap'
-import { ERA_SEQUENCE, MAX_DEPTH_M, MQ_PINNED_DESKTOP } from '../../lib/constants'
+import {
+  ERA_SEQUENCE,
+  MAX_DEPTH_M,
+  MQ_COMPACT_MOTION,
+  MQ_PINNED_DESKTOP,
+} from '../../lib/constants'
 import { useMediaQuery } from '../../lib/useMediaQuery'
+import { useReducedMotion } from '../../lib/useReducedMotion'
 import { ambient } from '../../lib/ambient'
 import { haptic } from '../../lib/haptics'
 import { ERA_PHOTO } from '../../lib/media'
@@ -18,6 +24,8 @@ const PIN_VH_PER_ERA = 0.65
 const PHOTO_PARALLAX_PCT = 3.5
 /** Seconds the backdrop takes to follow the pointer — slow, like rock. */
 const PHOTO_EASE_S = 1.4
+/** Native-scroll distance per era on phones; no scroll-jacking or JS pinning. */
+const MOBILE_VH_PER_ERA = 58
 
 const depthOf = (depth: number) => Math.round(depth * MAX_DEPTH_M)
 
@@ -31,9 +39,8 @@ function PinnedEras({ t }: { t: Dictionary }) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const photoStackRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<ScrollTrigger | null>(null)
+  const progressLineRef = useRef<HTMLSpanElement>(null)
   const [idx, setIdx] = useState(0)
-  /** How far through the current era the reader is, 0..1. */
-  const [eraProgress, setEraProgress] = useState(0)
 
   /** Jump the page scroll so a given era becomes current. */
   const onJump = (target: number) => {
@@ -71,7 +78,10 @@ function PinnedEras({ t }: { t: Dictionary }) {
             }
             return cur === next ? cur : next
           })
-          setEraProgress(Math.min(1, scaled - next))
+          if (progressLineRef.current) {
+            progressLineRef.current.style.transform =
+              `scaleX(${Math.min(1, scaled - next).toFixed(4)})`
+          }
         },
       })
       triggerRef.current = trigger
@@ -118,22 +128,24 @@ function PinnedEras({ t }: { t: Dictionary }) {
       className="relative flex flex-col overflow-hidden"
       style={{ height: '100dvh' }}
     >
-      {/* Era backdrops: one monochrome landscape per level, crossfading with
-          the text. All stay mounted so the fade is instant on revisit. The
-          stack is oversized so pointer parallax never exposes an edge. */}
+      {/* Keep only the current and adjacent landscapes decoded. This preserves
+          an instant crossfade in either scroll direction while capping the
+          fullscreen image working set at three instead of eight. */}
       <div ref={photoStackRef} className="absolute -inset-[4%]">
-        {ERA_SEQUENCE.map((item, i) => (
-          <img
-            key={item.id}
-            src={ERA_PHOTO[item.id]}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover photo-tone transition-[opacity,transform] duration-[1600ms] ease-out ${
-              i === idx ? 'scale-105 opacity-40' : 'scale-100 opacity-0'
-            }`}
-          />
-        ))}
+        {ERA_SEQUENCE.map((item, index) => ({ item, index }))
+          .filter(({ index }) => Math.abs(index - idx) <= 1)
+          .map(({ item, index }) => (
+            <img
+              key={item.id}
+              src={ERA_PHOTO[item.id]}
+              alt=""
+              loading="eager"
+              decoding="async"
+              className={`absolute inset-0 h-full w-full object-cover photo-tone transition-[opacity,transform] duration-[1600ms] ease-out ${
+                index === idx ? 'scale-105 opacity-40' : 'scale-100 opacity-0'
+              }`}
+            />
+          ))}
         {/* Legibility + the deeper-darker ritual, now above the photograph. */}
         <div className="absolute inset-0 bg-gradient-to-t from-void/90 via-void/45 to-void/75" />
         <div
@@ -225,8 +237,8 @@ function PinnedEras({ t }: { t: Dictionary }) {
                 {/* How far through THIS era the reader currently is. */}
                 {i === idx && (
                   <span
-                    className="absolute inset-y-0 left-0 bg-bone transition-[width] duration-200"
-                    style={{ width: `${(eraProgress * 100).toFixed(1)}%` }}
+                    ref={progressLineRef}
+                    className="absolute inset-y-0 left-0 w-full origin-left scale-x-0 bg-bone"
                   />
                 )}
               </span>
@@ -261,7 +273,161 @@ function PinnedEras({ t }: { t: Dictionary }) {
   )
 }
 
-/** Flat era list — mobile, reduced motion, and the sr-only mirror. */
+/**
+ * Phone chronology: CSS sticky provides the lock while native scrolling
+ * advances through eight layers. React changes only when the era changes;
+ * intra-era progress is written to one transform, so the thumb keeps a clean
+ * frame path without a ScrollTrigger pin or per-frame component renders.
+ */
+function MobileErasStory({ t }: { t: Dictionary }) {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const progressRef = useRef<HTMLSpanElement>(null)
+  const currentRef = useRef(0)
+  const [idx, setIdx] = useState(0)
+
+  useEffect(() => {
+    const wrap = wrapRef.current
+    if (!wrap) return
+
+    let active = false
+    let frame = 0
+    const update = () => {
+      frame = 0
+      if (!active) return
+      const rect = wrap.getBoundingClientRect()
+      const scrollable = Math.max(1, rect.height - window.innerHeight)
+      const progress = Math.min(1, Math.max(0, -rect.top / scrollable))
+      const scaled = Math.min(ERA_SEQUENCE.length - 0.001, progress * ERA_SEQUENCE.length)
+      const next = Math.floor(scaled)
+
+      if (next !== currentRef.current) {
+        currentRef.current = next
+        setIdx(next)
+        ambient.play('shift')
+        haptic('edge')
+      }
+      if (progressRef.current) {
+        progressRef.current.style.transform = `scaleX(${(scaled - next).toFixed(4)})`
+      }
+    }
+    const schedule = () => {
+      if (!active || frame) return
+      frame = window.requestAnimationFrame(update)
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        active = entry.isIntersecting
+        if (active) schedule()
+      },
+      { rootMargin: '15% 0px' },
+    )
+    observer.observe(wrap)
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    schedule()
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      window.cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  const era = ERA_SEQUENCE[idx]
+  const copy = t.eras.items[era.id]
+
+  return (
+    <div
+      ref={wrapRef}
+      className="era-mobile-story relative"
+      style={{ height: `${100 + ERA_SEQUENCE.length * MOBILE_VH_PER_ERA}svh` }}
+    >
+      <div
+        aria-hidden="true"
+        className="era-mobile-stage sticky top-0 flex h-[100svh] flex-col overflow-hidden bg-surface"
+      >
+        <div className="absolute inset-0">
+          {ERA_SEQUENCE.map((item, index) => ({ item, index }))
+            .filter(({ index }) => Math.abs(index - idx) <= 1)
+            .map(({ item, index }) => (
+              <img
+                key={item.id}
+                src={ERA_PHOTO[item.id]}
+                alt=""
+                loading="eager"
+                decoding="async"
+                className={`era-mobile-stage__image photo-tone absolute inset-0 h-full w-full object-cover ${
+                  index === idx ? 'is-active' : ''
+                }`}
+              />
+            ))}
+          <div className="era-mobile-stage__shade absolute inset-0" />
+        </div>
+
+        <span
+          key={`mobile-horizon-${era.id}`}
+          className="drill-horizon pointer-events-none absolute inset-x-0 z-[2] h-px bg-gradient-to-r from-transparent via-bone/65 to-transparent"
+        />
+
+        <div className="section-gutter relative z-[3] mx-auto w-full max-w-3xl px-5 pt-28">
+          <p className="eyebrow">{t.eras.eyebrow}</p>
+          <h2 className="display-title mt-3 text-[2.7rem] leading-[0.9] text-bone">
+            {t.eras.title}
+          </h2>
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-bone/60">{t.eras.sub}</p>
+        </div>
+
+        <div className="section-gutter relative z-[3] mx-auto flex w-full max-w-3xl flex-1 flex-col justify-end px-5 pb-8">
+          <div key={era.id} className="era-mobile-stage__copy">
+            <div className="flex items-center justify-between border-b border-bone/15 pb-3">
+              <span className="font-mono-t text-[11px] uppercase tracking-[0.16em] text-bone/70">
+                −{formatNumber(depthOf(era.depth))} {t.telemetry.unit}
+              </span>
+              <span className="font-mono-t text-[10px] uppercase tracking-[0.18em] text-ash">
+                {String(idx + 1).padStart(2, '0')} /{' '}
+                {String(ERA_SEQUENCE.length).padStart(2, '0')}
+              </span>
+            </div>
+            <h3
+              className={`display-title mt-5 text-[clamp(3.25rem,16vw,5.4rem)] leading-[0.86] ${
+                era.id === 'hadean' ? 'era-molten' : 'text-bone'
+              }`}
+            >
+              {copy.name}
+            </h3>
+            <p className="font-mono-t mt-3 text-[11px] uppercase tracking-[0.16em] text-bone/55">
+              {copy.age}
+            </p>
+            <p className="mt-5 max-w-xl text-[0.95rem] leading-relaxed text-bone/75">
+              {copy.note}
+            </p>
+          </div>
+
+          <div className="mt-7 grid grid-cols-8 gap-1.5" aria-hidden="true">
+            {ERA_SEQUENCE.map((item, index) => (
+              <span
+                key={item.id}
+                className={`relative h-px overflow-hidden ${
+                  index <= idx ? 'bg-bone/45' : 'bg-bone/15'
+                }`}
+              >
+                {index === idx && (
+                  <span
+                    ref={progressRef}
+                    className="absolute inset-0 origin-left scale-x-0 bg-lichen/90"
+                  />
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Flat era list — reduced motion and the sr-only mirror. */
 function ErasList({ t, srOnly = false }: { t: Dictionary; srOnly?: boolean }) {
   if (srOnly) {
     return (
@@ -374,24 +540,36 @@ function ErasList({ t, srOnly = false }: { t: Dictionary; srOnly?: boolean }) {
 export default function Eras() {
   const { t } = useI18n()
   const pinned = useMediaQuery(MQ_PINNED_DESKTOP)
+  const compact = useMediaQuery(MQ_COMPACT_MOTION)
+  const reduced = useReducedMotion()
+  const mobileStory = compact && !reduced
 
   return (
-    <SectionShell id="eras" index="02" eyebrow={t.eras.eyebrow} depthM={1600} depart={false} className="bg-surface">
+    <SectionShell
+      id="eras"
+      index="02"
+      eyebrow={t.eras.eyebrow}
+      depthM={1600}
+      depart={false}
+      clip={!compact}
+      className="bg-surface"
+    >
       {/* Pinned stage: only a tall, fine-pointer desktop earns the lock. */}
       {pinned && <PinnedEras t={t} />}
-      {/* Its AT mirror, active only where the visual stage is the one shown. */}
-      <div className={pinned ? 'block' : 'hidden'}>
-        <ErasList t={t} srOnly />
-      </div>
+      {mobileStory && <MobileErasStory t={t} />}
 
-      {/* Native list: phones, tablets, coarse pointers, short viewports and
-          reduced-motion users keep an uninterrupted document flow. */}
-      <div className={pinned ? 'hidden' : 'block'}>
-        <div className="pointer-events-none absolute inset-0">
-          <ParticleField density={0.45} />
+      {pinned || mobileStory ? (
+        /* The full semantic chronology mirrors both visual storytelling modes. */
+        <ErasList t={t} srOnly />
+      ) : (
+        /* Reduced motion and unusual short desktop windows stay in document flow. */
+        <div>
+          <div className="pointer-events-none absolute inset-0">
+            <ParticleField density={0.45} />
+          </div>
+          <ErasList t={t} />
         </div>
-        <ErasList t={t} />
-      </div>
+      )}
     </SectionShell>
   )
 }

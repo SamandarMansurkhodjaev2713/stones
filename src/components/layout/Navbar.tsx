@@ -8,7 +8,13 @@ import { haptic } from '../../lib/haptics'
 import { useSound } from '../../lib/sound'
 import SectionStrata from '../ui/SectionStrata'
 import { MENU_PREVIEW } from '../../lib/media'
-import { HEADER_OFFSET, MAX_DEPTH_M, MQ_MOBILE, STATION_COORDS } from '../../lib/constants'
+import {
+  HEADER_OFFSET,
+  MAX_DEPTH_M,
+  MOBILE_HEADER_OFFSET,
+  MQ_MOBILE,
+  STATION_COORDS,
+} from '../../lib/constants'
 import { useMediaQuery } from '../../lib/useMediaQuery'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 import { useDeviceTilt } from '../../lib/useDeviceTilt'
@@ -21,8 +27,11 @@ const CLOCK_TICK_MS = 1000
 
 function LangToggle({ compact = false }: { compact?: boolean }) {
   const { locale, setLocale, t } = useI18n()
+  const { play } = useSound()
   const [open, setOpen] = useState(false)
+  const [switching, setSwitching] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
+  const switchTimersRef = useRef<number[]>([])
 
   useEffect(() => {
     if (!open) return
@@ -40,9 +49,41 @@ function LangToggle({ compact = false }: { compact?: boolean }) {
     }
   }, [open])
 
+  useEffect(
+    () => () => {
+      switchTimersRef.current.forEach((timer) => window.clearTimeout(timer))
+      document.documentElement.classList.remove('locale-transitioning', 'locale-swapped')
+      document.body.removeAttribute('data-locale-next')
+    },
+    [],
+  )
+
   const choose = (code: Locale) => {
-    setLocale(code)
+    if (code === locale || switching) {
+      setOpen(false)
+      return
+    }
+    const root = document.documentElement
+    switchTimersRef.current.forEach((timer) => window.clearTimeout(timer))
+    switchTimersRef.current = []
+    setSwitching(true)
     setOpen(false)
+    document.body.dataset.localeNext = code.toUpperCase()
+    root.classList.remove('locale-swapped')
+    root.classList.add('locale-transitioning')
+    play('shift')
+    haptic('snap')
+    switchTimersRef.current.push(
+      window.setTimeout(() => {
+        setLocale(code)
+        root.classList.add('locale-swapped')
+      }, 180),
+      window.setTimeout(() => {
+        root.classList.remove('locale-transitioning', 'locale-swapped')
+        document.body.removeAttribute('data-locale-next')
+        setSwitching(false)
+      }, 720),
+    )
   }
 
   return (
@@ -61,13 +102,14 @@ function LangToggle({ compact = false }: { compact?: boolean }) {
               type="button"
               onClick={() => choose(code)}
               aria-pressed={locale === code}
+              disabled={switching}
               data-cursor="label"
               data-cursor-label={code.toUpperCase()}
-              className={`min-h-[44px] min-w-[44px] uppercase tracking-[0.12em] transition-colors duration-300 ${
+              className={`locale-option relative min-h-[44px] min-w-[44px] overflow-hidden uppercase tracking-[0.12em] transition-colors duration-300 disabled:pointer-events-none ${
                 locale === code ? 'text-lichen' : 'text-ash hover:text-bone'
               }`}
             >
-              {code}
+              <span className="relative z-[1]">{code}</span>
             </button>
           </span>
         ))}
@@ -77,8 +119,10 @@ function LangToggle({ compact = false }: { compact?: boolean }) {
         type="button"
         aria-label={t.a11y.langSwitch}
         aria-expanded={open}
+        aria-busy={switching}
+        disabled={switching}
         onClick={() => setOpen((value) => !value)}
-        className={`font-mono-t grid h-11 min-w-11 place-items-center rounded-full border text-[11px] uppercase tracking-[0.14em] transition-[border-color,color,background-color] duration-300 lg:hidden ${
+        className={`locale-trigger font-mono-t relative grid h-11 min-w-11 place-items-center overflow-hidden rounded-full border text-[11px] uppercase tracking-[0.14em] transition-[border-color,color,background-color] duration-300 disabled:pointer-events-none lg:hidden ${
           open
             ? 'border-lichen/65 bg-lichen/10 text-lichen'
             : 'border-bone/15 text-bone/80 hover:border-bone/40'
@@ -91,7 +135,7 @@ function LangToggle({ compact = false }: { compact?: boolean }) {
         role="group"
         aria-label={t.a11y.langSwitch}
         aria-hidden={!open}
-        className={`absolute right-0 z-[130] min-w-[9.25rem] overflow-hidden rounded-2xl border border-bone/15 bg-surface/95 p-1.5 shadow-2xl backdrop-blur-lg transition-[opacity,transform] duration-300 ${
+        className={`locale-popover absolute right-0 z-[130] min-w-[9.25rem] overflow-hidden rounded-2xl border border-bone/15 bg-surface p-1.5 shadow-2xl transition-[opacity,transform] duration-300 ${
           compact ? 'bottom-full mb-2 origin-bottom-right' : 'top-full mt-2 origin-top-right'
         } ${open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'}`}
       >
@@ -101,8 +145,9 @@ function LangToggle({ compact = false }: { compact?: boolean }) {
             type="button"
             onClick={() => choose(code)}
             aria-pressed={locale === code}
+            disabled={switching}
             tabIndex={open ? 0 : -1}
-            className={`font-mono-t flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-xs uppercase tracking-[0.16em] transition-colors duration-300 ${
+            className={`locale-choice font-mono-t flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-xs uppercase tracking-[0.16em] transition-colors duration-300 disabled:pointer-events-none ${
               locale === code
                 ? 'bg-lichen/10 text-lichen'
                 : 'text-ash hover:bg-bone/5 hover:text-bone'
@@ -322,7 +367,7 @@ export default function Navbar() {
   const go = (id: string) => {
     play('click')
     setMenuOpen(false)
-    scrollTo(`#${id}`, { offset: HEADER_OFFSET })
+    scrollTo(`#${id}`, { offset: isMobile ? MOBILE_HEADER_OFFSET : HEADER_OFFSET })
   }
 
   /** Fictional shaft level for a menu entry — evenly spaced station stops. */
@@ -337,7 +382,7 @@ export default function Navbar() {
     <>
       <header
         className={`site-header fixed inset-x-0 top-0 z-[90] transition-colors duration-500 ${
-          scrolled ? 'bg-void/85 backdrop-blur-md' : 'bg-transparent'
+          scrolled ? 'bg-void/95' : 'bg-transparent'
         }`}
       >
         {/* Telemetry strip */}
@@ -393,16 +438,16 @@ export default function Navbar() {
               aria-expanded={menuOpen}
               data-cursor="label"
               data-cursor-label={t.nav.menu}
-              className="group flex shrink-0 items-center gap-3"
+              className="station-menu-button group flex shrink-0 items-center gap-3"
             >
               <span className="station-menu-label font-mono-t text-xs uppercase tracking-[0.2em] text-bone/80 transition-colors duration-300 group-hover:text-bone">
                 {t.nav.menu}
               </span>
               {/* Core-sample icon: three strata bands */}
-              <span className="flex h-11 w-11 flex-col items-center justify-center gap-[5px] rounded-full border border-bone/15 transition-colors duration-300 group-hover:border-bone/40">
-                <span className="h-px w-4 bg-bone" />
-                <span className="h-px w-4 bg-bone/60" />
-                <span className="h-px w-4 bg-bone/30" />
+              <span className="station-menu-core relative flex h-11 w-11 flex-col items-center justify-center gap-[5px] overflow-hidden rounded-full border border-bone/15 transition-colors duration-300 group-hover:border-bone/40">
+                <span className="station-menu-band h-px w-4 bg-bone" />
+                <span className="station-menu-band h-px w-4 bg-bone/60" />
+                <span className="station-menu-band h-px w-4 bg-bone/30" />
               </span>
             </button>
           </div>
@@ -422,6 +467,21 @@ export default function Navbar() {
         }`}
         aria-hidden={!menuOpen}
       >
+        <span
+          aria-hidden="true"
+          className={`shaft-menu-index display-title outline-title pointer-events-none absolute bottom-[-0.12em] right-[3%] z-[1] text-[42vw] leading-none transition-[opacity,transform] duration-700 ease-out-expo ${
+            menuOpen ? 'translate-y-0 opacity-30' : 'translate-y-[12%] opacity-0'
+          }`}
+        >
+          {String(previewIdx + 1).padStart(2, '0')}
+        </span>
+        <span
+          aria-hidden="true"
+          className={`shaft-menu-axis pointer-events-none absolute inset-y-0 left-1/2 z-[2] w-px origin-top transition-transform duration-700 ease-out-expo ${
+            menuOpen ? 'scale-y-100' : 'scale-y-0'
+          }`}
+        />
+
         {/* The plates */}
         <div
           aria-hidden="true"
@@ -429,7 +489,7 @@ export default function Navbar() {
             menuOpen ? 'translate-y-0' : '-translate-y-full'
           }`}
         >
-          <SectionStrata depth={0.2} />
+          <SectionStrata depth={0.2} animate={false} />
         </div>
         <div
           aria-hidden="true"
@@ -437,7 +497,7 @@ export default function Navbar() {
             menuOpen ? 'translate-y-0' : 'translate-y-full'
           }`}
         >
-          <SectionStrata depth={0.8} />
+          <SectionStrata depth={0.8} animate={false} />
         </div>
 
         {/* Section preview — the scene behind the list (desktop). */}
@@ -449,18 +509,14 @@ export default function Navbar() {
             transition: 'opacity 500ms var(--ease-out) 350ms',
           }}
         >
-          {t.nav.links.map((link, i) => (
-            <img
-              key={link.id}
-              src={MENU_PREVIEW[link.id]}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              className={`photo-tone absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-700 ease-out-expo ${
-                i === previewIdx ? 'scale-100 opacity-55' : 'scale-105 opacity-0'
-              }`}
-            />
-          ))}
+          <img
+            key={t.nav.links[previewIdx]?.id}
+            src={MENU_PREVIEW[t.nav.links[previewIdx]?.id]}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="menu-preview-in photo-tone absolute inset-0 h-full w-full object-cover opacity-55"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-void/80 to-transparent" />
           <span className="font-mono-t absolute bottom-4 left-4 text-[10px] uppercase tracking-[0.2em] text-bone/70">
             {t.nav.links[previewIdx]?.label} · −{formatNumber(levelDepth(previewIdx))}{' '}
@@ -526,7 +582,8 @@ export default function Navbar() {
               // controls they cannot see.
               data-cursor="label"
               data-cursor-label={link.label}
-              className={`shaft-menu-link group flex items-baseline justify-between gap-6 border-b border-bone/10 py-4 text-left transition-[opacity,transform] duration-500 ease-out-expo sm:py-5 ${
+              data-active={previewIdx === i}
+              className={`shaft-menu-link group relative flex items-baseline justify-between gap-6 overflow-hidden border-b border-bone/10 py-4 text-left transition-[opacity,transform] duration-500 ease-out-expo sm:py-5 ${
                 menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
               }`}
               style={{
